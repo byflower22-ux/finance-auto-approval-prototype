@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>财务待办｜AI 影子审批原型</title>
+  <style>
+    :root { --nav:#1f3156; --nav-hover:#2c4472; --blue:#2864ee; --blue-soft:#edf3ff; --ink:#18243a; --muted:#6d7a91; --line:#e3e9f2; --page:#f5f7fb; --green:#147a60; --green-soft:#e9f8f2; --amber:#9a6500; --amber-soft:#fff6e4; --red:#c13c4a; --red-soft:#fff0f1; }
+    * { box-sizing:border-box; }
+    body { min-width:1200px; margin:0; color:var(--ink); background:var(--page); font:13px/1.45 "Microsoft YaHei","PingFang SC",Arial,sans-serif; }
+    button,input,select { font:inherit; }
+    button { cursor:pointer; }
+    .topbar { position:fixed; z-index:10; top:0; right:0; left:0; display:flex; align-items:center; justify-content:space-between; height:62px; padding:0 25px 0 22px; background:#fff; border-bottom:1px solid var(--line); }
+    .brand { display:flex; gap:11px; align-items:center; color:#273959; font-size:18px; font-weight:700; }
+    .brand-mark { display:grid; width:25px; height:25px; place-items:center; color:#fff; background:#e75159; border-radius:7px 12px 7px 12px; transform:rotate(45deg); }
+    .brand-mark span { font-size:13px; transform:rotate(-45deg); }
+    .top-actions { display:flex; gap:19px; align-items:center; color:var(--muted); font-size:12px; }
+    .avatar { display:grid; width:29px; height:29px; place-items:center; color:#fff; background:#e05358; border-radius:50%; }
+    .sidebar { position:fixed; z-index:5; top:62px; bottom:0; left:0; width:204px; padding:16px 12px; color:#cbd5e7; background:var(--nav); }
+    .side-title { display:flex; align-items:center; justify-content:space-between; padding:5px 11px 13px; color:#fff; font-size:13px; font-weight:700; }
+    .nav-item { display:flex; gap:10px; align-items:center; min-height:37px; padding:0 12px; color:#c2cde0; border-radius:6px; font-size:13px; }
+    .nav-item.active { color:#fff; background:var(--nav-hover); font-weight:700; }
+    .nav-sub { margin:3px 0 4px 37px; padding:7px 0; color:#81a9fa; font-size:13px; }
+    .nav-sub.current { color:#fff; font-weight:700; }
+    .workspace { min-height:calc(100vh - 62px); margin:62px 0 0 204px; }
+    .crumb { display:flex; gap:9px; align-items:center; height:44px; padding:0 27px; color:var(--muted); background:#fff; border-bottom:1px solid var(--line); font-size:12px; }
+    .crumb strong { color:var(--ink); }
+    .content { padding:19px 27px 52px; }
+    .topline { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; }
+    .page-title { color:#263854; font-size:20px; font-weight:700; }
+    .page-subtitle { margin-top:4px; color:#7b899d; font-size:12px; }
+    .search { display:flex; width:305px; overflow:hidden; border:1px solid #d9e2ee; border-radius:5px; background:#fff; }
+    .search input { flex:1; min-width:0; height:33px; padding:0 10px; border:0; outline:0; font-size:12px; }
+    .search button { width:37px; color:#fff; background:var(--blue); border:0; }
+    .filter-card,.list-card { background:#fff; border:1px solid var(--line); border-radius:8px; box-shadow:0 7px 19px rgba(27,49,93,.04); }
+    .filter-card { margin-bottom:15px; overflow:hidden; }
+    .filter-row { display:flex; align-items:center; min-height:43px; padding:0 17px; border-top:1px solid #eef2f6; }
+    .filter-row:first-child { border-top:0; }
+    .filter-name { flex:0 0 94px; color:#53627a; font-size:12px; font-weight:700; }
+    .filter-options { display:flex; flex-wrap:wrap; gap:5px; align-items:center; }
+    .quick-option { min-height:24px; padding:0 8px; color:#6f7e93; background:transparent; border:0; border-radius:3px; font-size:12px; }
+    .quick-option:hover { color:var(--blue); background:var(--blue-soft); }
+    .quick-option.active { color:#fff; background:#e95b5e; }
+    .filter-select { width:172px; height:28px; padding:0 8px; color:#52627a; background:#fff; border:1px solid #d8e1ed; border-radius:4px; font-size:12px; }
+    .date-input { width:124px; height:28px; padding:0 8px; color:#65758d; border:1px solid #d8e1ed; border-radius:4px; font-size:12px; }
+    .filter-btn { min-height:28px; margin-left:8px; padding:0 12px; color:#fff; background:#e95b5e; border:0; border-radius:4px; font-size:12px; }
+    .reset-btn { min-height:28px; margin-left:6px; padding:0 10px; color:#6b7a90; background:#fff; border:1px solid #d9e2ec; border-radius:4px; font-size:12px; }
+    .list-head { display:flex; align-items:center; justify-content:space-between; min-height:51px; padding:0 17px; border-bottom:1px solid var(--line); }
+    .list-title { color:#2b3b56; font-size:14px; font-weight:700; }
+    .list-title small { margin-left:6px; color:#8795a8; font-size:11px; font-weight:400; }
+    .sort { color:#76869d; font-size:12px; }
+    .sort select { height:28px; margin-left:4px; padding:0 7px; color:#52627a; border:1px solid #d8e1ed; border-radius:4px; font-size:12px; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; min-width:2010px; border-collapse:collapse; }
+    th { height:42px; padding:0 10px; color:#62728a; background:#f7f9fc; border-bottom:1px solid #e7edf4; border-right:1px solid #edf1f6; font-size:11px; font-weight:700; text-align:left; white-space:nowrap; }
+    td { padding:12px 10px; color:#475872; border-bottom:1px solid #edf1f5; border-right:1px solid #f1f4f8; font-size:12px; vertical-align:middle; }
+    tr:hover td { background:#fbfdff; }
+    th:last-child,td:last-child { border-right:0; }
+    .actions { display:flex; flex-wrap:wrap; gap:4px; width:90px; }
+    .action-link { padding:3px 5px; color:#4471c4; background:#f5f8ff; border:1px solid #dce6fa; border-radius:3px; font-size:11px; text-decoration:none; }
+    .action-link.primary-action { color:#fff; background:#2864ee; border-color:#2864ee; }
+    .code { color:#2b61be; font-size:11px; font-weight:700; white-space:nowrap; }
+    .title-link { display:block; max-width:160px; overflow:hidden; color:#406fc4; text-overflow:ellipsis; white-space:nowrap; text-decoration:none; }
+    .muted { color:#8b98aa; font-size:11px; }
+    .subline { display:block; margin-top:3px; color:#8794a6; font-size:11px; }
+    .payer { max-width:158px; color:#43546f; line-height:1.45; }
+    .content-cell { max-width:160px; color:#596a83; line-height:1.45; }
+    .money { color:#d4484d; font-weight:700; white-space:nowrap; }
+    .status { display:inline-flex; gap:5px; align-items:center; white-space:nowrap; }
+    .status::before { width:6px; height:6px; background:currentColor; border-radius:50%; content:""; }
+    .status.pending { color:#c77d0c; } .status.returned { color:#d34b54; } .status.paid { color:#218262; }
+    .tag { display:inline-flex; min-height:22px; align-items:center; padding:0 6px; border-radius:3px; font-size:11px; white-space:nowrap; }
+    .tag.done { color:#147a60; background:#e9f8f2; } .tag.wait { color:#7a8799; background:#f1f4f8; }
+    .tag.review { color:#9a6500; background:#fff6e4; } .tag.pass { color:#147a60; background:#e9f8f2; } .tag.reject { color:#c13c4a; background:#fff0f1; }
+    .empty { display:none; padding:35px; color:#8a98aa; text-align:center; }
+    .empty.show { display:block; }
+    /* 与回单对接的审批确认页保持一致的紧凑工作台层级。 */
+    :root { --nav:#303d5b; --nav-hover:rgba(255,255,255,.08); --blue:#f26b6b; --blue-soft:#fff1f1; --ink:#303846; --muted:#8d97a9; --line:#edf0f5; --page:#f6f8fb; }
+    body { min-width:1180px; color:var(--ink); background:var(--page); font-size:14px; }
+    .topbar { left:196px; height:36px; padding:0 12px; }
+    .brand { position:fixed; top:0; left:0; z-index:21; width:196px; height:36px; padding:0 16px; gap:7px; color:#fff; background:#27334f; font-size:15px; }
+    .brand-mark { width:auto; height:auto; color:#f1646b; background:transparent; border-radius:0; transform:none; }
+    .brand-mark span { font-size:18px; transform:none; }
+    .top-actions { gap:15px; height:100%; font-size:13px; }
+    .avatar { width:18px; height:18px; font-size:11px; }
+    .sidebar { top:36px; width:196px; padding:6px 0 14px; color:#c8cfde; background:#303d5b; }
+    .side-title { min-height:38px; padding:0 16px; color:#fff; background:rgba(255,255,255,.06); font-weight:400; }
+    .nav-item { min-height:38px; padding:0 16px; border-radius:0; color:#d3d9e5; }
+    .nav-item.active { background:rgba(255,255,255,.06); }
+    .nav-sub { position:relative; margin:0; min-height:30px; padding:6px 16px 6px 38px; color:#bdc6d7; }
+    .nav-sub.current { color:#ff7b7b; background:rgba(255,255,255,.06); }
+    .nav-sub.current::before { position:absolute; top:0; bottom:0; left:0; width:3px; content:""; background:#f27676; }
+    .nav-sub.current::before { display:none; }
+    .workspace { min-height:calc(100vh - 36px); margin:36px 0 0 196px; }
+    .crumb { gap:0; height:32px; padding-left:10px; color:#708096; font-size:13px; }
+    .crumb span { display:none; }
+    .crumb strong { position:relative; display:flex; align-items:center; height:32px; padding:0 12px; color:#4d5868; border-right:1px solid var(--line); border-left:1px solid var(--line); font-weight:400; }
+    .crumb strong::before { position:absolute; top:0; right:0; left:0; height:2px; content:""; background:#f26b6b; }
+    .content { padding:0 10px 24px; }
+    .topline { align-items:center; min-height:52px; margin:0 -10px; padding:9px 12px; background:#fff; border-bottom:1px solid var(--line); }
+    .page-title,.page-subtitle { display:none; }
+    .search { width:272px; border-radius:2px; }
+    .search input { height:24px; font-size:13px; }
+    .search button { width:28px; background:#f26b6b; }
+    .filter-card,.list-card { border:1px solid #f1f3f6; border-radius:0; box-shadow:none; }
+    .filter-card { margin:8px 0 0; }
+    .filter-row { min-height:34px; padding:4px 11px; border-top:0; border-bottom:1px solid var(--line); }
+    .filter-row:last-child { border-bottom:0; }
+    .filter-name { flex-basis:100px; color:#303846; font-size:14px; }
+    .filter-options { gap:3px 8px; }
+    .quick-option { min-height:24px; padding:3px 7px; color:#f07878; border-radius:2px; font-size:14px; }
+    .quick-option:hover,.quick-option.active { color:#fff; background:#f26b6b; }
+    .filter-select,.date-input { height:28px; border-color:#e1e6ed; border-radius:2px; font-size:13px; }
+    .filter-select { width:310px; }
+    .filter-btn { min-height:22px; padding:0 8px; background:#f26b6b; border-radius:2px; }
+    .reset-btn { min-height:24px; border-radius:2px; color:#c75b5b; border-color:#e8b6b6; }
+    .list-card { margin-top:24px; }
+    .list-head { min-height:33px; padding:0 10px; }
+    .list-title { color:var(--muted); font-size:13px; font-weight:400; }
+    .sort { font-size:12px; }
+    .sort select { height:24px; border-radius:2px; }
+    table { min-width:3040px; }
+    th { height:38px; color:#343d4c; font-size:13px; background:#f5f7fb; }
+    td { height:58px; padding:8px 10px; color:#4a5565; font-size:13px; }
+    th,td { border-right:0; }
+    .actions { width:178px; gap:6px; }
+    .action-link { padding:2px 6px; color:#6594c0; background:#fff; border-color:#dce4ee; border-radius:2px; font-size:13px; }
+    .action-link.primary-action { color:#6594c0; background:#fff; border-color:#dce4ee; }
+    .action-link:hover,.action-link.primary-action:hover { color:#f45656; background:#fff7f7; border-color:#f45656; }
+    .action-link.log-action { font:inherit; }
+    /* AI 建议仅展示结论标签，不在列表中重复展示命中说明。 */
+    #todoList td:nth-child(24) .subline { display:none; }
+    .code { color:#4a5565; font-size:13px; font-weight:400; }
+    .title-link { max-width:190px; color:#4b8bc8; }
+    .money { color:#4a5565; font-weight:400; }
+    .tag { min-height:22px; border-radius:2px; }
+    .pagination { display:flex; align-items:center; justify-content:flex-end; gap:4px; min-height:43px; padding:0 12px; }
+    .pagination button { min-width:25px; height:23px; padding:0 6px; border:1px solid #e0e6ee; border-radius:2px; color:#667085; background:#fff; }
+    .pagination button.active { color:#fff; border-color:#f26b6b; background:#f26b6b; }
+    .log-modal[hidden] { display:none; }
+    .log-modal { position:fixed; z-index:100; inset:0; display:grid; place-items:center; }
+    .log-modal__backdrop { position:absolute; inset:0; background:rgba(30,39,57,.5); }
+    .log-modal__panel { position:relative; width:520px; max-width:calc(100vw - 40px); background:#fff; box-shadow:0 8px 28px rgba(15,23,42,.22); }
+    .log-modal__header { display:flex; align-items:center; justify-content:space-between; height:46px; padding:0 15px; border-bottom:1px solid var(--line); }
+    .log-modal__header strong { font-size:15px; }
+    .log-modal__close { border:0; color:#9099a8; background:transparent; font-size:20px; }
+    .log-modal__body { padding:16px; color:#556275; }
+    .log-modal__body p { margin:0 0 10px; }
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><span class="brand-mark"><span>✥</span></span>博商管理</div><div class="top-actions"><span>▦ 应用中心⌄</span><span>▧ 帮助手册</span><span>▣ 日程</span><span>▦ 换肤</span><span class="avatar">财</span><span>财务专员⌄</span></div></header>
+  <aside class="sidebar"><div class="side-title"><span>▰ 财务管理</span><span>⌄</span></div><div class="nav-item">订单中心</div><div class="nav-item">客户档案</div><div class="nav-item">银行对账</div><div class="nav-item">发票管理</div><div class="nav-sub current">审批确认</div><div class="nav-item">开具发票</div><div class="nav-item">费用报销</div><div class="nav-item">收入确认</div><div class="nav-item">项目收支</div><div class="nav-item">收款记录</div><div class="nav-item">付款申请</div><div class="nav-item">回单对接</div><div class="nav-item">预算管理</div></aside>
+  <main class="workspace"><div class="content">
+    <div class="topline"><div><div class="page-title">财务待办</div><div class="page-subtitle">AI 审批信息仅供财务核对。</div></div><div class="search"><input id="globalSearch" placeholder="搜索标题、单号、申请人、申请部门..." onkeydown="if(event.key==='Enter') applyFilters()"><button type="button" onclick="applyFilters()" aria-label="搜索">⌕</button></div></div>
+    <section class="filter-card">
+      <div class="filter-row"><div class="filter-name">表单状态：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="status" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="status" data-value="待财务审核" onclick="selectQuickFilter(this)">待财务审核</button><button class="quick-option" type="button" data-filter="status" data-value="已驳回" onclick="selectQuickFilter(this)">已驳回</button><button class="quick-option" type="button" data-filter="status" data-value="待支付" onclick="selectQuickFilter(this)">待支付</button><button class="quick-option" type="button" data-filter="status" data-value="已支付" onclick="selectQuickFilter(this)">已支付</button><button class="quick-option" type="button" data-filter="status" data-value="支付失败" onclick="selectQuickFilter(this)">支付失败</button></div></div>
+      <div class="filter-row"><div class="filter-name">回单状态：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="receiptStatus" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="receiptStatus" data-value="待拉取" onclick="selectQuickFilter(this)">待拉取</button><button class="quick-option" type="button" data-filter="receiptStatus" data-value="已归档" onclick="selectQuickFilter(this)">已归档</button><button class="quick-option" type="button" data-filter="receiptStatus" data-value="拉取失败" onclick="selectQuickFilter(this)">拉取失败</button></div></div>
+      <div class="filter-row"><div class="filter-name">金蝶状态：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="kingdeeStatus" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="kingdeeStatus" data-value="待同步" onclick="selectQuickFilter(this)">待同步</button><button class="quick-option" type="button" data-filter="kingdeeStatus" data-value="同步成功" onclick="selectQuickFilter(this)">同步成功</button><button class="quick-option" type="button" data-filter="kingdeeStatus" data-value="同步失败" onclick="selectQuickFilter(this)">同步失败</button></div></div>
+      <div class="filter-row"><div class="filter-name">创建时间：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="date" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="date" data-value="today" onclick="selectQuickFilter(this)">今天</button><button class="quick-option" type="button" data-filter="date" data-value="week" onclick="selectQuickFilter(this)">本周</button><button class="quick-option" type="button" data-filter="date" data-value="month" onclick="selectQuickFilter(this)">本月</button><button class="quick-option" type="button" data-filter="date" data-value="quarter" onclick="selectQuickFilter(this)">本季度</button><input class="date-input" type="text" placeholder="开始日期"><span class="muted">至</span><input class="date-input" type="text" placeholder="结束日期"><button class="filter-btn" type="button" onclick="applyFilters()">查询</button><button class="reset-btn" type="button" onclick="resetFilters()">重置</button></div></div>
+      <div class="filter-row"><div class="filter-name">流程审批通过时间：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="approvalDate" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="approvalDate" data-value="today" onclick="selectQuickFilter(this)">今天</button><button class="quick-option" type="button" data-filter="approvalDate" data-value="week" onclick="selectQuickFilter(this)">本周</button><button class="quick-option" type="button" data-filter="approvalDate" data-value="month" onclick="selectQuickFilter(this)">本月</button><input class="date-input" type="text" placeholder="开始日期"><span class="muted">至</span><input class="date-input" type="text" placeholder="结束日期"><button class="filter-btn" type="button" onclick="applyFilters()">查询</button></div></div>
+      <div class="filter-row"><div class="filter-name">报销单类型：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="type" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="type" data-value="付款单" onclick="selectQuickFilter(this)">付款单</button><button class="quick-option" type="button" data-filter="type" data-value="报销单" onclick="selectQuickFilter(this)">报销单</button><button class="quick-option" type="button" data-filter="type" data-value="固定资产付款单" onclick="selectQuickFilter(this)">固定资产付款单</button></div></div>
+      <div class="filter-row"><div class="filter-name">是否涉海外：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="overseas" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="overseas" data-value="是" onclick="selectQuickFilter(this)">是</button><button class="quick-option" type="button" data-filter="overseas" data-value="否" onclick="selectQuickFilter(this)">否</button></div></div>
+      <div class="filter-row"><div class="filter-name">是否有发票：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="invoice" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="invoice" data-value="是" onclick="selectQuickFilter(this)">是</button><button class="quick-option" type="button" data-filter="invoice" data-value="否" onclick="selectQuickFilter(this)">否</button></div></div>
+      <div class="filter-row"><div class="filter-name">付款主体：</div><div class="filter-options"><select id="payerFilter" class="filter-select" onchange="applyFilters()"><option value="">全部付款主体</option><option value="博商管理集团有限公司">博商管理集团有限公司</option><option value="深圳市博商管理咨询有限公司">深圳市博商管理咨询有限公司</option><option value="Sands Bosum Business Pte. Ltd">Sands Bosum Business Pte. Ltd</option></select></div></div>
+      <div class="filter-row"><div class="filter-name">收款方类型：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="payeeType" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="payeeType" data-value="公司" onclick="selectQuickFilter(this)">公司</button><button class="quick-option" type="button" data-filter="payeeType" data-value="个人" onclick="selectQuickFilter(this)">个人</button></div></div>
+      <div class="filter-row"><div class="filter-name">AI 是否已审批：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="aiAudit" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="aiAudit" data-value="AI已审批" onclick="selectQuickFilter(this)">AI已审批</button><button class="quick-option" type="button" data-filter="aiAudit" data-value="未审批" onclick="selectQuickFilter(this)">未审批</button></div></div>
+      <div class="filter-row"><div class="filter-name">AI 审批建议：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="aiSuggestion" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="aiSuggestion" data-value="建议通过" onclick="selectQuickFilter(this)">建议通过</button><button class="quick-option" type="button" data-filter="aiSuggestion" data-value="建议驳回" onclick="selectQuickFilter(this)">建议驳回</button><button class="quick-option" type="button" data-filter="aiSuggestion" data-value="建议复核" onclick="selectQuickFilter(this)">建议复核</button></div></div>
+    </section>
+    <section class="list-card"><div class="list-head"><div class="list-title" id="resultCount">共 5 条记录</div></div><select id="sortSelect" hidden><option value="created"></option></select><div class="table-wrap"><table><thead><tr><th>操作</th><th>单号</th><th>标题</th><th>是否有发票</th><th>是否涉海外</th><th>金蝶编码</th><th>CBS交易流水号</th><th>申请时间</th><th>流程审批通过时间</th><th>申请人</th><th>申请部门</th><th>付款主体</th><th>内容</th><th>金额(人民币)</th><th>金额(外币)</th><th>单据类型</th><th>付款类型</th><th>状态</th><th>收款方类型</th><th>回单状态</th><th>金蝶状态</th><th>状态时间</th><th>失败原因</th><th>AI是否已审批</th><th>AI审批建议</th><th>审批人</th></tr></thead><tbody id="todoList">
+      <tr data-status="待财务审核" data-type="付款单" data-overseas="否" data-invoice="是" data-payer="博商管理集团有限公司" data-ai-audit="AI已审批" data-ai-suggestion="建议复核" data-created="5" data-amount="1560"><td><div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo">详情</a></div></td><td><span class="code">PAY-20260805-0086</span></td><td><a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo">2026 年 8 月项目差旅费用付款</a></td><td>是</td><td>否</td><td>--</td><td>--</td><td>2026-08-05<span class="subline">14:26:18</span></td><td>刘宇鑫</td><td>教学运营部</td><td><div class="payer">博商管理集团有限公司</div></td><td><div class="content-cell">差旅交通及住宿费用付款</div></td><td class="money">1,560.00</td><td>--</td><td>付款单</td><td>项目付款</td><td><span class="status pending">待财务审核</span></td><td>2026-08-05<span class="subline">14:26:18</span></td><td><span class="tag done">AI已审批</span></td><td><span class="tag review">建议复核</span></td><td>王晓雯</td></tr>
+      <tr data-status="待财务审核" data-type="固定资产付款单" data-overseas="否" data-invoice="是" data-payer="深圳市博商管理咨询有限公司" data-ai-audit="AI已审批" data-ai-suggestion="建议驳回" data-created="4" data-amount="42500"><td><div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo">详情</a></div></td><td><span class="code">PAY-20260805-0081</span></td><td><a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo">教学中心投影仪采购付款</a></td><td>是</td><td>否</td><td>KD-FA-02471</td><td>--</td><td>2026-08-05<span class="subline">09:11:42</span></td><td>陈敏</td><td>教学运营部</td><td><div class="payer">深圳市博商管理咨询有限公司</div></td><td><div class="content-cell">多媒体教学设备采购</div></td><td class="money">42,500.00</td><td>--</td><td>固定资产付款单</td><td>付款</td><td><span class="status pending">待财务审核</span></td><td>2026-08-05<span class="subline">09:11:42</span></td><td><span class="tag done">AI已审批</span></td><td><span class="tag reject">建议驳回</span></td><td>王晓雯</td></tr>
+      <tr data-status="待财务审核" data-type="付款单" data-overseas="是" data-invoice="否" data-payer="Sands Bosum Business Pte. Ltd" data-ai-audit="AI已审批" data-ai-suggestion="建议复核" data-created="3" data-amount="8600"><td><div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo">详情</a></div></td><td><span class="code">PAY-20260804-0074</span></td><td><a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo">华南区域公开课市场推广费</a></td><td>否</td><td>是</td><td>KD-20260804-74</td><td>CBS-98374920</td><td>2026-08-04<span class="subline">17:43:05</span></td><td>周蕾</td><td>市场部</td><td><div class="payer">Sands Bosum Business Pte. Ltd</div></td><td><div class="content-cell">境外公开课场地推广费用</div></td><td class="money">8,600.00</td><td>1,189.00</td><td>付款单</td><td>付款</td><td><span class="status pending">待财务审核</span></td><td>2026-08-04<span class="subline">17:43:05</span></td><td><span class="tag done">AI已审批</span></td><td><span class="tag review">建议复核</span></td><td>王晓雯</td></tr>
+      <tr data-status="待财务审核" data-type="付款单" data-overseas="否" data-invoice="是" data-payer="博商管理集团有限公司" data-ai-audit="AI已审批" data-ai-suggestion="建议通过" data-created="2" data-amount="12600"><td><div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo">详情</a></div></td><td><span class="code">PAY-20260805-0083</span></td><td><a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo">7 月外聘讲师课酬付款</a></td><td>是</td><td>否</td><td>KD-20260805-83</td><td>CBS-98375216</td><td>2026-08-05<span class="subline">12:05:29</span></td><td>赵立</td><td>教学运营部</td><td><div class="payer">博商管理集团有限公司</div></td><td><div class="content-cell">7 月外聘讲师课酬结算</div></td><td class="money">12,600.00</td><td>--</td><td>付款单</td><td>付款</td><td><span class="status pending">待财务审核</span></td><td>2026-08-05<span class="subline">12:05:29</span></td><td><span class="tag done">AI已审批</span></td><td><span class="tag pass">建议通过</span></td><td>王晓雯</td></tr>
+      <tr data-status="待财务审核" data-type="付款单" data-overseas="否" data-invoice="是" data-payer="深圳市博商管理咨询有限公司" data-ai-audit="未审批" data-ai-suggestion="" data-created="1" data-amount="3260"><td><div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo">详情</a></div></td><td><span class="code">PAY-20260805-0088</span></td><td><a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo">北京客户拜访差旅费用付款</a></td><td>是</td><td>否</td><td>--</td><td>--</td><td>2026-08-05<span class="subline">16:17:36</span></td><td>孙晨</td><td>项目管理部</td><td><div class="payer">深圳市博商管理咨询有限公司</div></td><td><div class="content-cell">北京客户拜访交通及住宿</div></td><td class="money">3,260.00</td><td>--</td><td>付款单</td><td>项目付款</td><td><span class="status pending">待财务审核</span></td><td>2026-08-05<span class="subline">16:17:36</span></td><td><span class="tag wait">未审批</span></td><td><span class="tag wait">未审批</span></td><td>王晓雯</td></tr>
+    </tbody></table></div><div id="emptyState" class="empty">未找到符合当前筛选条件的待办。</div><nav class="pagination" aria-label="单据列表分页"><button type="button" disabled>‹</button><button type="button" class="active" aria-current="page">1</button><button type="button" disabled>›</button></nav></section>
+  </div></main>
+  <div id="operationLog" class="log-modal" hidden><div class="log-modal__backdrop" onclick="closeOperationLog()"></div><section class="log-modal__panel" role="dialog" aria-modal="true" aria-label="操作日志"><header class="log-modal__header"><strong>操作日志</strong><button class="log-modal__close" type="button" aria-label="关闭" onclick="closeOperationLog()">×</button></header><div class="log-modal__body" id="operationLogContent"></div></section></div>
+  <script>
+    const filters={ status:'',receiptStatus:'',kingdeeStatus:'',date:'',approvalDate:'',type:'',overseas:'',invoice:'',payeeType:'',aiAudit:'',aiSuggestion:'' };
+    const referenceColumns=[
+      { payeeType:'个人', receiptStatus:'待拉取', kingdeeStatus:'待同步', approvalPassed:'2026-08-05 14:26:18', failureReason:'' },
+      { payeeType:'公司', receiptStatus:'待拉取', kingdeeStatus:'待同步', approvalPassed:'2026-08-05 09:11:42', failureReason:'发票异常' },
+      { payeeType:'公司', receiptStatus:'—', kingdeeStatus:'待同步', approvalPassed:'2026-08-04 17:43:05', failureReason:'合同待核验' },
+      { payeeType:'个人', receiptStatus:'已归档', kingdeeStatus:'同步成功', approvalPassed:'2026-08-05 12:05:29', failureReason:'' },
+      { payeeType:'个人', receiptStatus:'待拉取', kingdeeStatus:'待同步', approvalPassed:'', failureReason:'' },
+      { payeeType:'个人', receiptStatus:'已归档', kingdeeStatus:'同步成功', approvalPassed:'2026-08-05 10:10:45', failureReason:'' },
+      { payeeType:'个人', receiptStatus:'待拉取', kingdeeStatus:'待同步', approvalPassed:'2026-08-05 11:30:12', failureReason:'行程材料待补充' }
+    ];
+    function appendReimbursementTodoRows() {
+      const source = document.querySelector('#todoList tr');
+      if (!source) return;
+      const createRow = ({ number, title, applicant, department, payer, content, amount, kind, suggestion, suggestionClass, created, failureReason }) => {
+        const row = source.cloneNode(true);
+        row.dataset.type = '报销单';
+        row.dataset.approvalKind = kind === '项目报销' ? 'project' : 'non-project';
+        row.dataset.payer = payer;
+        row.dataset.aiAudit = 'AI已审批';
+        row.dataset.aiSuggestion = suggestion;
+        row.dataset.created = created;
+        row.dataset.amount = amount.replace(',', '');
+        row.cells[0].innerHTML = `<div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo&documentType=reimbursement&approvalKind=${kind === '项目报销' ? 'project' : 'non-project'}&documentNo=${number}">详情</a></div>`;
+        row.cells[1].innerHTML = `<span class="code">${number}</span>`;
+        row.cells[2].innerHTML = `<a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo&documentType=reimbursement&approvalKind=${kind === '项目报销' ? 'project' : 'non-project'}&documentNo=${number}">${title}</a>`;
+        row.cells[5].textContent = '--'; row.cells[6].textContent = '--';
+        row.cells[7].innerHTML = `2026-08-05<span class="subline">${created === '7' ? '10:10:45' : '11:30:12'}</span>`;
+        row.cells[8].textContent = applicant; row.cells[9].textContent = department;
+        row.cells[10].innerHTML = `<div class="payer">${payer}</div>`;
+        row.cells[11].innerHTML = `<div class="content-cell">${content}</div>`;
+        row.cells[12].textContent = amount; row.cells[13].textContent = '--';
+        row.cells[14].textContent = '报销单'; row.cells[15].textContent = kind;
+        row.cells[16].innerHTML = '<span class="status pending">待财务审核</span>';
+        row.cells[17].innerHTML = '<span class="tag done">AI已审批</span>';
+        row.cells[18].innerHTML = `<span class="tag ${suggestionClass}">${suggestion}</span>`;
+        row.cells[19].textContent = '王晓雯';
+        if (failureReason) row.dataset.failureReason = failureReason;
+        return row;
+      };
+      document.getElementById('todoList').append(
+        createRow({ number:'EXP-20260805-0042', title:'8 月办公用品采购项目报销', applicant:'陈敏', department:'行政部', payer:'博商管理集团有限公司', content:'办公文具及耗材采购', amount:'2,380.00', kind:'项目报销', suggestion:'建议通过', suggestionClass:'pass', created:'7' }),
+        createRow({ number:'EXP-20260805-0048', title:'8 月客户拜访交通费用报销', applicant:'林佳', department:'市场部', payer:'深圳市博商管理咨询有限公司', content:'客户拜访交通及餐费', amount:'1,280.00', kind:'报销', suggestion:'建议复核', suggestionClass:'review', created:'6', failureReason:'行程材料待补充' })
+      );
+    }
+    function referenceCell(value, className='') { const cell=document.createElement('td'); cell.className=className; cell.textContent=value||'--'; return cell; }
+    function hydrateReferenceColumns() {
+      document.querySelectorAll('#todoList tr').forEach((row,index)=>{
+        const data=referenceColumns[index]; if(!data || row.dataset.referenceReady) return;
+        Object.entries(data).forEach(([key,value])=>row.setAttribute(`data-${key.replace(/[A-Z]/g,letter=>`-${letter.toLowerCase()}`)}`,value));
+        row.insertBefore(referenceCell(data.approvalPassed,'approval-time'),row.cells[8]);
+        row.insertBefore(referenceCell(data.payeeType),row.cells[18]);
+        row.insertBefore(referenceCell(data.receiptStatus),row.cells[19]);
+        row.insertBefore(referenceCell(data.kingdeeStatus),row.cells[20]);
+        row.insertBefore(referenceCell(data.failureReason,'failure-reason'),row.cells[22]);
+        row.dataset.referenceReady='true';
+      });
+    }
+    function wireDocumentRoutes() {
+      document.querySelectorAll('#todoList tr').forEach(row => {
+        const documentNo = row.cells[1].textContent.trim();
+        const documentType = row.dataset.type === '报销单' ? 'reimbursement' : 'payment';
+        const paymentType = row.cells[15]?.textContent.trim() || '';
+        const approvalKind = row.dataset.approvalKind || (/项目付款|项目报销/.test(paymentType) ? 'project' : 'non-project');
+        const detailUrl = `审批详情页-AI影子审批原型.html?from=todo&documentType=${documentType}&approvalKind=${approvalKind}&documentNo=${encodeURIComponent(documentNo)}`;
+        row.dataset.approvalKind = approvalKind;
+        const detailAction = row.querySelector('.actions .action-link:not(.primary-action)');
+        const titleLink = row.querySelector('.title-link');
+        if (detailAction) detailAction.href = detailUrl;
+        if (titleLink) titleLink.href = detailUrl;
+      });
+    }
+    function selectQuickFilter(button) { const key=button.dataset.filter; filters[key]=button.dataset.value; document.querySelectorAll(`.quick-option[data-filter="${key}"]`).forEach(item=>item.classList.toggle('active',item===button)); applyFilters(); }
+    function applyFilters() { const payer=document.getElementById('payerFilter').value; const keyword=document.getElementById('globalSearch').value.trim().toLowerCase(); const rows=[...document.querySelectorAll('#todoList tr')]; let count=0; rows.forEach(row=>{ const text=row.textContent.toLowerCase(); const match=(!filters.status||row.dataset.status===filters.status)&&(!filters.receiptStatus||row.dataset.receiptStatus===filters.receiptStatus)&&(!filters.kingdeeStatus||row.dataset.kingdeeStatus===filters.kingdeeStatus)&&(!filters.type||row.dataset.type===filters.type)&&(!filters.overseas||row.dataset.overseas===filters.overseas)&&(!filters.invoice||row.dataset.invoice===filters.invoice)&&(!filters.payeeType||row.dataset.payeeType===filters.payeeType)&&(!filters.aiAudit||row.dataset.aiAudit===filters.aiAudit)&&(!filters.aiSuggestion||row.dataset.aiSuggestion===filters.aiSuggestion)&&(!payer||row.dataset.payer===payer)&&(!keyword||text.includes(keyword)); row.hidden=!match; if(match) count+=1; }); const sort=document.getElementById('sortSelect').value; const aiWeight={ '建议复核':3,'建议驳回':2,'建议通过':1,'':0 }; rows.sort((a,b)=>sort==='amount'?Number(b.dataset.amount)-Number(a.dataset.amount):sort==='ai'?(aiWeight[b.dataset.aiSuggestion]-aiWeight[a.dataset.aiSuggestion])||Number(b.dataset.created)-Number(a.dataset.created):Number(b.dataset.created)-Number(a.dataset.created)).forEach(row=>document.getElementById('todoList').appendChild(row)); document.getElementById('resultCount').textContent=`共 ${count} 条记录`; document.getElementById('emptyState').classList.toggle('show',count===0); }
+    function resetFilters() { Object.keys(filters).forEach(key=>filters[key]=''); document.querySelectorAll('.quick-option').forEach(item=>item.classList.toggle('active',item.dataset.value==='')); document.getElementById('payerFilter').value=''; document.getElementById('globalSearch').value=''; document.getElementById('sortSelect').value='created'; applyFilters(); }
+    function showOperationLog(button) { const row=button.closest('tr'); const number=row.cells[1].textContent.trim(); const title=row.cells[2].textContent.trim(); document.getElementById('operationLogContent').innerHTML=`<p><strong>${number}</strong>　${title}</p><p>提交申请：2026-08-05 14:26:18　申请人已提交单据</p><p>AI 审单：已完成　${row.dataset.aiSuggestion||'等待 AI 审单'}</p><p>当前节点：待财务审批</p>`; document.getElementById('operationLog').hidden=false; }
+    function closeOperationLog() { document.getElementById('operationLog').hidden=true; }
+    function addApprovalActions() { document.querySelectorAll('#todoList .actions').forEach(actions=>{ if(actions.querySelector('.primary-action')) return; const row=actions.closest('tr'); const documentType=row.dataset.type==='报销单'?'reimbursement':'payment'; const documentNo=row.cells[1].textContent.trim(); const approval=document.createElement('a'); approval.className='action-link primary-action'; approval.href=`财务审批页-AI影子审单原型.html?from=todo&documentType=${documentType}&approvalKind=${row.dataset.approvalKind}&documentNo=${encodeURIComponent(documentNo)}`; approval.textContent='审批'; const log=document.createElement('button'); log.className='action-link log-action'; log.type='button'; log.textContent='日志'; log.onclick=()=>showOperationLog(log); actions.append(log); actions.append(approval); }); }
+    appendReimbursementTodoRows();
+    hydrateReferenceColumns();
+    wireDocumentRoutes();
+    addApprovalActions();
+    applyFilters();
+  </script>
+  <script src="prototype-navigation.js"></script>
+</body>
+</html>
+
+
+

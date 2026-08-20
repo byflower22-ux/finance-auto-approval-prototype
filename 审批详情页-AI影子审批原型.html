@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>审批详情｜AI 影子审批原型</title>
+  <style>
+    :root { --nav:#1f3156; --nav-hover:#2c4472; --blue:#2864ee; --blue-soft:#edf3ff; --ink:#18243a; --muted:#6d7a91; --line:#e3e9f2; --page:#f5f7fb; --green:#147a60; --green-soft:#e9f8f2; --amber:#9a6500; --amber-soft:#fff6e4; --red:#c13c4a; --red-soft:#fff0f1; }
+    * { box-sizing:border-box; }
+    body { min-width:1180px; margin:0; color:var(--ink); background:var(--page); font:14px/1.45 "Microsoft YaHei","PingFang SC",Arial,sans-serif; }
+    button { font:inherit; cursor:pointer; }
+    .topbar { position:fixed; z-index:10; top:0; right:0; left:0; display:flex; align-items:center; justify-content:space-between; height:62px; padding:0 25px 0 22px; background:#fff; border-bottom:1px solid var(--line); }
+    .brand { display:flex; gap:11px; align-items:center; color:#273959; font-size:18px; font-weight:700; }
+    .brand-mark { display:grid; width:25px; height:25px; place-items:center; color:#fff; background:#e75159; border-radius:7px 12px 7px 12px; transform:rotate(45deg); }
+    .brand-mark span { font-size:13px; transform:rotate(-45deg); }
+    .top-actions { display:flex; gap:19px; align-items:center; color:var(--muted); font-size:12px; }
+    .avatar { display:grid; width:29px; height:29px; place-items:center; color:#fff; background:#e05358; border-radius:50%; }
+    .sidebar { position:fixed; z-index:5; top:62px; bottom:0; left:0; width:204px; padding:16px 12px; color:#cbd5e7; background:var(--nav); }
+    .side-title { display:flex; align-items:center; justify-content:space-between; padding:5px 11px 13px; color:#fff; font-size:13px; font-weight:700; }
+    .nav-item { display:flex; gap:10px; align-items:center; min-height:37px; padding:0 12px; color:#c2cde0; border-radius:6px; font-size:13px; }
+    .nav-item.active { color:#fff; background:var(--nav-hover); font-weight:700; }
+    .nav-sub { margin:3px 0 4px 37px; padding:7px 0; color:#81a9fa; font-size:13px; }
+    .nav-sub.current { color:#fff; font-weight:700; }
+    .workspace { min-height:calc(100vh - 62px); margin:62px 0 0 204px; }
+    .crumb { display:flex; gap:9px; align-items:center; height:44px; padding:0 27px; color:var(--muted); background:#fff; border-bottom:1px solid var(--line); font-size:12px; }
+    .crumb strong { color:var(--ink); }
+    .content { max-width:1590px; padding:19px 27px 52px; }
+    .topline { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:15px; }
+    .page-title { display:flex; gap:10px; align-items:center; color:#263854; font-size:19px; font-weight:700; }
+    .page-title small { padding:3px 7px; color:#365fc4; background:var(--blue-soft); border-radius:4px; font-size:11px; font-weight:600; }
+    .status { display:inline-flex; gap:6px; align-items:center; margin-top:2px; padding:6px 10px; color:#9a6500; background:var(--amber-soft); border:1px solid #f4dfb4; border-radius:99px; font-size:12px; }
+    .status::before { width:7px; height:7px; background:currentColor; border-radius:50%; content:""; }
+    .layout { display:grid; grid-template-columns:minmax(0,7fr) minmax(320px,3fr); gap:16px; align-items:start; }
+    .review-column { position:sticky; top:78px; max-height:calc(100vh - 94px); overflow-y:auto; padding-right:2px; }
+    .card { margin-bottom:16px; background:#fff; border:1px solid var(--line); border-radius:9px; box-shadow:0 7px 19px rgba(27,49,93,.045); }
+    .card-head { display:flex; align-items:center; justify-content:space-between; min-height:52px; padding:0 17px; border-bottom:1px solid var(--line); }
+    .card-title { display:flex; gap:9px; align-items:center; color:#2b3b56; font-size:14px; font-weight:700; }
+    .num { display:grid; width:22px; height:22px; place-items:center; color:var(--blue); background:var(--blue-soft); border-radius:50%; font-size:11px; }
+    .card-note { color:#8090a4; font-size:11px; }
+    .card-body { padding:15px 17px; }
+    .document-context { display:flex; flex-wrap:wrap; gap:8px 22px; margin-bottom:15px; padding-bottom:12px; color:#6c7c92; border-bottom:1px solid #edf1f5; font-size:12px; }
+    .document-context strong { color:#34445e; }
+    .document-section + .document-section { margin-top:16px; padding-top:15px; border-top:1px solid #edf1f5; }
+    .document-section-title { margin-bottom:11px; color:#34445e; font-size:13px; font-weight:700; }
+    .document-section-title::before { display:inline-block; width:3px; height:13px; margin-right:7px; vertical-align:-2px; background:var(--blue); content:""; }
+    .document-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px 25px; }
+    .document-field { min-width:0; }
+    .document-field.wide { grid-column:1 / -1; }
+    .document-field label { display:block; margin-bottom:4px; color:#8390a3; font-size:11px; }
+    .document-field .readonly-value { min-height:0; padding:0; color:#34445e; background:transparent; border:0; font-size:13px; overflow-wrap:anywhere; }
+    .document-field .readonly-value.tagged { display:flex; gap:6px; align-items:center; }
+    .project-tag { min-height:0; padding:0; color:#34445e; background:transparent; border-radius:0; font-size:13px; }
+    .table-wrap { overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; }
+    .overview-grid { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:12px 25px; }
+    .field-label { margin-bottom:4px; color:#8390a3; font-size:11px; }
+    .field-value { color:#34445e; font-size:13px; }
+    .field-value strong { color:#283a58; font-size:14px; }
+    .money { color:#d74744; font-size:20px; font-weight:700; }
+    .expense-group { overflow:hidden; margin-top:12px; border:1px solid #dce5f0; border-radius:7px; }
+    .expense-group:first-child { margin-top:0; }
+    .expense-head { display:flex; gap:10px; align-items:center; min-height:45px; padding:0 13px; background:#f8fbff; border-bottom:1px solid #e3eaf3; }
+    .expense-tag { padding:3px 6px; color:var(--blue); background:var(--blue-soft); border-radius:4px; font-size:10px; }
+    .expense-head strong { color:#34445e; font-size:13px; }
+    .expense-head span:not(.expense-tag) { color:#8190a4; font-size:11px; }
+    .expense-amount { margin-left:auto; color:#374963; font-size:13px; font-weight:700; }
+    .expense-tabs { display:flex; gap:18px; min-height:38px; padding:0 13px; border-bottom:1px solid #edf0f5; }
+    .expense-tabs button { position:relative; padding:0; color:#79889e; background:transparent; border:0; font-size:12px; }
+    .expense-tabs button.active { color:var(--blue); font-weight:700; }
+    .expense-tabs button.active::after { position:absolute; right:0; bottom:-1px; left:0; height:2px; background:var(--blue); content:""; }
+    .expense-panel { padding:12px 13px; }
+    .expense-panel[hidden] { display:none; }
+    .mini-table { width:100%; border-collapse:collapse; }
+    .mini-table th { padding:0 8px 8px; color:#8090a3; font-size:11px; font-weight:600; text-align:left; }
+    .mini-table td { padding:9px 8px; color:#475872; border-top:1px solid #edf1f5; font-size:12px; }
+    .mini-table td:first-child,.mini-table th:first-child { padding-left:0; }
+    .mini-table td:last-child,.mini-table th:last-child { padding-right:0; }
+    .file-row { display:grid; grid-template-columns:30px 1.35fr .8fr .8fr 80px; gap:10px; align-items:center; padding:10px 0; border-top:1px solid #edf1f5; }
+    .file-row:first-child { padding-top:0; border-top:0; }
+    .file-icon { display:grid; width:28px; height:28px; place-items:center; color:#df5650; background:#fff0ee; border-radius:5px; font-size:10px; font-weight:700; }
+    .file-row strong { display:block; color:#40506a; font-size:12px; }
+    .file-row small { display:block; margin-top:2px; color:#8a98aa; font-size:11px; }
+    .ok { color:var(--green); font-size:11px; }
+    .attachment-row { display:flex; gap:10px; align-items:center; padding:10px 0; border-top:1px solid #edf1f5; }
+    .attachment-row:first-child { padding-top:0; border-top:0; }
+    .attachment-icon { display:grid; width:28px; height:28px; place-items:center; color:#6d50cc; background:#f2efff; border-radius:5px; font-size:12px; }
+    .attachment-row strong { display:block; color:#40506a; font-size:12px; }
+    .attachment-row small { display:block; margin-top:2px; color:#8a98aa; font-size:11px; }
+    .attachment-state { margin-left:auto; padding:3px 6px; color:var(--green); background:var(--green-soft); border-radius:3px; font-size:10px; }
+    .attachment-state.missing { color:var(--red); background:var(--red-soft); }
+    .result-card { border-color:#f0d69b; }
+    .result-card .card-head { background:#fffaf1; border-bottom-color:#f2e3c5; }
+    .result-summary { display:flex; gap:12px; align-items:flex-start; padding:14px 16px; background:#fffdf9; }
+    .result-icon { display:grid; flex:0 0 auto; width:33px; height:33px; place-items:center; color:#a36a02; background:#fff0cf; border-radius:50%; font-weight:700; }
+    .result-summary small { display:block; color:#8b7550; font-size:11px; }
+    .result-summary strong { display:block; margin-top:1px; color:#7b570e; font-size:16px; }
+    .result-summary p { margin:4px 0 0; color:#718096; font-size:12px; }
+    .result-meta { display:grid; grid-template-columns:1fr 1fr 1.4fr; gap:12px; padding:12px 16px 15px; border-top:1px solid #f2e9d8; }
+    .result-meta span { display:block; color:#8a98aa; font-size:10px; }
+    .result-meta strong { display:block; margin-top:3px; color:#43546f; font-size:12px; }
+    .ai-card { overflow:hidden; border-color:#b7cdf6; box-shadow:0 9px 22px rgba(42,91,181,.09); }
+    .ai-card .card-head { min-height:55px; background:#f7faff; border-bottom-color:#dce8fb; }
+    .ai-heading { display:flex; gap:9px; align-items:center; color:#27497f; font-size:14px; font-weight:700; }
+    .ai-spark { display:grid; width:23px; height:23px; place-items:center; color:#fff; background:linear-gradient(135deg,#3d7cff,#6e58d6); border-radius:6px; font-size:13px; }
+    .final-opinion { display:flex; gap:10px; align-items:flex-start; padding:14px 16px; background:#fffaf1; border-bottom:1px solid #f2e3c5; }
+    .final-opinion-symbol { display:grid; flex:0 0 auto; width:32px; height:32px; place-items:center; color:#a36a02; background:#fff0cf; border-radius:50%; font-size:15px; font-weight:700; }
+    .final-opinion-label { display:block; color:#8b7550; font-size:11px; }
+    .final-opinion strong { display:block; margin-top:1px; color:#7b570e; font-size:16px; }
+    .final-opinion p { margin:3px 0 0; color:#8b7550; font-size:11px; line-height:1.55; }
+    .ai-body { padding:15px 16px; }
+    .check-title { margin:0 0 8px; color:#40516d; font-size:13px; font-weight:700; }
+    .check-list { overflow:hidden; border:1px solid #e1e7ef; border-radius:6px; }
+    .check-item { display:grid; grid-template-columns:83px minmax(0,1fr); gap:9px; padding:10px 11px; border-top:1px solid #edf1f5; }
+    .check-item:first-child { border-top:0; }
+    .check-name { padding-top:2px; color:#52627a; font-size:11px; font-weight:700; }
+    .check-status { display:inline-flex; align-items:center; min-height:19px; padding:0 6px; border-radius:3px; font-size:10px; font-weight:700; }
+    .check-status.pass { color:var(--green); background:var(--green-soft); }
+    .check-status.review { color:#9a6500; background:var(--amber-soft); }
+    .check-opinion { margin:4px 0 0; color:#718096; font-size:11px; line-height:1.55; }
+    .feedback-card .card-head { background:#fff; }
+    .feedback-badge { padding:4px 7px; color:#385889; background:#edf3ff; border-radius:99px; font-size:10px; }
+    .feedback-summary { padding:14px 16px; }
+    .feedback-state { display:flex; gap:9px; align-items:center; padding-bottom:11px; border-bottom:1px solid #edf1f5; }
+    .feedback-state-icon { display:grid; width:26px; height:26px; place-items:center; color:var(--green); background:var(--green-soft); border-radius:50%; font-size:13px; font-weight:700; }
+    .feedback-state small,.feedback-detail span { display:block; color:#8a98aa; font-size:10px; }
+    .feedback-state strong { display:block; color:#16775e; font-size:13px; }
+    .feedback-detail { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding-top:11px; }
+    .feedback-detail strong { display:block; margin-top:3px; color:#43546f; font-size:12px; }
+    .feedback-comment { margin:11px 0 0; padding:9px 10px; color:#687890; background:#f8fafc; border:1px solid #e7ecf3; border-radius:5px; font-size:11px; line-height:1.55; }
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><span class="brand-mark"><span>博</span></span>博商管理</div><div class="top-actions"><span>▦ 应用中心</span><span>● 帮助手册</span><span>▣ 日程</span><span>◆ 模块</span><span class="avatar">财</span><span>财务专员⌄</span></div></header>
+  <aside class="sidebar"><div class="side-title"><span>⌂ 办公管理</span><span>⌄</span></div><div class="nav-item">▣ 申请</div><div class="nav-item active">▥ 审批</div><div class="nav-sub">我的申请</div><div class="nav-sub current">审批记录</div><div class="nav-item">⌘ 流程</div><div class="nav-item">▦ 记录</div><div class="nav-item">● 日程</div><div class="nav-item">◆ 项目计划</div><div class="nav-item">✦ 同学会</div><div class="nav-item">◉ 研企管理</div><div class="nav-item">◈ 智服系统</div><div class="nav-item">▤ 证书管理</div><div class="nav-item">▦ 智能报表</div><div class="nav-item">◌ 统计分析</div></aside>
+  <main class="workspace">
+    <div class="crumb"><span>办公管理</span><span>/</span><span>审批</span><span>/</span><span>审批记录</span><span>/</span><strong>付款审批详情</strong></div>
+    <div class="content">
+      <div class="layout review-split">
+        <div class="document-column">
+          <section class="card"><div class="card-head"><div class="card-title"><span class="num">1</span>付款单概要</div><span class="card-note">申请日期：2026-08-05</span></div><div class="card-body"><div class="overview-grid"><div><div class="field-label">申请标题</div><div class="field-value"><strong>2026 年 8 月项目差旅费用付款</strong></div></div><div><div class="field-label">申请人 / 申请部门</div><div class="field-value">刘宇鑫　/　教学运营部</div></div><div><div class="field-label">收款方</div><div class="field-value">深圳同鹏餐饮管理有限公司</div></div><div><div class="field-label">付款类型</div><div class="field-value">项目付款</div></div><div><div class="field-label">费用时间</div><div class="field-value">2026-07-28 至 2026-07-30</div></div><div><div class="field-label">申请金额</div><div class="money">¥ 1,560.00</div></div><div><div class="field-label">备注</div><div class="field-value">用于项目班级客户拜访的交通及住宿费用付款。</div></div></div></div></section>
+          <section class="card"><div class="card-head"><div class="card-title"><span class="num">2</span>费用、发票与业务材料</div><span class="card-note">按费用类型归档</span></div><div class="card-body">
+            <section class="expense-group"><div class="expense-head"><span class="expense-tag">费用类型</span><strong>差旅－交通</strong><span>1 条分摊 · 2 张发票 · 2 个附件</span><span class="expense-amount">¥ 960.00</span></div><div class="expense-tabs"><button class="active" type="button" data-expense-tab="allocation" onclick="switchExpensePanel(this)">项目 / 团队分摊</button><button type="button" data-expense-tab="invoice" onclick="switchExpensePanel(this)">发票（2）</button><button type="button" data-expense-tab="attachment" onclick="switchExpensePanel(this)">附件（2）</button></div><div class="expense-panel" data-expense-panel="allocation"><table class="mini-table"><thead><tr><th>费用归集</th><th>项目</th><th>分摊人 / 部门</th><th>费用承担团队</th><th>分摊金额</th><th>事由</th></tr></thead><tbody><tr><td>项目归集</td><td>目的班级</td><td>刘宇鑫 / 教学运营部</td><td>教学运营组</td><td>¥ 960.00</td><td>北京客户拜访交通费</td></tr></tbody></table></div><div class="expense-panel" data-expense-panel="invoice" hidden><div class="file-row"><span class="file-icon">PDF</span><div><strong>26952000002709459496</strong><small>电子普通发票 · 2026-07-29</small></div><div><small>价税合计</small><strong>¥ 600.00</strong></div><div><small>开票公司</small><strong>北京交通服务有限公司</strong></div><span class="ok">✓ 验真通过</span></div><div class="file-row"><span class="file-icon">PDF</span><div><strong>26952000002709459497</strong><small>电子普通发票 · 2026-07-30</small></div><div><small>价税合计</small><strong>¥ 360.00</strong></div><div><small>开票公司</small><strong>北京交通服务有限公司</strong></div><span class="ok">✓ 验真通过</span></div></div><div class="expense-panel" data-expense-panel="attachment" hidden><div class="attachment-row"><span class="attachment-icon">▣</span><div><strong>出差行程单.pdf</strong><small>出差 / 行程材料 · 已关联本费用类型</small></div><span class="attachment-state">已上传</span></div><div class="attachment-row"><span class="attachment-icon">▣</span><div><strong>业务审批记录.pdf</strong><small>业务审批单 / 审批记录 · 已关联本费用类型</small></div><span class="attachment-state">已上传</span></div></div></section>
+            <section class="expense-group"><div class="expense-head"><span class="expense-tag">费用类型</span><strong>差旅－住宿</strong><span>1 条分摊 · 1 张发票 · 1 个附件</span><span class="expense-amount">¥ 600.00</span></div><div class="expense-tabs"><button class="active" type="button" data-expense-tab="allocation" onclick="switchExpensePanel(this)">项目 / 团队分摊</button><button type="button" data-expense-tab="invoice" onclick="switchExpensePanel(this)">发票（1）</button><button type="button" data-expense-tab="attachment" onclick="switchExpensePanel(this)">附件（1）</button></div><div class="expense-panel" data-expense-panel="allocation"><table class="mini-table"><thead><tr><th>费用归集</th><th>项目</th><th>分摊人 / 部门</th><th>费用承担团队</th><th>分摊金额</th><th>事由</th></tr></thead><tbody><tr><td>项目归集</td><td>目的班级</td><td>刘宇鑫 / 教学运营部</td><td>教学运营组</td><td>¥ 600.00</td><td>北京客户拜访住宿费</td></tr></tbody></table></div><div class="expense-panel" data-expense-panel="invoice" hidden><div class="file-row"><span class="file-icon">PDF</span><div><strong>031001900111</strong><small>增值税普通发票 · 2026-07-30</small></div><div><small>价税合计</small><strong>¥ 600.00</strong></div><div><small>开票公司</small><strong>北京金桥酒店有限公司</strong></div><span class="ok">✓ 验真通过</span></div></div><div class="expense-panel" data-expense-panel="attachment" hidden><div class="attachment-row"><span class="attachment-icon">▣</span><div><strong>酒店订单.pdf</strong><small>出差 / 行程材料 · 已关联本费用类型</small></div><span class="attachment-state missing">缺少行程单</span></div></div></section>
+          </div></section>
+        </div>
+        <aside class="review-column">
+          <section class="card ai-card"><div class="card-head"><div class="ai-heading"><span class="ai-spark">✦</span>AI 审批意见</div></div><div class="final-opinion"><span class="final-opinion-symbol">!</span><div><span class="final-opinion-label">最终意见</span><strong>建议复核</strong><p>附件完整性及交通费报销标准存在待核验项，建议结合单据和关联材料确认后处理。</p></div></div><div class="ai-body"><div class="check-title">条件审查结论</div><div class="check-list"><div class="check-item"><div class="check-name">发票信息</div><div><span class="check-status pass">通过</span><p class="check-opinion">3 张关联发票均已验真，发票合计 ¥1,560.00 与申请金额一致。</p></div></div><div class="check-item"><div class="check-name">附件完整性</div><div><span class="check-status review">需复核</span><p class="check-opinion">“差旅－住宿”未发现与住宿日期对应的出差行程单。</p></div></div><div class="check-item"><div class="check-name">报销标准合规</div><div><span class="check-status review">需复核</span><p class="check-opinion">交通行程材料识别金额 ¥860.00，与该费用申报金额 ¥960.00 相差 ¥100.00。</p></div></div><div class="check-item"><div class="check-name">时间与时效</div><div><span class="check-status pass">通过</span><p class="check-opinion">费用发生于 2026-07-28 至 2026-07-30，申请时效符合当前规则。</p></div></div><div class="check-item"><div class="check-name">业务合理性</div><div><span class="check-status pass">通过</span><p class="check-opinion">已完成两级业务审批，费用事由与项目、费用承担团队归集一致。</p></div></div></div></div></section>
+          <section class="card feedback-card"><div class="card-head"><div class="card-title"><span class="num">4</span>AI 审单结果反馈</div><span class="feedback-badge">影子审批评估</span></div><div class="feedback-summary"><div class="feedback-state"><span class="feedback-state-icon">✓</span><div><small>财务评价</small><strong>AI 判断准确</strong></div></div><div class="feedback-detail"><div><span>反馈人</span><strong>王晓雯（财务部）</strong></div><div><span>反馈时间</span><strong>2026-08-05 16:50</strong></div></div><p class="feedback-comment">AI 已准确识别住宿费用缺少行程材料及交通金额差异，实际处理结论与 AI 建议一致。</p></div></section>
+        </aside>
+      </div>
+    </div>
+  </main>
+  <script>
+    const detailSearch = new URLSearchParams(window.location.search);
+    const isReimbursementDetail = detailSearch.get('documentType') === 'reimbursement';
+    const reimbursementDocumentNo = detailSearch.get('documentNo');
+    const isNonProjectReimbursementDetail = reimbursementDocumentNo ? reimbursementDocumentNo === 'EXP-20260805-0048' : detailSearch.get('approvalKind') === 'non-project';
+    const paymentDetailDocuments = {
+      'PAY-20260805-0086': { title:'2026 年 8 月项目差旅费用付款', applicant:'刘宇鑫　/　教学运营部', payee:'深圳同鹏餐饮管理有限公司', paymentType:'项目付款', expenseTime:'2026-07-28 至 2026-07-30', amount:'¥ 1,560.00', remark:'用于项目班级客户拜访的交通及住宿费用付款。', date:'2026-08-05' },
+      'PAY-20260805-0081': { title:'教学中心投影仪采购付款', applicant:'陈敏　/　教学运营部', payee:'深圳高新设备有限公司', paymentType:'付款', expenseTime:'2026-08-01 至 2026-08-05', amount:'¥ 42,500.00', remark:'教学中心多媒体设备采购及会议室预约系统年度服务费用。', date:'2026-08-05' },
+      'PAY-20260804-0074': { title:'华南区域公开课市场推广费', applicant:'周蕾　/　市场部', payee:'Singapore Event Marketing Pte. Ltd', paymentType:'付款', expenseTime:'2026-08-01 至 2026-08-04', amount:'¥ 8,600.00', remark:'境外公开课场地推广费用。', date:'2026-08-04' },
+      'PAY-20260805-0083': { title:'7 月外聘讲师课酬付款', applicant:'赵立　/　教学运营部', payee:'李明', paymentType:'付款', expenseTime:'2026-07-01 至 2026-07-31', amount:'¥ 12,600.00', remark:'7 月外聘讲师课酬结算。', date:'2026-08-05' },
+      'PAY-20260805-0088': { title:'北京客户拜访差旅费用付款', applicant:'孙晨　/　项目管理部', payee:'孙晨', paymentType:'项目付款', expenseTime:'2026-08-02 至 2026-08-04', amount:'¥ 3,260.00', remark:'北京客户拜访交通及住宿费用。', date:'2026-08-05' }
+    };
+    function switchExpensePanel(button) { const group=button.closest('.expense-group'); const tab=button.dataset.expenseTab; group.querySelectorAll('[data-expense-tab]').forEach(item=>item.classList.toggle('active',item===button)); group.querySelectorAll('[data-expense-panel]').forEach(panel=>panel.hidden=panel.dataset.expensePanel!==tab); }
+    function applyPaymentDetailMode() {
+      if (isReimbursementDetail) return;
+      const documentNo = detailSearch.get('documentNo') || 'PAY-20260805-0086';
+      const documentData = paymentDetailDocuments[documentNo] || paymentDetailDocuments['PAY-20260805-0086'];
+      document.title = '付款审批详情｜AI 影子审批原型';
+      document.querySelector('.card-note').textContent = `申请日期：${documentData.date}`;
+      const overviewGrid = document.querySelector('.overview-grid');
+      const updateOverviewField = (label, value) => {
+        const field = [...overviewGrid.children].find(item => item.querySelector('.field-label')?.textContent === label);
+        const valueElement = field?.querySelector('.field-value, .money');
+        if (valueElement) valueElement.textContent = value;
+      };
+      updateOverviewField('申请标题', documentData.title);
+      updateOverviewField('申请人 / 申请部门', documentData.applicant);
+      updateOverviewField('收款方', documentData.payee);
+      updateOverviewField('付款类型', documentData.paymentType);
+      updateOverviewField('费用时间', documentData.expenseTime);
+      updateOverviewField('申请金额', documentData.amount);
+      updateOverviewField('备注', documentData.remark);
+    }
+    function applyReimbursementDetailMode() {
+      if (!isReimbursementDetail) return;
+      document.title = '报销审批详情｜AI 影子审批原型';
+      const reimbursementNumber = reimbursementDocumentNo || (isNonProjectReimbursementDetail ? 'EXP-20260805-0048' : 'EXP-20260805-0042');
+      const reimbursementTitle = isNonProjectReimbursementDetail ? '8 月客户拜访交通费用报销' : '8 月办公用品采购项目报销';
+      const reimbursementApplicant = isNonProjectReimbursementDetail ? '林佳　/　市场部' : '陈敏　/　行政部';
+      const reimbursementAmount = isNonProjectReimbursementDetail ? '¥ 1,280.00' : '¥ 2,380.00';
+      document.querySelector('.crumb strong').textContent = '报销审批详情';
+      const overviewCard = document.querySelector('.document-column > .card');
+      overviewCard.querySelector('.card-title').innerHTML = '<span class="num">1</span>报销单概要';
+      const overviewGrid = overviewCard.querySelector('.overview-grid');
+      const updateOverviewField = (label, value) => {
+        const field = [...overviewGrid.children].find(item => item.querySelector('.field-label')?.textContent === label);
+        const valueElement = field?.querySelector('.field-value, .money');
+        if (valueElement) valueElement.textContent = value;
+      };
+      updateOverviewField('申请标题', reimbursementTitle);
+      updateOverviewField('申请人 / 申请部门', reimbursementApplicant);
+      updateOverviewField('费用时间', '2026-08-01 至 2026-08-05');
+      updateOverviewField('申请金额', reimbursementAmount);
+      updateOverviewField('备注', '用于日常业务开展产生的交通、住宿及办公物料费用报销。');
+      const recipient = isNonProjectReimbursementDetail ? '林佳' : '陈敏';
+      const recipientField = [...overviewGrid.children].find(item => item.querySelector('.field-label')?.textContent === '收款方');
+      recipientField.innerHTML = `<div class="field-label">领款人</div><div class="field-value">${recipient}</div>`;
+      const paymentTypeField = [...overviewGrid.children].find(item => item.querySelector('.field-label')?.textContent === '付款类型');
+      paymentTypeField.innerHTML = `<div class="field-label">报销类型</div><div class="field-value">${isNonProjectReimbursementDetail ? '报销' : '项目报销'}</div>`;
+      overviewGrid.insertAdjacentHTML('beforeend', `<div><div class="field-label">领款人开户行</div><div class="field-value">${isNonProjectReimbursementDetail ? '中国银行深圳科技园支行' : '招商银行深圳分行'}</div></div><div><div class="field-label">领款人银行卡账号</div><div class="field-value">${isNonProjectReimbursementDetail ? '6225 8888 0731 6204' : '6222 1001 8354 6120'}</div></div><div><div class="field-label">是否海外付款</div><div class="field-value">${isNonProjectReimbursementDetail ? '否' : '是'}</div></div>${isNonProjectReimbursementDetail ? '' : '<div><div class="field-label">币种 / SWIFT Code</div><div class="field-value">USD / CMBCCNBS</div></div>'}`);
+      renderReimbursementDetailExpenses(isNonProjectReimbursementDetail);
+    }
+    function renderReimbursementDetailExpenses(isNonProject) {
+      const documentData = isNonProject ? {
+        expenses: [
+          { type:'差旅－交通', amount:'¥ 880.00', invoice:['142032600048','电子普通发票','880.00','深圳市城市交通服务有限公司','2026-08-03'], reason:'客户拜访交通费', contract:'客户拜访费用说明.pdf', material:'尚未上传' },
+          { type:'业务招待－餐费', amount:'¥ 400.00', invoice:['142032600052','电子普通发票','400.00','深圳市会务餐饮有限公司','2026-08-04'], reason:'客户拜访交通及餐费', contract:'尚未上传', material:'客户拜访餐费说明.pdf' }
+        ],
+        project:'无关联项目', applicant:'林佳', department:'市场部', team:'市场部', result:'请补充客户拜访行程及餐费事由说明，当前单据已退回申请人补充材料。', opinion:'客户拜访行程及餐费事由待补充，建议复核后处理。'
+      } : {
+        expenses: [
+          { type:'日常运营－办公用品', amount:'¥ 2,380.00', foreign:'USD 332.20', invoice:['033002600104','电子普通发票','2,380.00','深圳市优品办公用品有限公司','2026-08-02'], reason:'项目办公文具及耗材采购', contract:'项目费用合同.pdf', material:'尚未上传' }
+        ],
+        project:'华南区域公开课项目', applicant:'陈敏', department:'行政部', team:'行政支持组', result:'项目报销材料齐全，财务审批通过。', opinion:'项目费用与关联材料已匹配，建议通过。'
+      };
+      const expenseCard = [...document.querySelectorAll('.document-column > .card')].find(card => card.querySelector('.card-title')?.textContent.includes('费用、发票与业务材料'));
+      if (!expenseCard) return;
+      expenseCard.querySelector('.card-title').innerHTML = '<span class="num">3</span>费用、发票与业务材料';
+      const headers = ['费用类型',...(isNonProject ? [] : ['项目']),'分摊人','分摊人部门','费用承担团队','分摊金额（人民币）'];
+      if (!isNonProject) headers.push('金额（外币，USD）');
+      headers.push('事由');
+      expenseCard.querySelector('.card-body').innerHTML = documentData.expenses.map(expense => {
+        const values = [expense.type, ...(isNonProject ? [] : [documentData.project]), documentData.applicant, documentData.department, documentData.team, expense.amount];
+        if (!isNonProject) values.push(expense.foreign);
+        values.push(expense.reason);
+        return `<section class="expense-group"><div class="expense-head"><span class="expense-tag">费用类型</span><strong>${expense.type}</strong><span>1 条明细 · 1 张发票 · 2 个附件</span><span class="expense-amount">${expense.amount}</span></div><div class="expense-tabs"><button class="active" type="button" data-expense-tab="allocation" onclick="switchExpensePanel(this)">费用明细</button><button type="button" data-expense-tab="invoice" onclick="switchExpensePanel(this)">发票（1）</button><button type="button" data-expense-tab="attachment" onclick="switchExpensePanel(this)">附件（2）</button></div><div class="expense-panel" data-expense-panel="allocation"><table class="mini-table"><thead><tr>${headers.map(header => `<th>${header}</th>`).join('')}</tr></thead><tbody><tr>${values.map(value => `<td>${value}</td>`).join('')}</tr></tbody></table></div><div class="expense-panel" data-expense-panel="invoice" hidden><div class="file-row"><span class="file-icon">PDF</span><div><strong>${expense.invoice[0]}</strong><small>${expense.invoice[1]} · ${expense.invoice[4]}</small></div><div><small>价税合计</small><strong>¥ ${expense.invoice[2]}</strong></div><div><small>开票公司</small><strong>${expense.invoice[3]}</strong></div><span class="ok">核验通过</span></div></div><div class="expense-panel" data-expense-panel="attachment" hidden><div class="attachment-row"><span class="attachment-icon">▣</span><div><strong>${expense.contract}</strong><small>合同 · 已关联本费用类型</small></div><span class="attachment-state">${expense.contract === '尚未上传' ? '待上传' : '已上传'}</span></div><div class="attachment-row"><span class="attachment-icon">▣</span><div><strong>${expense.material}</strong><small>其他说明材料 · 已关联本费用类型</small></div><span class="attachment-state">${expense.material === '尚未上传' ? '待上传' : '已上传'}</span></div></div></section>`;
+      }).join('');
+       const opinion = document.querySelector('.final-opinion');
+      if (opinion) { opinion.querySelector('strong').textContent = isNonProject ? '建议复核' : '建议通过'; opinion.querySelector('p').textContent = documentData.opinion; }
+      const checkMessages = isNonProject ? [
+        ['通过','2 张关联发票均已验真，发票金额合计 ¥1,280.00。'], ['需复核','尚需补充客户拜访行程说明。'], ['需复核','客户拜访餐费需补充业务事由说明。'], ['通过','费用发生时间在申请时效范围内。'], ['需复核','客户拜访对象及行程信息待补充核验。']
+      ] : [
+        ['通过','关联发票金额与项目报销金额一致。'], ['通过','合同及其他说明材料已按费用类型归档。'], ['通过','办公用品费用符合项目预算标准。'], ['通过','费用发生时间在申请时效范围内。'], ['通过','费用事由与关联项目一致。']
+      ];
+      [...document.querySelectorAll('.check-item')].forEach((item, index) => { const [status, message] = checkMessages[index] || []; const statusNode = item.querySelector('.check-status'); if (statusNode) { statusNode.textContent = status; statusNode.className = `check-status ${status === '通过' ? 'pass' : 'review'}`; } const messageNode = item.querySelector('.check-opinion'); if (messageNode) messageNode.textContent = message; });
+    }
+    function renderRestrictedAttachments() {
+      if (isReimbursementDetail) return;
+      document.querySelectorAll('.expense-group').forEach((group, index) => {
+        const attachmentTab = group.querySelector('[data-expense-tab="attachment"]');
+        const attachmentPanel = group.querySelector('[data-expense-panel="attachment"]');
+        attachmentTab.textContent = '附件（2）';
+        attachmentPanel.innerHTML = `<div class="attachment-row"><span class="attachment-icon">▣</span><div><strong>${index === 0 ? '项目费用合同.pdf' : '尚未上传'}</strong><small>合同 · 已关联本费用类型</small></div><span class="attachment-state">${index === 0 ? '已上传' : '待上传'}</span></div><div class="attachment-row"><span class="attachment-icon">▣</span><div><strong>尚未上传</strong><small>其他说明材料 · 已关联本费用类型</small></div><span class="attachment-state">待上传</span></div>`;
+      });
+    }
+    function renderReadonlyInvoiceTable(invoices) {
+      const headers=['序号','发票号码','发票类型','价税合计（元）','税率','税额','开票公司','购买方主体','购买方税号','开票日期','核验结果'];
+      const rows=invoices.map((invoice,index)=>{
+        const amount=Number(String(invoice[2]).replace(/,/g,''));
+        const tax=(amount-amount/1.06).toFixed(2);
+        return [index+1,invoice[0],invoice[1],invoice[2],'6%',tax,invoice[3],'博商管理集团有限公司','91440300BS2026001',invoice[4],'核验通过'];
+      });
+      return `<div class="table-wrap"><table class="mini-table"><thead><tr>${headers.map(header=>`<th>${header}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map((value,index)=>`<td${index===10?' class="ok"':''}>${value}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    }
+    function alignDetailInvoices() {
+      const invoiceGroups=isReimbursementDetail
+        ? (isNonProjectReimbursementDetail
+          ? [[['142032600048','电子普通发票','880.00','深圳市城市交通服务有限公司','2026-08-03']],[['142032600052','电子普通发票','400.00','深圳市会务餐饮有限公司','2026-08-04']]]
+          : [[['033002600104','电子普通发票','2,380.00','深圳市优品办公用品有限公司','2026-08-02']]])
+        : [[['26952000002709459496','电子普通发票','600.00','北京交通服务有限公司','2026-07-29'],['26952000002709459497','电子普通发票','360.00','北京交通服务有限公司','2026-07-30']],[['031001900111','增值税普通发票','600.00','北京金桥酒店有限公司','2026-07-30']]];
+      document.querySelectorAll('.expense-panel[data-expense-panel="invoice"]').forEach((panel,index)=>{
+        if (invoiceGroups[index]) panel.innerHTML=renderReadonlyInvoiceTable(invoiceGroups[index]);
+      });
+    }
+    function removeExpenseCardNotes() {
+      [...document.querySelectorAll('.card-title')]
+        .filter(title=>title.textContent.includes('费用、发票与业务材料'))
+        .forEach(title=>title.closest('.card')?.querySelector('.card-note')?.remove());
+    }
+    function applyReadonlyDetailLayout() {
+      const overviewCard = document.querySelector('.document-column > .card');
+      if (!overviewCard) return;
+      const documentNo = detailSearch.get('documentNo') || (isNonProjectReimbursementDetail ? 'EXP-20260805-0048' : isReimbursementDetail ? 'EXP-20260805-0042' : 'PAY-20260805-0086');
+      const paymentDocument = paymentDetailDocuments[documentNo] || paymentDetailDocuments['PAY-20260805-0086'];
+      const reimbursement = isReimbursementDetail ? {
+        documentNo,
+        title: isNonProjectReimbursementDetail ? '8 月客户拜访交通费用报销' : '8 月办公用品采购项目报销',
+        applicant: isNonProjectReimbursementDetail ? '林佳' : '陈敏',
+        department: isNonProjectReimbursementDetail ? '市场部' : '行政部',
+        type: isNonProjectReimbursementDetail ? '报销' : '项目报销',
+        amount: isNonProjectReimbursementDetail ? '¥ 1,280.00' : '¥ 2,380.00',
+        recipient: isNonProjectReimbursementDetail ? '林佳' : '陈敏',
+        bank: isNonProjectReimbursementDetail ? '中国银行深圳科技园支行' : '招商银行深圳分行',
+        account: isNonProjectReimbursementDetail ? '6225 8888 0731 6204' : '6222 1001 8354 6120',
+        overseas: isNonProjectReimbursementDetail ? '否' : '是',
+        project: isNonProjectReimbursementDetail ? '' : '华南区域公开课项目'
+      } : null;
+      const [paymentApplicant, paymentDepartment] = paymentDocument.applicant.split('　/　');
+      const data = reimbursement || {
+        documentNo,
+        title: paymentDocument.title,
+        applicant: paymentApplicant,
+        department: paymentDepartment,
+        type: paymentDocument.paymentType,
+        amount: paymentDocument.amount,
+        recipient: paymentDocument.payee,
+        bank: '招商银行深圳科技园支行',
+        account: '6225 8888 0462 9551',
+        overseas: '否',
+        project: paymentDocument.paymentType === '项目付款' ? '目的班级' : ''
+      };
+      const readonlyField = (label, value, wide = false) => `<div class="document-field${wide ? ' wide' : ''}"><label>${label}</label><div class="readonly-value">${value}</div></div>`;
+      const relatedProject = data.project ? readonlyField('本单关联项目', `<span class="project-tag">${data.project}</span>`, true) : '';
+      const informationTitle = reimbursement ? '报销信息' : '付款信息';
+      const recipientTitle = reimbursement ? '领款信息' : '收款信息';
+      const recipientLabel = reimbursement ? '领款人' : '收款单位';
+      const reimbursementOverseasFields = reimbursement && !isNonProjectReimbursementDetail
+        ? `${readonlyField('币种', 'USD')}${readonlyField('SWIFT Code', 'CMBCCNBS')}`
+        : '';
+      const loanOffsetSection = reimbursement ? `<section class="document-section"><div class="document-section-title">借款单冲抵</div><div class="document-grid">${readonlyField('是否使用借款单冲抵', '是')}${readonlyField('领款人当前剩余欠款', isNonProjectReimbursementDetail ? '(CNY) 3,000.00' : '(CNY) 12,500.00；(HKD) 1,500.00', true)}</div><div class="table-wrap"><table class="mini-table"><thead><tr><th>借款单编号</th><th>主体公司</th><th>状态</th><th>币种</th><th>剩余欠款金额</th><th>实际借款时间</th><th>本次抵冲金额</th></tr></thead><tbody>${isNonProjectReimbursementDetail ? '<tr><td>JK202608030010</td><td>深圳市博商管理科学研究院股份有限公司</td><td>待还款</td><td>CNY</td><td>3,000.00</td><td>2026-08-03</td><td>1,280.00</td></tr>' : '<tr><td>JK202608120001</td><td>深圳市博商管理科学研究院股份有限公司</td><td>待还款</td><td>CNY</td><td>6,000.00</td><td>2026-08-12</td><td>2,380.00</td></tr>'}</tbody></table></div></section>` : '';
+      overviewCard.querySelector('.card-title').innerHTML = '<span class="num">1</span>申请基础信息';
+      overviewCard.querySelector('.card-note').textContent = `申请日期：${reimbursement ? '2026-08-05' : paymentDocument.date}`;
+      overviewCard.querySelector('.card-body').innerHTML = `<div class="document-context"><span>申请人：<strong>${data.applicant}</strong></span><span>申请部门：<strong>${data.department}</strong></span><span>申请单号：<strong>${data.documentNo}</strong></span></div><section class="document-section"><div class="document-section-title">${informationTitle}</div><div class="document-grid">${readonlyField('标题', data.title)}${readonlyField('费用时间', reimbursement ? '2026-08-01 至 2026-08-05' : paymentDocument.expenseTime)}${readonlyField(reimbursement ? '报销类型' : '付款类型', data.type)}${readonlyField('主体公司', '博商管理集团有限公司')}${readonlyField('是否有发票', '是')}${readonlyField('申请金额', data.amount)}${relatedProject}${readonlyField('备注', reimbursement ? '用于日常业务开展产生的交通、住宿及办公物料费用报销。' : paymentDocument.remark, true)}</div></section><section class="document-section"><div class="document-section-title">${recipientTitle}</div><div class="document-grid">${readonlyField(recipientLabel, data.recipient)}${readonlyField(reimbursement ? '领款人开户行' : '开户行', data.bank)}${readonlyField(reimbursement ? '领款人银行卡账号' : '银行账号', data.account)}${readonlyField('是否海外付款', data.overseas)}${reimbursementOverseasFields}</div></section>`;
+      if (loanOffsetSection) overviewCard.querySelector('.card-body').insertAdjacentHTML('beforeend', loanOffsetSection);
+      const offsetCard = [...document.querySelectorAll('.document-column > .card')].find(card => card.querySelector('.card-title')?.textContent.includes('借款单冲抵'));
+      if (offsetCard) {
+        offsetCard.querySelector('.card-title').innerHTML = '<span class="num">2</span>借款单冲抵';
+        offsetCard.querySelector('.card-body').innerHTML = `<section class="document-section"><div class="document-section-title">借款单冲抵信息</div><div class="document-grid">${readonlyField('是否使用借款单冲抵', '是')}${readonlyField('领款人当前剩余欠款', isNonProjectReimbursementDetail ? '(CNY) 3,000.00' : '(CNY) 12,500.00；(HKD) 1,500.00', true)}</div><div class="table-wrap"><table class="mini-table"><thead><tr><th>借款单编号</th><th>主体公司</th><th>状态</th><th>币种</th><th>剩余欠款金额</th><th>实际借款时间</th><th>本次抵冲金额</th></tr></thead><tbody>${isNonProjectReimbursementDetail ? '<tr><td>JK202608030010</td><td>深圳市博商管理科学研究院股份有限公司</td><td>待还款</td><td>CNY</td><td>3,000.00</td><td>2026-08-03</td><td>1,280.00</td></tr>' : '<tr><td>JK202608120001</td><td>深圳市博商管理科学研究院股份有限公司</td><td>待还款</td><td>CNY</td><td>6,000.00</td><td>2026-08-12</td><td>2,380.00</td></tr>'}</tbody></table></div></section>`;
+      }
+    }
+    applyPaymentDetailMode();
+    applyReimbursementDetailMode();
+    applyReadonlyDetailLayout();
+    renderRestrictedAttachments();
+    alignDetailInvoices();
+    removeExpenseCardNotes();
+  </script>
+  <script src="prototype-navigation.js"></script>
+</body>
+</html>

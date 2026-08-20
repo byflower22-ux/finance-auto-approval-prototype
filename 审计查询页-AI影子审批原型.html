@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI审单记录｜财务 AI 影子审批原型</title>
+  <style>
+    :root { --nav:#1f3156; --nav-hover:#2c4472; --blue:#2864ee; --ink:#18243a; --muted:#6d7a91; --line:#e3e9f2; --page:#f5f7fb; --green:#147a60; --green-soft:#e9f8f2; --amber:#9a6500; --amber-soft:#fff6e4; --red:#c13c4a; --red-soft:#fff0f1; }
+    * { box-sizing:border-box; }
+    body { min-width:1200px; margin:0; color:var(--ink); background:var(--page); font:13px/1.45 "Microsoft YaHei","PingFang SC",Arial,sans-serif; }
+    button,input,select { font:inherit; } button { cursor:pointer; }
+    .topbar { position:fixed; z-index:10; top:0; right:0; left:0; display:flex; align-items:center; justify-content:space-between; height:62px; padding:0 25px 0 22px; background:#fff; border-bottom:1px solid var(--line); }
+    .brand { display:flex; gap:11px; align-items:center; color:#273959; font-size:18px; font-weight:700; }
+    .brand-mark { display:grid; width:25px; height:25px; place-items:center; color:#fff; background:#e75159; border-radius:7px 12px 7px 12px; transform:rotate(45deg); }
+    .brand-mark span { font-size:13px; transform:rotate(-45deg); }
+    .top-actions { display:flex; gap:19px; align-items:center; color:var(--muted); font-size:12px; }
+    .avatar { display:grid; width:29px; height:29px; place-items:center; color:#fff; background:#e05358; border-radius:50%; }
+    .sidebar { position:fixed; z-index:5; top:62px; bottom:0; left:0; width:204px; padding:16px 12px; color:#cbd5e7; background:var(--nav); }
+    .side-title { display:flex; align-items:center; justify-content:space-between; padding:5px 11px 13px; color:#fff; font-size:13px; font-weight:700; }
+    .nav-item { display:flex; gap:10px; align-items:center; min-height:37px; padding:0 12px; color:#c2cde0; border-radius:6px; font-size:13px; }
+    .nav-item.active { color:#fff; background:var(--nav-hover); font-weight:700; }
+    .nav-sub { margin:3px 0 4px 37px; padding:7px 0; color:#81a9fa; font-size:13px; }
+    .nav-sub.current { color:#fff; font-weight:700; }
+    .workspace { min-height:calc(100vh - 62px); margin:62px 0 0 204px; }
+    .crumb { display:flex; gap:9px; align-items:center; height:44px; padding:0 27px; color:var(--muted); background:#fff; border-bottom:1px solid var(--line); font-size:12px; }
+    .crumb strong { color:var(--ink); }
+    .content { padding:19px 27px 52px; }
+    .topline { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; }
+    .page-title { color:#263854; font-size:20px; font-weight:700; }
+    .page-subtitle { margin-top:4px; color:#7b899d; font-size:12px; }
+    .archive-pill { display:inline-flex; gap:6px; align-items:center; padding:6px 10px; color:#3e67b5; background:#edf3ff; border:1px solid #d3e0fa; border-radius:99px; font-size:11px; }
+    .archive-pill::before { width:7px; height:7px; background:currentColor; border-radius:50%; content:""; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:8px; box-shadow:0 7px 19px rgba(27,49,93,.04); }
+    .filter-card { display:grid; grid-template-columns:1.15fr 1fr 1fr 1fr 1fr 1fr 1.15fr auto; gap:10px; align-items:end; margin-bottom:15px; padding:14px 16px; }
+    .field label { display:block; margin-bottom:5px; color:#76869c; font-size:11px; }
+    .field input,.field select { width:100%; height:32px; padding:0 8px; color:#52637d; background:#fff; border:1px solid #d8e1ec; border-radius:5px; outline:none; font-size:12px; }
+    .field input:focus,.field select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(40,100,238,.1); }
+    .btn { min-height:32px; padding:0 11px; color:#55647b; background:#fff; border:1px solid #d6e0ec; border-radius:5px; font-size:12px; }
+    .btn.primary { color:#fff; background:var(--blue); border-color:var(--blue); }
+    .report-head { display:flex; align-items:center; justify-content:space-between; min-height:52px; padding:0 16px; border-bottom:1px solid var(--line); }
+    .report-title { color:#2d3d57; font-size:14px; font-weight:700; }
+    .report-title small { margin-left:7px; color:#8795a8; font-size:11px; font-weight:400; }
+    .report-note { color:#8795a8; font-size:11px; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; min-width:4770px; border-collapse:collapse; }
+    th { height:42px; padding:0 10px; color:#62728a; background:#f7f9fc; border-bottom:1px solid #e7edf4; border-right:1px solid #edf1f6; font-size:11px; font-weight:700; text-align:left; white-space:nowrap; }
+    td { padding:12px 10px; color:#4d5e76; border-bottom:1px solid #edf1f5; border-right:1px solid #f1f4f8; font-size:12px; vertical-align:middle; }
+    tr:hover td { background:#fbfdff; }
+    th:last-child,td:last-child { border-right:0; }
+    .code { color:#2b61be; font-size:11px; font-weight:700; white-space:nowrap; }
+    .title { display:block; max-width:180px; overflow:hidden; color:#3f5676; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
+    .subline { display:block; margin-top:3px; color:#8794a6; font-size:10px; }
+    .payer { max-width:150px; line-height:1.45; }
+    .money { color:#d4484d; font-weight:700; white-space:nowrap; }
+    .tag { display:inline-flex; min-height:22px; align-items:center; padding:0 6px; border-radius:3px; font-size:11px; white-space:nowrap; }
+    .tag.review { color:#9a6500; background:#fff6e4; } .tag.pass { color:#147a60; background:#e9f8f2; } .tag.reject { color:#c13c4a; background:#fff0f1; } .tag.return { color:#a26b03; background:#fff4d9; } .tag.wait { color:#728198; background:#f1f4f8; }
+    thead tr:first-child th { height:38px; }
+    thead tr:nth-child(2) th { height:34px; color:#7a899d; background:#fbfcfe; font-size:10px; }
+    th.condition-group { color:#3e5f93; background:#f1f5fb; text-align:center; }
+    th.condition-subhead { text-align:center; }
+    .condition-conclusion { width:88px; min-width:88px; text-align:center; white-space:nowrap; }
+    .condition-opinion { width:205px; min-width:205px; color:#687991; font-size:10px; line-height:1.48; }
+    .finance-feedback { width:150px; min-width:150px; color:#687991; font-size:10px; line-height:1.48; }
+    .finance-feedback .feedback-ok { color:#147a60; font-weight:700; }
+    .finance-feedback .feedback-issue { color:#c13c4a; font-weight:700; }
+    .empty { display:none; padding:36px; color:#8a98aa; text-align:center; }
+    .empty.show { display:block; }
+    .footer { display:flex; justify-content:space-between; padding:12px 16px; color:#8795a8; background:#fbfcfe; border-top:1px solid #edf1f5; font-size:11px; }
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><span class="brand-mark"><span>博</span></span>博商管理</div><div class="top-actions"><span>▦ 应用中心</span><span>● 帮助手册</span><span>▣ 日程</span><span>◆ 模块</span><span class="avatar">财</span><span>财务专员⌄</span></div></header>
+  <aside class="sidebar"><div class="side-title"><span>⌂ 办公管理</span><span>⌄</span></div><div class="nav-item">▣ 申请</div><div class="nav-item">▥ 审批</div><div class="nav-sub">我的申请</div><div class="nav-sub">我的待办</div><div class="nav-item">⌘ 流程</div><div class="nav-item active">◉ 财务管理</div><div class="nav-sub current">AI审单记录</div><div class="nav-item">● 日程</div><div class="nav-item">◆ 项目计划</div><div class="nav-item">✦ 同学会</div><div class="nav-item">◉ 研企管理</div><div class="nav-item">◈ 智服系统</div><div class="nav-item">▤ 证书管理</div><div class="nav-item">▦ 智能报表</div><div class="nav-item">◌ 统计分析</div></aside>
+  <main class="workspace"><div class="crumb"><span>办公管理</span><span>/</span><span>财务管理</span><span>/</span><strong>AI审单记录</strong></div><div class="content">
+    <div class="topline"><div><div class="page-title">AI审单记录</div><div class="page-subtitle">审单、规则、模型、AI 建议、财务结论和反馈结果均以报表字段统一查询。</div></div><span class="archive-pill">数据已归档，只读报表</span></div>
+    <section class="card filter-card"><div class="field"><label for="docFilter">单据编号</label><input id="docFilter" placeholder="输入付款单号"></div><div class="field"><label for="applicantFilter">申请人</label><input id="applicantFilter" placeholder="输入申请人"></div><div class="field"><label for="payerFilter">付款主体</label><select id="payerFilter"><option value="">全部主体</option><option>博商管理集团有限公司</option><option>深圳市博商管理咨询有限公司</option></select></div><div class="field"><label for="expenseFilter">费用类型</label><select id="expenseFilter"><option value="">全部类型</option><option>差旅</option><option>固定资产</option><option>市场推广</option></select></div><div class="field"><label for="aiFilter">AI 审批建议</label><select id="aiFilter"><option value="">全部建议</option><option>建议通过</option><option>建议驳回</option><option>建议复核</option></select></div><div class="field"><label for="actualFilter">实际财务结论</label><select id="actualFilter"><option value="">全部结论</option><option>通过</option><option>驳回</option><option>退回补件</option></select></div><div class="field"><label for="auditTimeFilter">审单时间</label><select id="auditTimeFilter"><option value="">全部时间</option><option>近 7 天</option><option>近 15 个工作日</option><option>本月</option></select></div><button class="btn primary" type="button" onclick="applyAuditFilters()">查询</button><button class="btn" type="button" onclick="resetAuditFilters()">重置</button></section>
+    <section class="card"><div class="report-head"><div class="report-title">AI审单记录 <small id="recordCount">共 5 条</small></div><span class="report-note">横向滚动查看全部审计字段</span></div><div class="table-wrap"><table><thead><tr><th rowspan="2">单据编号</th><th rowspan="2">标题</th><th rowspan="2">申请人 / 部门</th><th rowspan="2">付款主体</th><th rowspan="2">费用类型</th><th rowspan="2">申请金额</th><th rowspan="2">审单快照版本</th><th rowspan="2">AI 审单状态</th><th rowspan="2">AI 审批建议</th><th class="condition-group" colspan="3">发票信息</th><th class="condition-group" colspan="3">附件完整性</th><th class="condition-group" colspan="3">报销标准合规</th><th class="condition-group" colspan="3">时间与时效</th><th class="condition-group" colspan="3">业务合理性</th><th rowspan="2">实际财务结论</th><th rowspan="2">AI 反馈结果</th><th rowspan="2">审单完成时间</th><th rowspan="2">财务处理时间</th></tr><tr><th class="condition-subhead" data-export-field="invoice_ai_conclusion">AI 结论</th><th data-export-field="invoice_ai_opinion">具体意见</th><th data-export-field="invoice_finance_feedback">财务审批反馈</th><th class="condition-subhead" data-export-field="attachment_ai_conclusion">AI 结论</th><th data-export-field="attachment_ai_opinion">具体意见</th><th data-export-field="attachment_finance_feedback">财务审批反馈</th><th class="condition-subhead" data-export-field="standard_ai_conclusion">AI 结论</th><th data-export-field="standard_ai_opinion">具体意见</th><th data-export-field="standard_finance_feedback">财务审批反馈</th><th class="condition-subhead" data-export-field="timeliness_ai_conclusion">AI 结论</th><th data-export-field="timeliness_ai_opinion">具体意见</th><th data-export-field="timeliness_finance_feedback">财务审批反馈</th><th class="condition-subhead" data-export-field="business_ai_conclusion">AI 结论</th><th data-export-field="business_ai_opinion">具体意见</th><th data-export-field="business_finance_feedback">财务审批反馈</th></tr></thead><tbody id="reportRows">
+      <tr data-doc="PAY-20260805-0086" data-applicant="刘宇鑫" data-payer="博商管理集团有限公司" data-expense="差旅" data-ai="建议复核" data-actual="退回补件"><td><span class="code">PAY-20260805-0086</span></td><td><span class="title">2026 年 8 月项目差旅费用付款</span></td><td>刘宇鑫<span class="subline">教学运营部</span></td><td><div class="payer">博商管理集团有限公司</div></td><td>差旅</td><td class="money">¥ 1,560.00</td><td>SNAP-20260805-0086-V1</td><td><span class="tag pass">已完成</span></td><td><span class="tag review">建议复核</span></td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">3 张发票已验真，合计 ¥1,560.00。</td><td class="condition-conclusion"><span class="tag review">需复核</span></td><td class="condition-opinion">住宿费用未关联出差行程单。</td><td class="condition-conclusion"><span class="tag review">需复核</span></td><td class="condition-opinion">行程材料与申报金额相差 ¥100.00。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">费用发生及申报时间符合规则。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">项目、团队及事由归集一致。</td><td><span class="tag return">退回补件</span></td><td><span class="tag pass">判断准确</span></td><td>--</td><td class="rule">3 项</td><td class="rule">FIN-RULE-2026.08.01</td><td class="model">ClawPro-Multimodal-v1</td><td>2026-08-05<span class="subline">16:37:08</span></td><td>2026-08-05<span class="subline">16:48:30</span></td></tr>
+      <tr data-doc="PAY-20260805-0081" data-applicant="陈敏" data-payer="深圳市博商管理咨询有限公司" data-expense="固定资产" data-ai="建议驳回" data-actual="驳回"><td><span class="code">PAY-20260805-0081</span></td><td><span class="title">教学中心投影仪采购付款</span></td><td>陈敏<span class="subline">教学运营部</span></td><td><div class="payer">深圳市博商管理咨询有限公司</div></td><td>固定资产</td><td class="money">¥ 42,500.00</td><td>SNAP-20260805-0081-V1</td><td><span class="tag pass">已完成</span></td><td><span class="tag reject">建议驳回</span></td><td class="condition-conclusion"><span class="tag reject">不通过</span></td><td class="condition-opinion">发票校验异常，税号与供应商信息不一致。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">资产申请单、报价单和验收材料齐全。</td><td class="condition-conclusion"><span class="tag review">需复核</span></td><td class="condition-opinion">采购金额超过同类资产标准上限。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">采购、验收和申报时间匹配。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">资产用途与申请部门一致。</td><td><span class="tag reject">驳回</span></td><td><span class="tag pass">判断准确</span></td><td>--</td><td class="rule">2 项</td><td class="rule">FIN-RULE-2026.08.01</td><td class="model">ClawPro-Multimodal-v1</td><td>2026-08-05<span class="subline">10:03:42</span></td><td>2026-08-05<span class="subline">11:15:07</span></td></tr>
+      <tr data-doc="PAY-20260804-0074" data-applicant="周蕾" data-payer="博商管理集团有限公司" data-expense="市场推广" data-ai="建议复核" data-actual="通过"><td><span class="code">PAY-20260804-0074</span></td><td><span class="title">华南区域公开课市场推广费</span></td><td>周蕾<span class="subline">市场部</span></td><td><div class="payer">博商管理集团有限公司</div></td><td>市场推广</td><td class="money">¥ 8,600.00</td><td>SNAP-20260804-0074-V2</td><td><span class="tag pass">已完成</span></td><td><span class="tag review">建议复核</span></td><td class="condition-conclusion"><span class="tag review">需复核</span></td><td class="condition-opinion">未关联发票，使用合同结算依据。</td><td class="condition-conclusion"><span class="tag review">需复核</span></td><td class="condition-opinion">合同版本待核验。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">金额在市场推广预算额度内。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">费用发生及申报时间符合要求。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">活动内容、预算及业务审批一致。</td><td><span class="tag pass">通过</span></td><td><span class="tag reject">判断不准确</span></td><td>风险判断过度 / 不应提示</td><td class="rule">1 项</td><td class="rule">FIN-RULE-2026.08.01</td><td class="model">ClawPro-Multimodal-v1</td><td>2026-08-04<span class="subline">18:21:12</span></td><td>2026-08-04<span class="subline">19:08:33</span></td></tr>
+      <tr data-doc="PAY-20260803-0069" data-applicant="赵立" data-payer="博商管理集团有限公司" data-expense="差旅" data-ai="建议通过" data-actual="通过"><td><span class="code">PAY-20260803-0069</span></td><td><span class="title">7 月外聘讲师课酬付款</span></td><td>赵立<span class="subline">教学运营部</span></td><td><div class="payer">博商管理集团有限公司</div></td><td>差旅</td><td class="money">¥ 12,600.00</td><td>SNAP-20260803-0069-V1</td><td><span class="tag pass">已完成</span></td><td><span class="tag pass">建议通过</span></td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">发票验真有效，金额与结算单一致。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">讲师协议、课时确认单齐全。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">课酬标准符合现行配置。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">课时发生及申报时间符合要求。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">课程计划与业务审批记录一致。</td><td><span class="tag pass">通过</span></td><td><span class="tag pass">判断准确</span></td><td>--</td><td class="rule">0 项</td><td class="rule">FIN-RULE-2026.08.01</td><td class="model">ClawPro-Multimodal-v1</td><td>2026-08-03<span class="subline">14:08:16</span></td><td>2026-08-03<span class="subline">15:20:54</span></td></tr>
+      <tr data-doc="PAY-20260802-0056" data-applicant="孙晨" data-payer="深圳市博商管理咨询有限公司" data-expense="差旅" data-ai="建议复核" data-actual="退回补件"><td><span class="code">PAY-20260802-0056</span></td><td><span class="title">北京客户拜访差旅费用付款</span></td><td>孙晨<span class="subline">项目管理部</span></td><td><div class="payer">深圳市博商管理咨询有限公司</div></td><td>差旅</td><td class="money">¥ 3,260.00</td><td>SNAP-20260802-0056-V1</td><td><span class="tag pass">已完成</span></td><td><span class="tag review">建议复核</span></td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">关联车票和住宿发票均已验真。</td><td class="condition-conclusion"><span class="tag review">需复核</span></td><td class="condition-opinion">缺少客户拜访行程单。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">交通及住宿金额未超标准。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">费用日期与拜访时间一致。</td><td class="condition-conclusion"><span class="tag pass">通过</span></td><td class="condition-opinion">客户拜访事由和项目归集一致。</td><td><span class="tag return">退回补件</span></td><td><span class="tag pass">判断准确</span></td><td>--</td><td class="rule">2 项</td><td class="rule">FIN-RULE-2026.07.29</td><td class="model">ClawPro-Multimodal-v1</td><td>2026-08-02<span class="subline">17:40:20</span></td><td>2026-08-02<span class="subline">18:11:45</span></td></tr>
+    </tbody></table></div><div id="emptyState" class="empty">未找到符合条件的审计记录。</div><div class="footer"><span>报表数据来自已归档的审单快照、AI 输出和财务操作记录。</span><span>共 28 个审计字段</span></div></section>
+  </div></main>
+  <script>
+    function applyAuditFilters() { const doc=document.getElementById('docFilter').value.trim().toLowerCase(); const applicant=document.getElementById('applicantFilter').value.trim().toLowerCase(); const payer=document.getElementById('payerFilter').value; const expense=document.getElementById('expenseFilter').value; const ai=document.getElementById('aiFilter').value; const actual=document.getElementById('actualFilter').value; const rows=[...document.querySelectorAll('#reportRows tr')]; let count=0; rows.forEach(row=>{ const match=(!doc||row.dataset.doc.toLowerCase().includes(doc))&&(!applicant||row.dataset.applicant.toLowerCase().includes(applicant))&&(!payer||row.dataset.payer===payer)&&(!expense||row.dataset.expense===expense)&&(!ai||row.dataset.ai===ai)&&(!actual||row.dataset.actual===actual); row.hidden=!match; if(match) count+=1; }); document.getElementById('recordCount').textContent=`共 ${count} 条`; document.getElementById('emptyState').classList.toggle('show',count===0); }
+    function resetAuditFilters() { document.getElementById('docFilter').value=''; document.getElementById('applicantFilter').value=''; document.getElementById('payerFilter').value=''; document.getElementById('expenseFilter').value=''; document.getElementById('aiFilter').value=''; document.getElementById('actualFilter').value=''; document.getElementById('auditTimeFilter').value=''; applyAuditFilters(); }
+    function removeReportMetadataColumns() { document.querySelectorAll('#reportRows .rule, #reportRows .model').forEach(cell => cell.remove()); }
+    function renderConditionFinanceFeedback() { const financeFeedbackByDoc={
+      'PAY-20260805-0086':['<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>'],
+      'PAY-20260805-0081':['<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>'],
+      'PAY-20260804-0074':['<span class="feedback-issue">判断不准确</span><br>合同结算可作为依据，发票非必传。','<span class="feedback-issue">判断不准确</span><br>合同版本已在业务审批中核验，无需重复提示。','<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>'],
+      'PAY-20260803-0069':['<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>'],
+      'PAY-20260802-0056':['<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>','<span class="feedback-ok">无异议</span>']
+    }; document.querySelectorAll('#reportRows tr').forEach(row=>{ const values=financeFeedbackByDoc[row.dataset.doc]||Array(5).fill('<span class="feedback-ok">未反馈</span>'); const baseCells=[...row.querySelectorAll(':scope > td')]; baseCells[21]?.remove(); for(let conditionIndex=4;conditionIndex>=0;conditionIndex--){ const feedback=document.createElement('td'); feedback.className='finance-feedback'; feedback.innerHTML=values[conditionIndex]; const opinionCell=[...row.querySelectorAll(':scope > td')][10+conditionIndex*2]; opinionCell.after(feedback); } }); }
+    function appendReimbursementAuditRecord() {
+      const source = document.querySelector('#reportRows tr');
+      if (!source) return;
+      const row = source.cloneNode(true);
+      row.dataset.doc = 'EXP-20260805-0042';
+      row.dataset.documentType = '报销单';
+      row.dataset.applicant = '陈敏';
+      row.dataset.payer = '博商管理集团有限公司';
+      row.dataset.expense = '日常运营';
+      row.dataset.ai = '建议通过';
+      row.dataset.actual = '通过';
+      row.querySelector('.code').textContent = 'EXP-20260805-0042';
+      row.querySelector('.title').textContent = '8 月办公用品采购项目报销单';
+      row.cells[2].innerHTML = '陈敏<span class="subline">行政部</span>';
+      row.cells[3].innerHTML = '<div class="payer">博商管理集团有限公司</div>';
+      row.cells[4].textContent = '日常运营';
+      row.cells[5].textContent = '¥ 2,380.00';
+      row.cells[6].textContent = 'SNAP-20260805-0042-V1';
+      row.cells[8].innerHTML = '<span class="tag pass">建议通过</span>';
+      row.cells[17].innerHTML = '<span class="tag pass">通过</span>';
+      row.cells[18].innerHTML = '<span class="tag pass">判断准确</span>';
+      row.cells[24].innerHTML = '2026-08-05<span class="subline">12:06:35</span>';
+      row.cells[25].innerHTML = '2026-08-05<span class="subline">13:20:14</span>';
+      document.getElementById('reportRows').appendChild(row);
+      const ordinaryRow = row.cloneNode(true);
+      ordinaryRow.dataset.doc = 'EXP-20260805-0048';
+      ordinaryRow.dataset.documentType = '报销单';
+      ordinaryRow.dataset.applicant = '林佳';
+      ordinaryRow.dataset.payer = '深圳市博商管理咨询有限公司';
+      ordinaryRow.dataset.expense = '差旅';
+      ordinaryRow.dataset.ai = '建议复核';
+      ordinaryRow.dataset.actual = '退回补件';
+      ordinaryRow.querySelector('.code').textContent = 'EXP-20260805-0048';
+      ordinaryRow.querySelector('.title').textContent = '8 月客户拜访交通费用报销单';
+      ordinaryRow.cells[2].innerHTML = '林佳<span class="subline">市场部</span>';
+      ordinaryRow.cells[3].innerHTML = '<div class="payer">深圳市博商管理咨询有限公司</div>';
+      ordinaryRow.cells[4].textContent = '差旅';
+      ordinaryRow.cells[5].textContent = '¥ 1,280.00';
+      ordinaryRow.cells[6].textContent = 'SNAP-20260805-0048-V1';
+      ordinaryRow.cells[8].innerHTML = '<span class="tag review">建议复核</span>';
+      ordinaryRow.cells[17].innerHTML = '<span class="tag return">退回补件</span>';
+      ordinaryRow.cells[18].innerHTML = '<span class="tag pass">判断准确</span>';
+      ordinaryRow.cells[24].innerHTML = '2026-08-05<span class="subline">11:42:09</span>';
+      ordinaryRow.cells[25].innerHTML = '2026-08-05<span class="subline">12:18:33</span>';
+      document.getElementById('reportRows').appendChild(ordinaryRow);
+      document.getElementById('recordCount').textContent = '共 7 条';
+    }
+    appendReimbursementAuditRecord();
+    removeReportMetadataColumns();
+    renderConditionFinanceFeedback();
+  </script>
+  <script src="prototype-navigation.js"></script>
+  <script src="audit-report-fields.js"></script>
+</body>
+</html>

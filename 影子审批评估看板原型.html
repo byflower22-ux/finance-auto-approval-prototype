@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>影子审批评估看板｜财务 AI 审批原型</title>
+  <style>
+    :root { --nav:#1f3156; --nav-hover:#2c4472; --blue:#2864ee; --blue-soft:#edf3ff; --ink:#18243a; --muted:#6d7a91; --line:#e3e9f2; --page:#f5f7fb; --green:#147a60; --green-soft:#e9f8f2; --amber:#9a6500; --amber-soft:#fff6e4; --red:#c13c4a; --red-soft:#fff0f1; --purple:#6d50cc; --purple-soft:#f2efff; }
+    * { box-sizing:border-box; }
+    body { min-width:1180px; margin:0; color:var(--ink); background:var(--page); font:14px/1.45 "Microsoft YaHei","PingFang SC",Arial,sans-serif; }
+    button,input,select { font:inherit; } button { cursor:pointer; }
+    .topbar { position:fixed; z-index:10; top:0; right:0; left:0; display:flex; align-items:center; justify-content:space-between; height:62px; padding:0 25px 0 22px; background:#fff; border-bottom:1px solid var(--line); }
+    .brand { display:flex; gap:11px; align-items:center; color:#273959; font-size:18px; font-weight:700; }
+    .brand-mark { display:grid; width:25px; height:25px; place-items:center; color:#fff; background:#e75159; border-radius:7px 12px 7px 12px; transform:rotate(45deg); }
+    .brand-mark span { font-size:13px; transform:rotate(-45deg); }
+    .top-actions { display:flex; gap:19px; align-items:center; color:var(--muted); font-size:12px; }
+    .avatar { display:grid; width:29px; height:29px; place-items:center; color:#fff; background:#e05358; border-radius:50%; }
+    .sidebar { position:fixed; z-index:5; top:62px; bottom:0; left:0; width:204px; padding:16px 12px; color:#cbd5e7; background:var(--nav); }
+    .side-title { display:flex; align-items:center; justify-content:space-between; padding:5px 11px 13px; color:#fff; font-size:13px; font-weight:700; }
+    .nav-item { display:flex; gap:10px; align-items:center; min-height:37px; padding:0 12px; color:#c2cde0; border-radius:6px; font-size:13px; }
+    .nav-item.active { color:#fff; background:var(--nav-hover); font-weight:700; }
+    .nav-sub { margin:3px 0 4px 37px; padding:7px 0; color:#81a9fa; font-size:13px; }
+    .nav-sub.current { color:#fff; font-weight:700; }
+    .workspace { min-height:calc(100vh - 62px); margin:62px 0 0 204px; }
+    .crumb { display:flex; gap:9px; align-items:center; height:44px; padding:0 27px; color:var(--muted); background:#fff; border-bottom:1px solid var(--line); font-size:12px; }
+    .crumb strong { color:var(--ink); }
+    .content { max-width:1580px; padding:19px 27px 50px; }
+    .topline { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:15px; }
+    .page-title { display:flex; gap:10px; align-items:center; color:#263854; font-size:20px; font-weight:700; }
+    .page-subtitle { margin-top:4px; color:#7b899d; font-size:12px; }
+    .run-pill { display:inline-flex; gap:7px; align-items:center; padding:7px 10px; color:#8f640a; background:var(--amber-soft); border:1px solid #f2dba9; border-radius:99px; font-size:12px; }
+    .run-pill::before { width:7px; height:7px; background:currentColor; border-radius:50%; content:""; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:9px; box-shadow:0 7px 19px rgba(27,49,93,.045); }
+    .filter-card { display:flex; gap:13px; align-items:end; margin-bottom:15px; padding:14px 17px; }
+    .field { min-width:185px; }
+    .field label { display:block; margin-bottom:5px; color:#77869c; font-size:11px; }
+    .field select { width:100%; height:33px; padding:0 9px; color:#485974; background:#fff; border:1px solid #d8e1ec; border-radius:5px; outline:none; font-size:12px; }
+    .field select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(40,100,238,.1); }
+    .btn { min-height:33px; padding:0 12px; color:#53627a; background:#fff; border:1px solid #d6e0ec; border-radius:5px; font-size:12px; }
+    .btn.primary { color:#fff; background:var(--blue); border-color:var(--blue); }
+    .filter-note { margin-left:auto; padding-bottom:7px; color:#8795a8; font-size:11px; }
+    .overview { display:grid; grid-template-columns:1.05fr repeat(4,1fr); gap:13px; margin-bottom:15px; }
+    .run-card { padding:16px 17px; color:#fff; background:linear-gradient(130deg,#2f5fc2,#587eeb); border-color:#4774d2; box-shadow:0 9px 22px rgba(43,91,186,.18); }
+    .run-card small { display:block; color:#dce8ff; font-size:11px; }
+    .run-card strong { display:block; margin:5px 0 7px; font-size:25px; line-height:1; }
+    .run-card p { margin:0; color:#e8efff; font-size:11px; line-height:1.6; }
+    .metric { min-height:116px; padding:15px 17px; }
+    .metric-label { display:flex; align-items:center; justify-content:space-between; color:#728198; font-size:12px; }
+    .metric-icon { display:grid; width:27px; height:27px; place-items:center; color:#476fbf; background:#edf3ff; border-radius:6px; }
+    .metric.good .metric-icon { color:var(--green); background:var(--green-soft); }
+    .metric.warn .metric-icon { color:#a26b03; background:#fff2d3; }
+    .metric-value { margin-top:8px; color:#2d405f; font-size:27px; font-weight:700; line-height:1; }
+    .metric-value.green { color:#16775e; } .metric-value.amber { color:#a56d03; }
+    .metric-note { margin-top:7px; color:#8a98aa; font-size:11px; }
+    .grid-two { display:grid; grid-template-columns:1.55fr 1fr; gap:15px; margin-bottom:15px; }
+    .card-head { display:flex; align-items:center; justify-content:space-between; min-height:52px; padding:0 17px; border-bottom:1px solid var(--line); }
+    .card-title { color:#2b3b56; font-size:14px; font-weight:700; }
+    .card-note { color:#8795a8; font-size:11px; }
+    .decision-body { display:grid; grid-template-columns:repeat(3,1fr); gap:11px; padding:15px 17px 17px; }
+    .decision-card { min-height:165px; padding:13px; border:1px solid #e2e8f0; border-radius:7px; }
+    .decision-card.pass { border-top:3px solid #61b598; } .decision-card.reject { border-top:3px solid #df8088; } .decision-card.review { border-top:3px solid #e0b45d; }
+    .decision-name { color:#4b5d77; font-size:13px; font-weight:700; }
+    .decision-stat { display:flex; align-items:baseline; gap:6px; margin-top:11px; }
+    .decision-stat strong { color:#2e405e; font-size:25px; line-height:1; }
+    .decision-stat span { color:#8290a3; font-size:11px; }
+    .progress { height:7px; overflow:hidden; margin:10px 0 9px; background:#eef2f6; border-radius:99px; }
+    .progress i { display:block; height:100%; border-radius:inherit; }
+    .pass .progress i { background:#3ca67f; } .reject .progress i { background:#d75a65; } .review .progress i { background:#d69a28; }
+    .decision-desc { color:#7f8da0; font-size:11px; line-height:1.55; }
+    .trend-body { padding:14px 17px 16px; }
+    .trend-legend { display:flex; gap:12px; margin-bottom:11px; color:#7e8da1; font-size:11px; }
+    .trend-legend span::before { display:inline-block; width:7px; height:7px; margin-right:5px; background:#4c7ee4; border-radius:50%; content:""; }
+    .trend-legend span:last-child::before { background:#e1ae53; }
+    .chart { display:flex; gap:7px; align-items:flex-end; height:122px; padding:5px 4px 0; border-bottom:1px solid #e5eaf1; }
+    .bar-group { display:flex; flex:1; gap:3px; align-items:flex-end; justify-content:center; height:100%; }
+    .bar { width:12px; min-height:8px; background:#5685e7; border-radius:3px 3px 0 0; }
+    .bar.amber { background:#dfad51; }
+    .chart-labels { display:flex; justify-content:space-between; margin-top:6px; color:#909daf; font-size:10px; }
+    .grid-bottom { display:grid; grid-template-columns:1.2fr 1fr .9fr; gap:15px; }
+    .condition-list { padding:2px 17px 14px; }
+    .condition-row { display:grid; grid-template-columns:102px 1fr 43px; gap:9px; align-items:center; min-height:47px; border-top:1px solid #eef2f6; }
+    .condition-row:first-child { border-top:0; }
+    .condition-name { color:#52627a; font-size:12px; font-weight:700; }
+    .condition-bar { height:7px; overflow:hidden; background:#edf1f5; border-radius:99px; }
+    .condition-bar i { display:block; height:100%; background:#4aa983; border-radius:inherit; }
+    .condition-row.warn .condition-bar i { background:#e0ac4e; }
+    .condition-value { color:#4a5c75; font-size:12px; font-weight:700; text-align:right; }
+    .condition-row.warn .condition-value { color:#a06c0c; }
+    .reason-list { padding:5px 17px 13px; }
+    .reason-row { display:grid; grid-template-columns:20px 1fr 28px; gap:9px; align-items:center; min-height:49px; border-top:1px solid #eef2f6; }
+    .reason-row:first-child { border-top:0; }
+    .rank { display:grid; width:20px; height:20px; place-items:center; color:#73839a; background:#f0f3f7; border-radius:4px; font-size:10px; font-weight:700; }
+    .rank.top { color:#b86d16; background:#fff0d5; }
+    .reason-main strong { display:block; color:#4c5c76; font-size:12px; }
+    .reason-main span { display:block; margin-top:2px; color:#8b98aa; font-size:10px; }
+    .reason-count { color:#c06d28; font-size:13px; font-weight:700; text-align:right; }
+    .gate-body { padding:15px 17px 16px; }
+    .gate-state { display:flex; gap:10px; align-items:flex-start; padding:11px; color:#8f6207; background:#fff8e9; border:1px solid #f2dfb8; border-radius:6px; }
+    .gate-state i { display:grid; flex:0 0 auto; width:25px; height:25px; place-items:center; color:#fff; background:#d49a28; border-radius:50%; font-style:normal; font-weight:700; }
+    .gate-state strong { display:block; font-size:14px; }
+    .gate-state span { display:block; margin-top:2px; color:#967a45; font-size:11px; }
+    .gate-list { margin-top:11px; }
+    .gate-item { display:flex; gap:8px; align-items:flex-start; padding:8px 0; border-top:1px solid #edf1f5; color:#65758b; font-size:11px; line-height:1.5; }
+    .gate-item b { display:grid; flex:0 0 auto; width:17px; height:17px; place-items:center; border-radius:50%; font-size:10px; }
+    .gate-item.ok b { color:#15795f; background:#e8f8f1; } .gate-item.wait b { color:#a46c05; background:#fff0d2; }
+    .audit-note { margin-top:10px; color:#8b98aa; font-size:10px; line-height:1.55; }
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><span class="brand-mark"><span>博</span></span>博商管理</div><div class="top-actions"><span>▦ 应用中心</span><span>● 帮助手册</span><span>▣ 日程</span><span>◆ 模块</span><span class="avatar">财</span><span>财务专员⌄</span></div></header>
+  <aside class="sidebar"><div class="side-title"><span>⌂ 办公管理</span><span>⌄</span></div><div class="nav-item">▣ 申请</div><div class="nav-item">▥ 审批</div><div class="nav-sub">我的申请</div><div class="nav-sub">我的待办</div><div class="nav-item">⌘ 流程</div><div class="nav-item">▦ 记录</div><div class="nav-item">● 日程</div><div class="nav-item">◆ 项目计划</div><div class="nav-item">✦ 同学会</div><div class="nav-item">◉ 研企管理</div><div class="nav-item">◈ 智服系统</div><div class="nav-item">▤ 证书管理</div><div class="nav-item">▦ 智能报表</div><div class="nav-item active">◌ 统计分析</div><div class="nav-sub current">影子审批评估</div></aside>
+  <main class="workspace"><div class="crumb"><span>办公管理</span><span>/</span><span>统计分析</span><span>/</span><strong>影子审批评估看板</strong><span style="margin-left:auto;color:#2864ee">影子审批运行中</span></div><div class="content">
+    <div class="topline"><div><div class="page-title">影子审批评估看板</div><div class="page-subtitle">对比 AI 审批建议与财务实际结论，持续评估策略准确性和自动化准入条件。</div></div><span class="run-pill">影子运行第 12 / 15 个工作日</span></div>
+    <section class="card filter-card"><div class="field"><label for="periodFilter">统计周期</label><select id="periodFilter"><option>近 15 个工作日</option><option>近 7 个工作日</option><option>本月</option></select></div><div class="field"><label for="expenseFilter">费用类型</label><select id="expenseFilter"><option>全部费用类型</option><option>差旅</option><option>固定人工</option><option>市场推广</option><option>固定资产</option></select></div><div class="field"><label for="payerFilter">付款主体</label><select id="payerFilter"><option>全部付款主体</option><option>博商管理集团有限公司</option><option>深圳市博商管理咨询有限公司</option><option>Sands Bosum Business Pte. Ltd</option></select></div><button class="btn primary" type="button" onclick="applyDashboardFilters()">查询</button><button class="btn" type="button" onclick="resetDashboardFilters()">重置</button><span id="filterNote" class="filter-note">当前展示：全部费用类型 · 全部付款主体</span></section>
+    <section class="overview"><article class="card run-card"><small>影子审批运行状态</small><strong>持续跟进中</strong><p>当前已覆盖 12 个工作日；财务仍需逐笔处理并回收对 AI 判断的反馈。</p></article><article class="card metric"><div class="metric-label">样本量 <span class="metric-icon">▦</span></div><div class="metric-value">318</div><div class="metric-note">已完成财务处理并收集反馈</div></article><article class="card metric good"><div class="metric-label">总体一致率 <span class="metric-icon">✓</span></div><div class="metric-value green">96.5%</div><div class="metric-note">AI 建议与财务结论一致 307 笔</div></article><article class="card metric warn"><div class="metric-label">改判率 <span class="metric-icon">↺</span></div><div class="metric-value amber">3.5%</div><div class="metric-note">11 笔 AI 判断被财务修正</div></article><article class="card metric good"><div class="metric-label">重大风险漏识别 <span class="metric-icon">!</span></div><div class="metric-value green">0 笔</div><div class="metric-note">无重大不合规单据遗漏</div></article></section>
+    <section class="grid-two"><article class="card"><div class="card-head"><div class="card-title">AI 建议结论表现</div><span class="card-note">与财务实际结论对比</span></div><div class="decision-body"><section class="decision-card pass"><div class="decision-name">建议通过</div><div class="decision-stat"><strong>142</strong><span>笔样本</span></div><div class="progress"><i style="width:99.3%"></i></div><div class="decision-desc">准确率 99.3%<br>1 笔被财务调整为补充材料。</div></section><section class="decision-card reject"><div class="decision-name">建议驳回</div><div class="decision-stat"><strong>76</strong><span>笔样本</span></div><div class="progress"><i style="width:98.7%"></i></div><div class="decision-desc">准确率 98.7%<br>1 笔因业务例外被改为复核。</div></section><section class="decision-card review"><div class="decision-name">建议复核</div><div class="decision-stat"><strong>100</strong><span>笔样本</span></div><div class="progress"><i style="width:91%"></i></div><div class="decision-desc">一致率 91.0%<br>主要偏差为风险提示过度。</div></section></div></article><article class="card"><div class="card-head"><div class="card-title">近 7 日表现趋势</div><span class="card-note">一致率 / 改判率</span></div><div class="trend-body"><div class="trend-legend"><span>一致率</span><span>改判率</span></div><div class="chart"><div class="bar-group"><i class="bar" style="height:78%"></i><i class="bar amber" style="height:13%"></i></div><div class="bar-group"><i class="bar" style="height:82%"></i><i class="bar amber" style="height:11%"></i></div><div class="bar-group"><i class="bar" style="height:85%"></i><i class="bar amber" style="height:9%"></i></div><div class="bar-group"><i class="bar" style="height:88%"></i><i class="bar amber" style="height:7%"></i></div><div class="bar-group"><i class="bar" style="height:91%"></i><i class="bar amber" style="height:6%"></i></div><div class="bar-group"><i class="bar" style="height:93%"></i><i class="bar amber" style="height:5%"></i></div><div class="bar-group"><i class="bar" style="height:96%"></i><i class="bar amber" style="height:4%"></i></div></div><div class="chart-labels"><span>07/29</span><span>07/30</span><span>07/31</span><span>08/01</span><span>08/02</span><span>08/03</span><span>08/04</span></div></div></article></section>
+    <section class="grid-bottom"><article class="card"><div class="card-head"><div class="card-title">五项条件表现</div><span class="card-note">条件结论与财务核验一致率</span></div><div class="condition-list"><div class="condition-row"><div class="condition-name">发票信息</div><div class="condition-bar"><i style="width:99.4%"></i></div><div class="condition-value">99.4%</div></div><div class="condition-row warn"><div class="condition-name">附件完整性</div><div class="condition-bar"><i style="width:93.1%"></i></div><div class="condition-value">93.1%</div></div><div class="condition-row warn"><div class="condition-name">报销标准合规</div><div class="condition-bar"><i style="width:94.0%"></i></div><div class="condition-value">94.0%</div></div><div class="condition-row"><div class="condition-name">时间与时效</div><div class="condition-bar"><i style="width:98.7%"></i></div><div class="condition-value">98.7%</div></div><div class="condition-row"><div class="condition-name">业务合理性</div><div class="condition-bar"><i style="width:96.8%"></i></div><div class="condition-value">96.8%</div></div></div></article><article class="card"><div class="card-head"><div class="card-title">AI 判断不准确原因</div><span class="card-note">11 笔改判反馈</span></div><div class="reason-list"><div class="reason-row"><span class="rank top">1</span><div class="reason-main"><strong>风险判断过度 / 不应提示</strong><span>主要发生在建议复核场景</span></div><span class="reason-count">5</span></div><div class="reason-row"><span class="rank top">2</span><div class="reason-main"><strong>识别或证据有误</strong><span>附件图片清晰度和材料版本影响</span></div><span class="reason-count">3</span></div><div class="reason-row"><span class="rank">3</span><div class="reason-main"><strong>规则判断不正确</strong><span>业务例外未覆盖</span></div><span class="reason-count">2</span></div><div class="reason-row"><span class="rank">4</span><div class="reason-main"><strong>应识别风险但未识别</strong><span>非重大风险</span></div><span class="reason-count">1</span></div></div></article><article class="card"><div class="card-head"><div class="card-title">自动化准入结论</div><span class="card-note">当前周期评估</span></div><div class="gate-body"><div class="gate-state"><i>!</i><div><strong>暂不满足</strong><span>继续影子运行并优化策略后再评估。</span></div></div><div class="gate-list"><div class="gate-item wait"><b>!</b><span>影子运行尚未满 15 个工作日，当前为第 12 天。</span></div><div class="gate-item wait"><b>!</b><span>建议通过准确率 99.3%，未达到自动通过要求的 100%。</span></div><div class="gate-item wait"><b>!</b><span>建议驳回准确率 98.7%，未达到自动驳回要求的 100%。</span></div><div class="gate-item ok"><b>✓</b><span>重大风险漏识别为 0 笔，持续观察。</span></div></div><p class="audit-note">准入结论只用于后续治理决策；影子期内实际财务审批结论仍为唯一生效结果。</p></div></article></section>
+  </div></main>
+  <script>
+    function applyDashboardFilters() { const period=document.getElementById('periodFilter').value; const expense=document.getElementById('expenseFilter').value; const payer=document.getElementById('payerFilter').value; document.getElementById('filterNote').textContent=`当前展示：${period} · ${expense} · ${payer}`; }
+    function resetDashboardFilters() { document.getElementById('periodFilter').selectedIndex=0; document.getElementById('expenseFilter').selectedIndex=0; document.getElementById('payerFilter').selectedIndex=0; applyDashboardFilters(); }
+  </script>
+  <script src="prototype-navigation.js"></script>
+</body>
+</html>

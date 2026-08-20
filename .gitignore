@@ -1,0 +1,7 @@
+# Keep the published repository limited to the runnable prototype.
+/tests/
+/docs/
+/.superpowers/
+/skills/
+*.md
+SKILL.md

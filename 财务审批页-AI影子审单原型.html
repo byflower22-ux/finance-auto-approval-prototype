@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>财务审批｜AI 审批意见原型</title>
+  <style>
+    :root { --nav:#1f3156; --nav-hover:#2c4472; --blue:#2864ee; --blue-deep:#1f4fc8; --blue-soft:#edf3ff; --ink:#18243a; --muted:#6d7a91; --line:#e3e9f2; --page:#f5f7fb; --green:#147a60; --green-soft:#e9f8f2; --amber:#9a6500; --amber-soft:#fff6e4; --red:#c13c4a; --red-soft:#fff0f1; --purple:#6d50cc; --purple-soft:#f2efff; }
+    * { box-sizing:border-box; }
+    body { min-width:1180px; margin:0; color:var(--ink); background:var(--page); font:14px/1.45 "Microsoft YaHei","PingFang SC",Arial,sans-serif; }
+    button,input,select,textarea { font:inherit; }
+    button { cursor:pointer; }
+    .topbar { position:fixed; z-index:10; top:0; right:0; left:0; display:flex; align-items:center; justify-content:space-between; height:62px; padding:0 25px 0 22px; background:#fff; border-bottom:1px solid var(--line); }
+    .brand { display:flex; gap:11px; align-items:center; color:#273959; font-size:18px; font-weight:700; }
+    .brand-mark { display:grid; width:25px; height:25px; place-items:center; color:#fff; background:#e75159; border-radius:7px 12px 7px 12px; transform:rotate(45deg); }
+    .brand-mark span { font-size:13px; transform:rotate(-45deg); }
+    .top-actions { display:flex; gap:19px; align-items:center; color:var(--muted); font-size:12px; }
+    .avatar { display:grid; width:29px; height:29px; place-items:center; color:#fff; background:#e05358; border-radius:50%; }
+    .sidebar { position:fixed; z-index:5; top:62px; bottom:0; left:0; width:204px; padding:16px 12px; color:#cbd5e7; background:var(--nav); }
+    .side-title { display:flex; align-items:center; justify-content:space-between; padding:5px 11px 13px; color:#fff; font-size:13px; font-weight:700; }
+    .nav-item { display:flex; gap:10px; align-items:center; min-height:37px; padding:0 12px; color:#c2cde0; border-radius:6px; font-size:13px; }
+    .nav-item.active { color:#fff; background:var(--nav-hover); font-weight:700; }
+    .nav-sub { margin:3px 0 4px 37px; padding:7px 0; color:#81a9fa; font-size:13px; }
+    .nav-sub.current { color:#fff; font-weight:700; }
+    .workspace { min-height:calc(100vh - 62px); margin:62px 0 0 204px; }
+    .crumb { display:flex; gap:9px; align-items:center; height:44px; padding:0 27px; color:var(--muted); background:#fff; border-bottom:1px solid var(--line); font-size:12px; }
+    .crumb strong { color:var(--ink); }
+    .content { max-width:1590px; padding:19px 27px 52px; }
+    .topline { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:15px; }
+    .topline-actions { display:flex; gap:9px; align-items:center; }
+    .page-title { display:flex; gap:10px; align-items:center; color:#263854; font-size:19px; font-weight:700; }
+    .page-title small { padding:3px 7px; color:#365fc4; background:var(--blue-soft); border-radius:4px; font-size:11px; font-weight:600; }
+    .page-subtitle { margin-top:4px; color:#7b899d; font-size:12px; }
+    .flow-state { display:inline-flex; gap:6px; align-items:center; margin-top:2px; padding:6px 10px; color:#8f640a; background:var(--amber-soft); border:1px solid #f4dfb4; border-radius:99px; font-size:12px; }
+    .flow-state::before { width:7px; height:7px; background:currentColor; border-radius:50%; content:""; }
+    .layout { display:grid; grid-template-columns:minmax(0,7fr) minmax(320px,3fr); gap:16px; align-items:start; }
+    .layout.is-collapsed { display:block; }
+    .layout > .review-drawer { position:sticky; top:78px; display:none; min-width:0; max-height:calc(100vh - 94px); overflow-y:auto; padding:0 2px 12px 0; }
+    .layout > .review-drawer.show { display:block; }
+    .drawer-head { display:flex; align-items:center; justify-content:space-between; margin:0 0 11px; padding:0 2px; color:#3a4b66; font-size:13px; font-weight:700; }
+    .drawer-head span { color:#7b899f; font-size:11px; font-weight:400; }
+    .drawer-close { display:grid; width:27px; height:27px; place-items:center; color:#6c7d94; background:#fff; border:1px solid #dce4ef; border-radius:5px; font-size:18px; line-height:1; }
+    .drawer-close:hover { color:var(--blue); border-color:#a9c2f2; }
+    .card { margin-bottom:16px; background:#fff; border:1px solid var(--line); border-radius:9px; box-shadow:0 7px 19px rgba(27,49,93,.045); }
+    .card-head { display:flex; align-items:center; justify-content:space-between; min-height:52px; padding:0 17px; border-bottom:1px solid var(--line); }
+    .card-title { display:flex; gap:9px; align-items:center; color:#2b3b56; font-size:14px; font-weight:700; }
+    .num { display:grid; width:22px; height:22px; place-items:center; color:var(--blue); background:var(--blue-soft); border-radius:50%; font-size:11px; }
+    .card-note { color:#8090a4; font-size:11px; }
+    .card-body { padding:15px 17px; }
+    .overview-grid { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:12px 25px; }
+    .field-label { margin-bottom:4px; color:#8390a3; font-size:11px; }
+    .field-value { color:#34445e; font-size:13px; }
+    .field-value strong { color:#283a58; font-size:14px; }
+    .money { color:#d74744; font-size:20px; font-weight:700; }
+    .document-context { display:flex; flex-wrap:wrap; gap:8px 22px; margin-bottom:15px; padding-bottom:12px; color:#6c7c92; border-bottom:1px solid #edf1f5; font-size:12px; }
+    .document-context strong { color:#34445e; }
+    .document-section + .document-section { margin-top:16px; padding-top:15px; border-top:1px solid #edf1f5; }
+    .document-section-title { margin-bottom:11px; color:#34445e; font-size:13px; font-weight:700; }
+    .document-section-title::before { display:inline-block; width:3px; height:13px; margin-right:7px; vertical-align:-2px; content:""; background:var(--blue); }
+    .document-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px 25px; }
+    .document-field { min-width:0; }
+    .document-field.wide { grid-column:1 / -1; }
+    .document-field label { display:block; margin-bottom:4px; color:#8390a3; font-size:11px; }
+    .document-field .readonly-value { min-height:31px; padding:6px 9px; color:#34445e; background:#f8fafc; border:1px solid #e1e7ef; border-radius:4px; font-size:13px; overflow-wrap:anywhere; }
+    .document-field .readonly-value { min-height:0; padding:0; background:transparent; border:0; }
+    .document-field .readonly-value.tagged { display:flex; gap:6px; align-items:center; }
+    .todo-approval-control { display:flex; gap:8px; align-items:center; min-height:34px; }
+    .todo-approval-control .application-form-control { height:34px; padding:0 10px; color:#23324a; background:#fff; border:1px solid #d8e0ec; border-radius:5px; outline:none; transition:.15s ease; }
+    .todo-approval-control .application-form-control:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(40,100,238,.1); }
+    .todo-approval-control select { width:160px; }.todo-approval-control input { width:170px; }.todo-approval-control input[hidden] { display:none; }
+    .expense-panel .cell-input { width:100%; min-width:85px; height:29px; padding:0 7px; color:#34435c; background:#fff; border:1px solid #dce3ed; border-radius:4px; outline:none; }.expense-panel .cell-input:focus { border-color:var(--blue); }.required-mark { margin-right:3px; color:#d14b51; }
+    .project-tag { display:inline-flex; align-items:center; min-height:20px; padding:0 6px; color:#365fc4; background:var(--blue-soft); border-radius:3px; font-size:11px; }
+    .project-tag { min-height:0; padding:0; background:transparent; border-radius:0; font-size:13px; }
+    .detail-link { padding:0; color:var(--blue); background:transparent; border:0; font-size:12px; }
+    .expense-group { overflow:hidden; margin-top:12px; border:1px solid #dce5f0; border-radius:7px; }
+    .expense-group:first-child { margin-top:0; }
+    .expense-head { display:flex; gap:10px; align-items:center; min-height:45px; padding:0 13px; background:#f8fbff; border-bottom:1px solid #e3eaf3; }
+    .expense-tag { padding:3px 6px; color:var(--blue); background:var(--blue-soft); border-radius:4px; font-size:10px; }
+    .expense-head strong { color:#34445e; font-size:13px; }
+    .expense-head span:not(.expense-tag) { color:#8190a4; font-size:11px; }
+    .expense-amount { margin-left:auto; color:#374963; font-size:13px; font-weight:700; }
+    .expense-tabs { display:flex; gap:18px; min-height:38px; padding:0 13px; border-bottom:1px solid #edf0f5; }
+    .expense-tabs button { position:relative; padding:0; color:#79889e; background:transparent; border:0; font-size:12px; }
+    .expense-tabs button.active { color:var(--blue); font-weight:700; }
+    .expense-tabs button.active::after { position:absolute; right:0; bottom:-1px; left:0; height:2px; background:var(--blue); content:""; }
+    .expense-panel { padding:12px 13px; }
+    .expense-panel[hidden] { display:none; }
+    .mini-table { width:100%; border-collapse:collapse; }
+    .mini-table th { padding:0 8px 8px; color:#8090a3; font-size:11px; font-weight:600; text-align:left; }
+    .mini-table td { padding:9px 8px; color:#475872; border-top:1px solid #edf1f5; font-size:12px; }
+    .mini-table td:first-child,.mini-table th:first-child { padding-left:0; }
+    .mini-table td:last-child,.mini-table th:last-child { padding-right:0; }
+    .invoice-row { display:grid; grid-template-columns:30px 1.35fr .8fr .8fr 100px; gap:10px; align-items:center; padding:10px 0; border-top:1px solid #edf1f5; }
+    .invoice-row:first-child { padding-top:0; border-top:0; }
+    .file-icon { display:grid; width:28px; height:28px; place-items:center; color:#df5650; background:#fff0ee; border-radius:5px; font-size:10px; font-weight:700; }
+    .invoice-row strong,.attachment-row strong { display:block; color:#40506a; font-size:12px; }
+    .invoice-row small,.attachment-row small { display:block; margin-top:2px; color:#8a98aa; font-size:11px; }
+    .ok { color:var(--green); font-size:11px; }
+    .warning { color:var(--amber); font-size:11px; }
+    .attachment-row { display:flex; gap:10px; align-items:center; padding:10px 0; border-top:1px solid #edf1f5; }
+    .attachment-row:first-child { padding-top:0; border-top:0; }
+    .attachment-icon { display:grid; width:28px; height:28px; place-items:center; color:var(--purple); background:var(--purple-soft); border-radius:5px; font-size:12px; }
+    .attachment-row .attachment-state { margin-left:auto; padding:3px 6px; color:var(--green); background:var(--green-soft); border-radius:3px; font-size:10px; }
+    .attachment-row .attachment-state.missing { color:var(--red); background:var(--red-soft); }
+    .approval-invoice-table { width:100%; min-width:1050px; border-collapse:collapse; }
+    .expense-panel .table-wrap { overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; }
+    .approval-invoice-table th { padding:8px; color:#596a82; background:#f6f8fb; border:1px solid #e7edf4; font-size:11px; text-align:left; white-space:nowrap; }
+    .approval-invoice-table td { padding:9px 8px; color:#475872; border:1px solid #edf1f5; font-size:12px; vertical-align:middle; }
+    .approval-invoice-table .invoice-result { color:var(--green); white-space:nowrap; }
+    .approval-invoice-table .invoice-view { padding:0; color:var(--blue); background:transparent; border:0; }
+    .approval-attachment-guidance { margin-bottom:10px; padding:8px 10px; color:#718096; background:#f8fafc; border:1px solid #e4eaf2; border-radius:4px; font-size:11px; }
+    .approval-attachment-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+    .approval-attachment { min-width:0; padding:10px; border:1px solid #e1e7ef; border-radius:5px; background:#fff; }
+    .approval-attachment-head { display:flex; align-items:center; justify-content:space-between; gap:8px; color:#40506a; font-size:12px; font-weight:700; }
+    .approval-attachment-state { flex:0 0 auto; padding:2px 5px; color:#7a8799; background:#f1f4f8; border-radius:3px; font-size:10px; font-weight:400; }
+    .approval-attachment-state.required { color:#9a6500; background:var(--amber-soft); }
+    .approval-attachment-description { margin:6px 0; color:#7c8b9f; font-size:11px; line-height:1.5; }
+    .approval-attachment-file { color:#5b789c; font-size:11px; }
+    .approval-attachment-file.missing { color:#9aa6b5; }
+    .ai-card { overflow:hidden; border:1px solid #b7cdf6; box-shadow:0 9px 22px rgba(42,91,181,.09); }
+    .ai-card .card-head { min-height:55px; background:#f7faff; border-bottom-color:#dce8fb; }
+    .ai-heading { display:flex; gap:9px; align-items:center; }
+    .ai-spark { display:grid; width:23px; height:23px; place-items:center; color:#fff; background:linear-gradient(135deg,#3d7cff,#6e58d6); border-radius:6px; font-size:13px; }
+    .ai-heading strong { color:#27497f; font-size:14px; }
+    .final-opinion { display:flex; gap:10px; align-items:flex-start; padding:14px 16px; background:#fffaf1; border-bottom:1px solid #f2e3c5; }
+    .final-opinion-symbol { display:grid; flex:0 0 auto; width:32px; height:32px; place-items:center; color:#a36a02; background:#fff0cf; border-radius:50%; font-size:15px; font-weight:700; }
+    .final-opinion-label { display:block; color:#8b7550; font-size:11px; }
+    .final-opinion strong { display:block; margin-top:1px; color:#7b570e; font-size:16px; }
+    .final-opinion p { margin:3px 0 0; color:#8b7550; font-size:11px; line-height:1.55; }
+    .ai-body { padding:15px 16px; }
+    .check-title { margin:0 0 8px; color:#40516d; font-size:13px; font-weight:700; }
+    .check-list { overflow:hidden; border:1px solid #e1e7ef; border-radius:6px; }
+    .check-item { display:grid; grid-template-columns:83px minmax(0,1fr); gap:9px; padding:10px 11px; border-top:1px solid #edf1f5; }
+    .check-item:first-child { border-top:0; }
+    .check-name { padding-top:2px; color:#52627a; font-size:11px; font-weight:700; }
+    .check-status { display:inline-flex; align-items:center; min-height:19px; padding:0 6px; border-radius:3px; font-size:10px; font-weight:700; }
+    .check-status.pass { color:var(--green); background:var(--green-soft); }
+    .check-status.review { color:#9a6500; background:var(--amber-soft); }
+    .check-status.fail { color:var(--red); background:var(--red-soft); }
+    .check-opinion { margin:4px 0 0; color:#718096; font-size:11px; line-height:1.55; }
+    .feedback-card { position:static; }
+    .feedback-card .card-head { background:#fff; }
+    .feedback-badge { padding:4px 7px; color:#385889; background:#edf3ff; border-radius:99px; font-size:10px; }
+    .feedback-intro { margin-bottom:12px; padding:10px 11px; color:#61718a; background:#f8fafc; border:1px solid #e4eaf2; border-radius:6px; font-size:11px; line-height:1.55; }
+    .feedback-intro strong { color:#43546f; }
+    .feedback-options { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .feedback-option { min-height:56px; padding:8px 9px; color:#6b7a91; background:#fff; border:1px solid #dce4ef; border-radius:6px; font-size:12px; text-align:left; }
+    .feedback-option b { display:block; margin-bottom:3px; font-size:12px; }
+    .feedback-option small { display:block; font-size:10px; }
+    .feedback-option.accurate.is-selected { color:var(--green); background:#f3fbf8; border-color:#91d3bd; }
+    .feedback-option.inaccurate.is-selected { color:var(--red); background:#fff6f6; border-color:#edb8bd; }
+    .feedback-section { margin-top:14px; }
+    .feedback-section label { display:block; margin-bottom:6px; color:#52627a; font-size:12px; font-weight:700; }
+    .feedback-section select,.feedback-section textarea { width:100%; padding:9px; color:#3f4f68; background:#fff; border:1px solid #d7e0ec; border-radius:5px; outline:none; }
+    .feedback-section textarea { min-height:64px; resize:vertical; }
+    .feedback-section select:focus,.feedback-section textarea:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(40,100,238,.1); }
+    .feedback-note { margin:5px 0 0; color:#8b98aa; font-size:10px; }
+    .condition-feedback-list { overflow:hidden; border:1px solid #dfe7f2; border-radius:6px; }
+    .condition-feedback-item { border-top:1px solid #eaf0f5; }
+    .condition-feedback-item:first-child { border-top:0; }
+    .condition-choice { display:flex; gap:8px; align-items:center; min-height:36px; margin:0; padding:0 10px; color:#45566f; background:#fbfcfe; cursor:pointer; font-size:12px; font-weight:600; }
+    .condition-choice input { accent-color:var(--blue); }
+    .condition-reason { padding:9px 10px 10px 34px; background:#fff; }
+    .condition-reason label { margin-bottom:5px; color:#6c7b90; font-size:11px; }
+    .condition-reason textarea { min-height:54px; }
+    .feedback-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:14px; padding-top:13px; border-top:1px solid #e8edf4; }
+    .btn { min-height:33px; padding:0 12px; color:#4d5c73; background:#fff; border:1px solid #d5deeb; border-radius:5px; }
+    .btn.primary { color:#fff; background:var(--blue); border-color:var(--blue); }
+    .btn:disabled { color:#a1adbd; background:#f2f5f8; border-color:#e1e6ed; cursor:not-allowed; }
+    .toast { position:fixed; z-index:40; right:26px; bottom:24px; display:none; padding:11px 15px; color:#fff; background:#263b61; border-radius:6px; box-shadow:0 10px 28px rgba(28,47,81,.22); }
+    .toast.show { display:block; }
+    .crumb { display:none; }
+    .workspace-tabs { display:flex; align-items:flex-end; height:38px; padding-left:12px; background:#fff; border-bottom:8px solid #f2f4f8; }
+    .workspace-tab { position:relative; height:32px; padding:0 14px; color:#4e6583; background:#fff; border:0; border-right:1px solid #dde3eb; border-left:1px solid #dde3eb; font-size:13px; }
+    .workspace-tab + .workspace-tab { margin-left:4px; }
+    .workspace-tab.active { color:#34445e; border-top:3px solid #f26b6b; }
+    .workspace-tab .tab-close { margin-left:4px; color:#5779a3; font-weight:700; }
+    .approval-toolbar { display:flex; align-items:center; gap:12px; min-height:56px; padding:10px 16px; background:#fff; border-bottom:8px solid #f2f4f8; }
+    .approval-action { min-width:72px; height:32px; padding:0 14px; color:#fff; background:#ee625e; border:0; border-radius:4px; font-size:13px; }
+    .approval-action:hover { background:#dc514e; }
+    .approval-view-tabs { display:flex; align-items:flex-end; height:42px; padding-left:12px; background:#fff; border-bottom:8px solid #f2f4f8; }
+    .approval-view-tab { position:relative; height:34px; padding:0 15px; color:#526783; background:#fff; border:0; border-right:1px solid #e0e5ed; border-left:1px solid #e0e5ed; font-size:13px; }
+    .approval-view-tab.active { color:#2e5d97; border-top:3px solid #303d5b; }
+    .approval-view[hidden] { display:none; }
+    .approval-history { max-width:1590px; margin:19px 27px 52px; padding:16px; background:#fff; border:1px solid var(--line); border-radius:6px; }
+    .approval-history h2 { margin:0 0 14px; color:#34445e; font-size:15px; }
+    .approval-history table { width:100%; border-collapse:collapse; }
+    .approval-history th,.approval-history td { padding:10px 12px; border-bottom:1px solid #edf1f5; color:#52627a; font-size:13px; text-align:left; }
+    .approval-history th { color:#42526a; background:#f6f8fb; }
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><span class="brand-mark"><span>博</span></span>博商管理</div><div class="top-actions"><span>▦ 应用中心</span><span>● 帮助手册</span><span>▣ 日程</span><span>◆ 模块</span><span class="avatar">财</span><span>财务专员⌄</span></div></header>
+  <aside class="sidebar"><div class="side-title"><span>⌂ 办公管理</span><span>⌄</span></div><div class="nav-item">▣ 申请</div><div class="nav-item active">▥ 审批</div><div class="nav-sub">我的申请</div><div class="nav-sub current">我的待办</div><div class="nav-item">⌘ 流程</div><div class="nav-item">▦ 记录</div><div class="nav-item">● 日程</div><div class="nav-item">◆ 项目计划</div><div class="nav-item">✦ 同学会</div><div class="nav-item">◉ 研企管理</div><div class="nav-item">◈ 智服系统</div><div class="nav-item">▤ 证书管理</div><div class="nav-item">▦ 智能报表</div><div class="nav-item">◌ 统计分析</div></aside>
+  <main class="workspace">
+    <div class="workspace-tabs" aria-label="已打开页签"><button class="workspace-tab" type="button" data-tab-route="申请中心原型.html" onclick="handleWorkspaceTabClick(this)">首页</button><button class="workspace-tab" type="button" data-tab-route="申请中心原型.html" onclick="handleWorkspaceTabClick(this)">申请<span class="tab-close" role="button" aria-label="关闭申请页签" onclick="closeWorkspaceTab(this.closest('.workspace-tab'), event)">×</span></button><button class="workspace-tab" type="button" data-tab-route="审批列表原型.html" onclick="handleWorkspaceTabClick(this)">审批<span class="tab-close" role="button" aria-label="关闭审批页签" onclick="closeWorkspaceTab(this.closest('.workspace-tab'), event)">×</span></button><button class="workspace-tab" type="button" data-tab-route="财务待办页-AI影子审批原型.html" onclick="handleWorkspaceTabClick(this)">审批确认<span class="tab-close" role="button" aria-label="关闭审批确认页签" onclick="closeWorkspaceTab(this.closest('.workspace-tab'), event)">×</span></button><button class="workspace-tab active" type="button" data-close-route="财务待办页-AI影子审批原型.html" onclick="handleWorkspaceTabClick(this)">付款审批<span class="tab-close" role="button" aria-label="关闭付款审批页签" onclick="closeWorkspaceTab(this.closest('.workspace-tab'), event)">×</span></button></div>
+    <div class="approval-toolbar" aria-label="审批操作"><button class="approval-action" type="button" onclick="submitApprovalAction('approve')">审批</button><button class="approval-action" type="button" onclick="submitApprovalAction('reject')">驳回</button><button class="approval-action" type="button" onclick="submitApprovalAction('cancel')">取消</button><button class="approval-action" type="button" onclick="previewApprovalFiles()">文件预览</button><button id="openReviewDrawer" type="button" hidden onclick="toggleReviewDrawer()">展开审单面板</button></div>
+    <div class="approval-view-tabs" role="tablist"><button class="approval-view-tab active" type="button" data-approval-tab="detail" onclick="switchApprovalPageTab('detail')">表单详情</button><button class="approval-view-tab" type="button" data-approval-tab="history" onclick="switchApprovalPageTab('history')">审批记录</button></div>
+    <div id="approvalDetailView" class="approval-view content">
+      <div id="approvalLayout" class="layout review-split">
+        <div>
+          <section class="card"><div class="card-head"><div class="card-title"><span class="num">1</span>申请基础信息</div><button class="detail-link" type="button" onclick="showToast('原型演示：打开付款单完整详情。')">查看完整单据 ↗</button></div><div class="card-body"><div class="document-context"><span>申请人：<strong>刘宇鑫</strong></span><span>申请部门：<strong>教学运营部</strong></span><span>申请单号：<strong>PAY-20260805-0086</strong></span></div><section class="document-section"><div class="document-section-title">付款信息</div><div class="document-grid"><div class="document-field"><label>标题</label><div class="readonly-value">2026 年 8 月项目差旅费用付款</div></div><div class="document-field"><label>费用时间</label><div class="readonly-value">2026-07-28 至 2026-07-30</div></div><div class="document-field"><label>付款类型</label><div class="readonly-value">项目付款</div></div><div class="document-field"><label>主体公司</label><div class="readonly-value">博商管理集团有限公司</div></div><div class="document-field"><label>是否有发票</label><div class="readonly-value">是</div></div><div class="document-field"><label>申请金额</label><div class="readonly-value">¥ 1,560.00</div></div><div class="document-field wide"><label>本单关联项目</label><div class="readonly-value tagged"><span class="project-tag">目的班级</span></div></div></div></section><section class="document-section"><div class="document-section-title">收款信息</div><div class="document-grid"><div class="document-field"><label>收款方类型</label><div class="readonly-value">公司</div></div><div class="document-field"><label>收款单位</label><div class="readonly-value">深圳同鹏餐饮管理有限公司</div></div><div class="document-field"><label>银行账号</label><div class="readonly-value">6225 8888 0462 9551</div></div><div class="document-field"><label>是否海外付款</label><div class="readonly-value">否</div></div><div class="document-field"><label>开户行</label><div class="readonly-value">招商银行深圳科技园支行</div></div><div class="document-field"><label>付款币种</label><div class="readonly-value">CNY</div></div></div></section></div></section>
+          <section class="card"><div class="card-head"><div class="card-title"><span class="num">2</span>费用、发票与业务材料</div><span class="card-note">按费用类型查看申请人提交的原始材料</span></div><div class="card-body">
+            <section class="expense-group"><div class="expense-head"><span class="expense-tag">费用类型</span><strong>差旅－交通</strong><span>1 条分摊 · 2 张发票 · 2 个附件</span><span class="expense-amount">¥ 960.00</span></div><div class="expense-tabs"><button class="active" type="button" data-expense-tab="allocation" onclick="switchExpensePanel(this)">项目 / 团队分摊</button><button type="button" data-expense-tab="invoice" onclick="switchExpensePanel(this)">发票（2）</button><button type="button" data-expense-tab="attachment" onclick="switchExpensePanel(this)">附件（2）</button></div><div class="expense-panel" data-expense-panel="allocation"><table class="mini-table"><thead><tr><th>费用归集</th><th>项目</th><th>分摊人 / 部门</th><th>费用承担团队</th><th>分摊金额</th><th>事由</th></tr></thead><tbody><tr><td>项目归集</td><td>目的班级</td><td>刘宇鑫 / 教学运营部</td><td>教学运营组</td><td>¥ 960.00</td><td>北京客户拜访交通费</td></tr></tbody></table></div><div class="expense-panel" data-expense-panel="invoice" hidden><div class="invoice-row"><span class="file-icon">PDF</span><div><strong>26952000002709459496</strong><small>电子普通发票 · 2026-07-29</small></div><div><small>价税合计</small><strong>¥ 600.00</strong></div><div><small>开票公司</small><strong>北京交通服务有限公司</strong></div><span class="ok">✓ 验真通过</span></div><div class="invoice-row"><span class="file-icon">PDF</span><div><strong>26952000002709459497</strong><small>电子普通发票 · 2026-07-30</small></div><div><small>价税合计</small><strong>¥ 360.00</strong></div><div><small>开票公司</small><strong>北京交通服务有限公司</strong></div><span class="ok">✓ 验真通过</span></div></div><div class="expense-panel" data-expense-panel="attachment" hidden><div class="attachment-row"><span class="attachment-icon">▣</span><div><strong>出差行程单.pdf</strong><small>出差 / 行程材料 · 已关联本费用类型</small></div><span class="attachment-state">已上传</span></div><div class="attachment-row"><span class="attachment-icon">▣</span><div><strong>业务审批记录.pdf</strong><small>业务审批单 / 审批记录 · 已关联本费用类型</small></div><span class="attachment-state">已上传</span></div></div></section>
+            <section class="expense-group"><div class="expense-head"><span class="expense-tag">费用类型</span><strong>差旅－住宿</strong><span>1 条分摊 · 1 张发票 · 1 个附件</span><span class="expense-amount">¥ 600.00</span></div><div class="expense-tabs"><button class="active" type="button" data-expense-tab="allocation" onclick="switchExpensePanel(this)">项目 / 团队分摊</button><button type="button" data-expense-tab="invoice" onclick="switchExpensePanel(this)">发票（1）</button><button type="button" data-expense-tab="attachment" onclick="switchExpensePanel(this)">附件（1）</button></div><div class="expense-panel" data-expense-panel="allocation"><table class="mini-table"><thead><tr><th>费用归集</th><th>项目</th><th>分摊人 / 部门</th><th>费用承担团队</th><th>分摊金额</th><th>事由</th></tr></thead><tbody><tr><td>项目归集</td><td>目的班级</td><td>刘宇鑫 / 教学运营部</td><td>教学运营组</td><td>¥ 600.00</td><td>北京客户拜访住宿费</td></tr></tbody></table></div><div class="expense-panel" data-expense-panel="invoice" hidden><div class="invoice-row"><span class="file-icon">PDF</span><div><strong>031001900111</strong><small>增值税普通发票 · 2026-07-30</small></div><div><small>价税合计</small><strong>¥ 600.00</strong></div><div><small>开票公司</small><strong>北京金桥酒店有限公司</strong></div><span class="ok">✓ 验真通过</span></div></div><div class="expense-panel" data-expense-panel="attachment" hidden><div class="attachment-row"><span class="attachment-icon">▣</span><div><strong>酒店订单.pdf</strong><small>出差 / 行程材料 · 已关联本费用类型</small></div><span class="attachment-state missing">缺少行程单</span></div></div></section>
+          </div></section>
+        </div>
+        <aside id="reviewDrawer" class="review-drawer show" aria-hidden="false"><div class="drawer-head"><div>AI 审单与结果反馈 <span>与左侧单据实时对照</span></div><button class="drawer-close" type="button" aria-label="收起 AI 审单与反馈" onclick="toggleReviewDrawer()">×</button></div>
+          <section class="card ai-card"><div class="card-head"><div class="ai-heading"><span class="ai-spark">✦</span><div><strong>AI 审批意见</strong></div></div></div><div class="final-opinion"><span class="final-opinion-symbol">!</span><div><span class="final-opinion-label">最终意见</span><strong>建议复核</strong><p>附件完整性及交通费报销标准存在待核验项，建议结合左侧单据和关联材料确认后处理。</p></div></div><div class="ai-body"><div class="check-title">条件审查结论</div><div class="check-list"><div class="check-item"><div class="check-name">发票信息</div><div><span class="check-status pass">通过</span><p class="check-opinion">3 张关联发票均已验真，发票合计 ¥1,560.00 与申请金额一致。</p></div></div><div class="check-item"><div class="check-name">附件完整性</div><div><span class="check-status review">需复核</span><p class="check-opinion">“差旅－住宿”未发现与住宿日期对应的出差行程单。</p></div></div><div class="check-item"><div class="check-name">报销标准合规</div><div><span class="check-status review">需复核</span><p class="check-opinion">交通行程材料识别金额 ¥860.00，与该费用申报金额 ¥960.00 相差 ¥100.00。</p></div></div><div class="check-item"><div class="check-name">时间与时效</div><div><span class="check-status pass">通过</span><p class="check-opinion">费用发生于 2026-07-28 至 2026-07-30，申请时效符合当前规则。</p></div></div><div class="check-item"><div class="check-name">业务合理性</div><div><span class="check-status pass">通过</span><p class="check-opinion">已完成两级业务审批，费用事由与项目、费用承担团队归集一致。</p></div></div></div></div></section>
+          <section class="card feedback-card"><div class="card-head"><div class="card-title"><span class="num">4</span>AI 审单结果反馈</div><span class="feedback-badge">影子审批评估</span></div><div class="card-body"><div class="feedback-intro"><strong>请评价 AI 的审单判断是否准确。</strong>本反馈只用于优化 AI 审单策略和评估准确率，不会改变当前单据的实际审批结果。</div><div class="feedback-options"><button class="feedback-option accurate" type="button" data-feedback="accurate" onclick="selectAiFeedback(this)"><b>✓ AI 判断准确</b><small>AI 结论、风险提示和证据均可采纳</small></button><button class="feedback-option inaccurate" type="button" data-feedback="inaccurate" onclick="selectAiFeedback(this)"><b>! AI 判断不准确</b><small>记录偏差原因，供后续策略调整</small></button></div><div id="inaccuracySection" hidden><div class="feedback-section"><label for="aiFeedbackReason">不准确原因 <span style="color:#d14b51">*</span></label><select id="aiFeedbackReason"><option value="">请选择原因</option><option value="识别或证据有误">识别或证据有误</option><option value="规则判断不正确">规则判断不正确</option><option value="应识别风险但未识别">应识别风险但未识别</option><option value="风险判断过度 / 不应提示">风险判断过度 / 不应提示</option><option value="其他">其他</option></select></div><div class="feedback-section"><label for="aiFeedbackComment">补充说明</label><textarea id="aiFeedbackComment" placeholder="可补充实际判断依据；选择“其他”时请说明具体原因。"></textarea><p class="feedback-note">反馈会与 AI 结论、命中的规则及证据一起留存，用于影子审批评估。</p></div></div><div class="feedback-actions"><button class="btn" type="button" onclick="saveAiFeedback()">暂存反馈</button><button id="submitAiFeedback" class="btn primary" type="button" onclick="submitAiFeedback()" disabled>提交反馈</button></div></div></section>
+        </aside>
+      </div>
+    </div>
+    <section id="approvalHistoryView" class="approval-view approval-history" hidden><h2>审批记录</h2><table><thead><tr><th>审批节点</th><th>审批人</th><th>审批结果</th><th>审批意见</th><th>审批时间</th></tr></thead><tbody><tr><td>业务审批</td><td>李晓明</td><td>通过</td><td>同意项目差旅费用付款。</td><td>2026-08-04 18:32:15</td></tr><tr><td>财务审批</td><td>财务专员</td><td>待处理</td><td>等待财务审批操作。</td><td>--</td></tr></tbody></table></section>
+  </main>
+  <div id="toast" class="toast">操作已记录</div>
+  <script>
+    let selectedAiFeedback = '';
+    const approvalSearch = new URLSearchParams(window.location.search);
+    const isNonProjectApproval = approvalSearch.get('approvalKind') === 'non-project';
+    const isReimbursementApproval = approvalSearch.get('documentType') === 'reimbursement';
+    const approvalDocumentNo = approvalSearch.get('documentNo');
+    const paymentApprovalDocuments = {
+      'PAY-20260805-0086': { applicant:'刘宇鑫', department:'教学运营部', title:'2026 年 8 月项目差旅费用付款', expenseTime:'2026-07-28 至 2026-07-30', paymentType:'项目付款', payer:'博商管理集团有限公司', invoice:'是', amount:'¥ 1,560.00', project:'目的班级', payeeType:'公司', payee:'深圳同鹏餐饮管理有限公司', account:'6225 8888 0462 9551', overseas:'否', bank:'招商银行深圳科技园支行', currency:'CNY', remark:'用于项目班级客户拜访的交通及住宿费用付款。', expenses:[['差旅－交通','¥ 960.00','北京客户拜访交通费'],['差旅－住宿','¥ 600.00','北京客户拜访住宿费']] },
+      'PAY-20260805-0081': { applicant:'陈敏', department:'教学运营部', title:'教学中心投影仪采购付款', expenseTime:'2026-08-01 至 2026-08-05', paymentType:'付款', payer:'深圳市博商管理咨询有限公司', invoice:'是', amount:'¥ 42,500.00', project:'无关联项目', payeeType:'公司', payee:'深圳高新设备有限公司', account:'6225 8888 0731 6204', overseas:'否', bank:'中国银行深圳科技园支行', currency:'CNY', remark:'教学中心多媒体设备采购及会议室预约系统年度服务费用。', expenses:[['固定资产－办公设备','¥ 36,000.00','教学中心投影仪采购'],['管理费用－软件服务','¥ 6,500.00','会议室预约系统年度服务']] },
+      'PAY-20260804-0074': { applicant:'周蕾', department:'市场部', title:'华南区域公开课市场推广费', expenseTime:'2026-08-01 至 2026-08-04', paymentType:'付款', payer:'Sands Bosum Business Pte. Ltd', invoice:'否', amount:'¥ 8,600.00', project:'无关联项目', payeeType:'公司', payee:'Singapore Event Marketing Pte. Ltd', account:'018-729-883', overseas:'是', bank:'DBS Bank Singapore', currency:'USD', swift:'DBSSSGSG', remark:'境外公开课场地推广费用。', expenses:[['市场推广－场地','¥ 8,600.00','华南区域公开课场地推广']] },
+      'PAY-20260805-0083': { applicant:'赵立', department:'教学运营部', title:'7 月外聘讲师课酬付款', expenseTime:'2026-07-01 至 2026-07-31', paymentType:'付款', payer:'博商管理集团有限公司', invoice:'是', amount:'¥ 12,600.00', project:'无关联项目', payeeType:'个人', payee:'李明', account:'6225 8800 1234 5688', overseas:'否', bank:'招商银行深圳分行', currency:'CNY', remark:'7 月外聘讲师课酬结算。', expenses:[['教学运营－课酬','¥ 12,600.00','7 月外聘讲师课酬结算']] },
+      'PAY-20260805-0088': { applicant:'孙晨', department:'项目管理部', title:'北京客户拜访差旅费用付款', expenseTime:'2026-08-02 至 2026-08-04', paymentType:'项目付款', payer:'深圳市博商管理咨询有限公司', invoice:'是', amount:'¥ 3,260.00', project:'北京客户拜访项目', payeeType:'个人', payee:'孙晨', account:'6225 8811 7643 0295', overseas:'否', bank:'中国银行北京分行', currency:'CNY', remark:'北京客户拜访交通及住宿费用。', expenses:[['差旅－交通及住宿','¥ 3,260.00','北京客户拜访交通及住宿']] }
+    };
+    let activePaymentDocument = null;
+    function showToast(message) { const toast=document.getElementById('toast'); toast.textContent=message; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),2800); }
+    function handleWorkspaceTabClick(tab) { const route=tab.dataset.tabRoute; if(route) window.location.href=route; }
+    function closeWorkspaceTab(tab,event) { event.stopPropagation(); const fallback=tab.dataset.closeRoute; if(tab.classList.contains('active') && fallback) { window.location.href=fallback; return; } tab.remove(); }
+    function toggleReviewDrawer() { if(document.body.classList.contains('office-approval-entry')) return; const drawer=document.getElementById('reviewDrawer'); const layout=document.getElementById('approvalLayout'); const button=document.getElementById('openReviewDrawer'); const willOpen=!drawer.classList.contains('show'); drawer.classList.toggle('show',willOpen); layout.classList.toggle('is-collapsed',!willOpen); drawer.setAttribute('aria-hidden',String(!willOpen)); if(button) button.textContent=willOpen?'← 收起审单面板':'✦ 展开审单面板'; }
+    function applyApprovalEntryMode() { if(new URLSearchParams(window.location.search).get('from') === 'office-approval') { document.body.classList.add('office-approval-entry'); const drawer=document.getElementById('reviewDrawer'); const layout=document.getElementById('approvalLayout'); drawer.hidden=true; drawer.classList.remove('show'); drawer.setAttribute('aria-hidden','true'); layout.classList.add('is-collapsed'); } }
+    function applyDocumentRemarks() {
+      const paymentSection=[...document.querySelectorAll('.document-section')].find(section=>section.querySelector('.document-section-title')?.textContent.includes('付款信息'));
+      const paymentGrid=paymentSection?.querySelector('.document-grid');
+      if(paymentGrid && !paymentGrid.querySelector('[data-application-remark]')) paymentGrid.insertAdjacentHTML('beforeend','<div class="document-field wide" data-application-remark><label>备注</label><div class="readonly-value">用于项目班级客户拜访的交通及住宿费用付款。</div></div>');
+    }
+    function applyApprovalDocumentExample() {
+      if (isReimbursementApproval) return;
+      activePaymentDocument = paymentApprovalDocuments[approvalDocumentNo] || paymentApprovalDocuments['PAY-20260805-0086'];
+      const updateReadonlyField=(label,value)=>{
+        const field=[...document.querySelectorAll('.document-field')].find(item=>item.querySelector('label')?.textContent.trim()===label);
+        const readonly=field?.querySelector('.readonly-value');
+        if(readonly) { readonly.classList.remove('tagged'); readonly.textContent=value; }
+      };
+      document.title = '付款单审批｜AI 审批意见原型';
+      const activeTab = document.querySelector('.workspace-tab.active');
+      if (activeTab?.firstChild) activeTab.firstChild.textContent = '付款审批';
+      document.querySelector('.document-context').innerHTML=`<span>申请人：<strong>${activePaymentDocument.applicant}</strong></span><span>申请部门：<strong>${activePaymentDocument.department}</strong></span><span>申请单号：<strong>${approvalDocumentNo || 'PAY-20260805-0086'}</strong></span>`;
+      const fieldValues={ '标题':activePaymentDocument.title, '费用时间':activePaymentDocument.expenseTime, '付款类型':activePaymentDocument.paymentType, '主体公司':activePaymentDocument.payer, '是否有发票':activePaymentDocument.invoice, '申请金额':activePaymentDocument.amount, '本单关联项目':activePaymentDocument.project, '收款方类型':activePaymentDocument.payeeType, '收款单位':activePaymentDocument.payee, '银行账号':activePaymentDocument.account, '是否海外付款':activePaymentDocument.overseas, '开户行':activePaymentDocument.bank, '付款币种':activePaymentDocument.currency, '备注':activePaymentDocument.remark };
+      Object.entries(fieldValues).forEach(([label,value])=>updateReadonlyField(label,value));
+      if ((approvalDocumentNo || 'PAY-20260805-0086') === 'PAY-20260805-0081') {
+        updateReadonlyField('付款类型','付款');
+        updateReadonlyField('备注','教学中心多媒体设备采购及会议室预约系统年度服务费用。');
+      }
+      const detailLink=document.querySelector('.detail-link');
+      detailLink.onclick=()=>{ window.location.href=`审批详情页-AI影子审批原型.html?from=todo&documentType=payment&approvalKind=${activePaymentDocument.paymentType==='项目付款'?'project':'non-project'}&documentNo=${encodeURIComponent(approvalDocumentNo || 'PAY-20260805-0086')}`; };
+      document.querySelectorAll('.expense-group').forEach((group,index)=>{
+        const [type,amount]=activePaymentDocument.expenses[index] || [];
+        const summary=type ? '1 条分摊 · 1 张发票 · 2 个附件' : '';
+        group.hidden=!type;
+        if(type) group.querySelector('.expense-head strong').textContent=type;
+        if(summary) group.querySelector('.expense-head span:not(.expense-tag)').textContent=summary;
+        if(amount) group.querySelector('.expense-amount').textContent=amount;
+      });
+    }
+    function applyReimbursementApprovalMode() {
+      if (!isReimbursementApproval) return;
+      document.title = '报销单审批｜AI 审批意见原型';
+      const isNonProjectReimbursement = approvalDocumentNo ? approvalDocumentNo === 'EXP-20260805-0048' : isNonProjectApproval;
+      const reimbursementNumber = approvalDocumentNo || (isNonProjectReimbursement ? 'EXP-20260805-0048' : 'EXP-20260805-0042');
+      const activeTab = document.querySelector('.workspace-tab.active');
+      if (activeTab?.firstChild) activeTab.firstChild.textContent = '报销审批';
+      const detailLink = document.querySelector('.detail-link');
+      detailLink.textContent = '查看完整报销单 ↗';
+      detailLink.onclick = () => { window.location.href = `审批详情页-AI影子审批原型.html?documentType=reimbursement&approvalKind=${isNonProjectReimbursement ? 'non-project' : 'project'}&documentNo=${encodeURIComponent(reimbursementNumber)}`; };
+      const reimbursementSection = [...document.querySelectorAll('.document-section')].find(section => section.querySelector('.document-section-title')?.textContent.includes('付款信息'));
+      reimbursementSection.querySelector('.document-section-title').textContent = '报销信息';
+      const typeField = [...reimbursementSection.querySelectorAll('.document-field')].find(field => field.querySelector('label')?.textContent.trim() === '付款类型');
+      typeField.querySelector('label').textContent = '报销类型';
+      typeField.querySelector('.readonly-value').textContent = isNonProjectReimbursement ? '报销' : '项目报销';
+      const updateReadonlyField = (label, value) => {
+        const field = [...document.querySelectorAll('.document-field')].find(item => item.querySelector('label')?.textContent.trim() === label);
+        const readonly = field?.querySelector('.readonly-value');
+        if (readonly) { readonly.classList.remove('tagged'); readonly.textContent = value; }
+      };
+      document.querySelector('.document-context').innerHTML = isNonProjectReimbursement
+        ? `<span>申请人：<strong>林佳</strong></span><span>申请部门：<strong>市场部</strong></span><span>申请单号：<strong>${reimbursementNumber}</strong></span>`
+        : `<span>申请人：<strong>陈敏</strong></span><span>申请部门：<strong>行政部</strong></span><span>申请单号：<strong>${reimbursementNumber}</strong></span>`;
+      updateReadonlyField('标题', isNonProjectReimbursement ? '8 月客户拜访交通费用报销' : '8 月办公用品采购项目报销');
+      updateReadonlyField('费用时间', '2026-08-01 至 2026-08-05');
+      updateReadonlyField('申请金额', isNonProjectReimbursement ? '¥ 1,280.00' : '¥ 2,380.00');
+      updateReadonlyField('本单关联项目', isNonProjectReimbursement ? '无关联项目' : '华南区域公开课项目');
+      updateReadonlyField('备注', '用于日常业务开展产生的交通、住宿及办公物料费用报销。');
+      const recipient = isNonProjectReimbursement ? '林佳' : '陈敏';
+      const paymentSection = [...document.querySelectorAll('.document-section')].find(section => section.querySelector('.document-section-title')?.textContent.trim() === '收款信息');
+      paymentSection.querySelector('.document-section-title').textContent = '领款信息';
+      paymentSection.querySelector('.document-grid').innerHTML = `<div class="document-field"><label>领款人</label><div class="readonly-value">${recipient}</div></div><div class="document-field"><label>领款人开户行</label><div class="readonly-value">${isNonProjectReimbursement ? '中国银行深圳科技园支行' : '招商银行深圳分行'}</div></div><div class="document-field"><label>领款人银行卡账号</label><div class="readonly-value">${isNonProjectReimbursement ? '6225 8888 0731 6204' : '6222 1001 8354 6120'}</div></div><div class="document-field"><label>是否海外付款</label><div class="readonly-value">${isNonProjectReimbursement ? '否' : '是'}</div></div>${isNonProjectReimbursement ? '' : '<div class="document-field"><label>币种</label><div class="readonly-value">USD</div></div><div class="document-field"><label>SWIFT Code</label><div class="readonly-value">CMBCCNBS</div></div>'}`;
+      paymentSection.insertAdjacentHTML('afterend', `<section class="document-section"><div class="document-section-title">借款单冲抵</div><div class="document-grid"><div class="document-field"><label>是否使用借款单冲抵</label><div class="readonly-value">是</div></div><div class="document-field wide"><label>领款人当前剩余欠款</label><div class="readonly-value">${isNonProjectReimbursement ? '(CNY) 3,000.00' : '(CNY) 12,500.00；(HKD) 1,500.00'}</div></div></div><div class="table-wrap"><table class="mini-table"><thead><tr><th>借款单编号</th><th>主体公司</th><th>状态</th><th>币种</th><th>剩余欠款金额</th><th>实际借款时间</th><th>本次抵冲金额</th></tr></thead><tbody>${isNonProjectReimbursement ? '<tr><td>JK202608030010</td><td>深圳市博商管理科学研究院股份有限公司</td><td>待还款</td><td>CNY</td><td>3,000.00</td><td>2026-08-03</td><td>1,280.00</td></tr>' : '<tr><td>JK202608120001</td><td>深圳市博商管理科学研究院股份有限公司</td><td>待还款</td><td>CNY</td><td>6,000.00</td><td>2026-08-12</td><td>2,380.00</td></tr>'}</tbody></table></div></section>`);
+      renderReimbursementApprovalExpenses(isNonProjectReimbursement);
+      document.querySelector('.approval-history tbody tr:first-child td:nth-child(4)').textContent = '同意本次费用报销。';
+    }
+    function renderReimbursementApprovalExpenses(isNonProject) {
+      const documentData = isNonProject ? {
+        expenses: [
+          { type:'差旅－交通', amount:'¥ 880.00', invoice:['142032600048','电子普通发票','880.00','深圳市城市交通服务有限公司','2026-08-03'], reason:'客户拜访交通费' },
+          { type:'业务招待－餐费', amount:'¥ 400.00', invoice:['142032600052','电子普通发票','400.00','深圳市会务餐饮有限公司','2026-08-04'], reason:'客户拜访交通及餐费' }
+        ],
+        project:'无关联项目', applicant:'林佳', department:'市场部', team:'市场部', aiOpinion:'客户拜访行程及餐费事由待补充，建议复核后处理。'
+      } : {
+        expenses: [
+          { type:'日常运营－办公用品', amount:'¥ 2,380.00', invoice:['033002600104','电子普通发票','2,380.00','深圳市优品办公用品有限公司','2026-08-02'], reason:'项目办公文具及耗材采购', foreign:'USD 332.20' }
+        ],
+        project:'华南区域公开课项目', applicant:'陈敏', department:'行政部', team:'行政支持组', aiOpinion:'项目费用与关联材料已匹配，建议通过。'
+      };
+      const expenseCard = [...document.querySelectorAll('.card')].find(card => card.querySelector('.card-title')?.textContent.includes('费用明细'));
+      if (!expenseCard) return;
+      const allocationHeaders = ['费用类型',...(isNonProject ? [] : ['项目']),'分摊人','分摊人部门','费用承担团队','分摊金额（人民币）'];
+      if (!isNonProject) allocationHeaders.push('金额（外币，USD）');
+      allocationHeaders.push('事由');
+      expenseCard.querySelector('.card-body').innerHTML = documentData.expenses.map((expense, index) => {
+        const allocationValues = [expense.type, ...(isNonProject ? [] : [documentData.project]), documentData.applicant, documentData.department, documentData.team, expense.amount];
+        if (!isNonProject) allocationValues.push(expense.foreign);
+        allocationValues.push(expense.reason);
+        return `<section class="expense-group"><div class="expense-head"><span class="expense-tag">费用类型</span><strong>${expense.type}</strong><span>1 条明细 · 1 张发票 · 2 个附件</span><span class="expense-amount">${expense.amount}</span></div><div class="expense-tabs"><button class="active" type="button" data-expense-tab="allocation" onclick="switchExpensePanel(this)">费用明细</button><button type="button" data-expense-tab="invoice" onclick="switchExpensePanel(this)">发票（1）</button><button type="button" data-expense-tab="attachment" onclick="switchExpensePanel(this)">附件（2）</button></div><div class="expense-panel" data-expense-panel="allocation"><table class="mini-table"><thead><tr>${allocationHeaders.map(header => `<th>${header}</th>`).join('')}</tr></thead><tbody><tr>${allocationValues.map(value => `<td>${value}</td>`).join('')}</tr></tbody></table></div><div class="expense-panel" data-expense-panel="invoice" hidden><div class="table-wrap"><table class="approval-invoice-table"><thead><tr><th>序号</th><th>发票号码</th><th>发票类型</th><th>价税合计（元）</th><th>开票公司</th><th>开票日期</th><th>核验结果</th></tr></thead><tbody><tr><td>1</td><td>${expense.invoice[0]}</td><td>${expense.invoice[1]}</td><td>${expense.invoice[2]}</td><td>${expense.invoice[3]}</td><td>${expense.invoice[4]}</td><td class="invoice-result">核验通过</td></tr></tbody></table></div></div><div class="expense-panel" data-expense-panel="attachment" hidden><div class="approval-attachment-list"><article class="approval-attachment"><div class="approval-attachment-head"><strong>合同</strong><span class="approval-attachment-state">选填</span></div><div class="approval-attachment-description">用于关联当前费用类型对应的合同文件。</div><div class="approval-attachment-file">${index === 0 ? '客户拜访费用说明.pdf' : '尚未上传'}</div></article><article class="approval-attachment"><div class="approval-attachment-head"><strong>其他说明材料</strong><span class="approval-attachment-state">选填</span></div><div class="approval-attachment-description">用于补充当前费用类型的业务背景说明。</div><div class="approval-attachment-file">${isNonProject && index === 1 ? '客户拜访餐费说明.pdf' : '尚未上传'}</div></article></div></div></section>`;
+      }).join('');
+      const opinion = document.querySelector('.final-opinion');
+      if (opinion) { opinion.querySelector('strong').textContent = isNonProject ? '建议复核' : '建议通过'; opinion.querySelector('p').textContent = documentData.aiOpinion; }
+      const checks = [...document.querySelectorAll('.check-item')];
+      const checkMessages = isNonProject ? [
+        ['通过','2 张关联发票均已验真，发票金额合计 ¥1,280.00。'],
+        ['需复核','已上传合同类材料，尚需补充客户拜访行程说明。'],
+        ['需复核','客户拜访餐费需补充业务事由说明。'],
+        ['通过','费用发生时间在申请时效范围内。'],
+        ['需复核','客户拜访对象及行程信息待补充核验。']
+      ] : [
+        ['通过','关联发票金额与项目报销金额一致。'], ['通过','合同及其他说明材料已按费用类型归档。'], ['通过','办公用品费用符合项目预算标准。'], ['通过','费用发生时间在申请时效范围内。'], ['通过','费用事由与关联项目一致。']
+      ];
+      checks.forEach((item, index) => { const [status, message] = checkMessages[index] || []; const statusNode = item.querySelector('.check-status'); const messageNode = item.querySelector('.check-opinion'); if (statusNode) { statusNode.textContent = status; statusNode.className = `check-status ${status === '通过' ? 'pass' : 'review'}`; } if (messageNode) messageNode.textContent = message; });
+    }
+    function toggleBankPaymentPurposeOther(select) { const other=document.querySelector('[data-bank-payment-purpose-other]'); other.hidden=select.value!=='其他'; if(other.hidden) other.value=''; }
+    function applyTodoApprovalFields() {
+      if(new URLSearchParams(window.location.search).get('from') !== 'todo') return;
+      const paymentSection=[...document.querySelectorAll('.document-section')].find(section=>/付款信息|报销信息/.test(section.querySelector('.document-section-title')?.textContent));
+      const paymentGrid=paymentSection?.querySelector('.document-grid');
+      if (paymentGrid && !paymentGrid.querySelector('[data-bank-payment-purpose]')) paymentGrid.insertAdjacentHTML('beforeend','<div class="document-field wide"><label><span class="required-mark">*</span>银行付款用途</label><div class="todo-approval-control"><select class="application-form-control" data-bank-payment-purpose onchange="toggleBankPaymentPurposeOther(this)"><option value="">请选择</option><option>物业水电费</option><option>房租</option><option>咨询费</option><option>课酬</option><option>付款</option><option>办公费用</option><option>销售成本</option><option>销售管理</option><option value="其他">其他</option></select><input class="application-form-control" data-bank-payment-purpose-other type="text" placeholder="请输入" hidden></div></div>');
+      const expenseTypes=['营业成本','销售费用','管理费用','研发支出','固定资产','无形资产','长期待摊费用','其他应收款','业务招待','技术服务'];
+      document.querySelectorAll('.expense-panel[data-expense-panel="allocation"] .mini-table tbody tr').forEach(row=>{
+        const table=row.closest('table');
+        const expenseTypeIndex=[...table.tHead.rows[0].cells].findIndex(cell=>cell.textContent.trim()==='费用类型');
+        const expenseTypeCell=row.cells[expenseTypeIndex];
+        if(expenseTypeCell) expenseTypeCell.innerHTML=`<select class="cell-input" data-expense-type aria-label="费用类型"><option value="">请选择</option>${expenseTypes.map(type=>`<option value="${type}">${type}</option>`).join('')}</select>`;
+      });
+    }
+    function validateTodoApprovalFields() {
+      if(new URLSearchParams(window.location.search).get('from') !== 'todo') return true;
+      const purpose=document.querySelector('[data-bank-payment-purpose]');
+      if(!purpose?.value) { showToast('请选择银行付款用途。'); purpose?.focus(); return false; }
+      const other=document.querySelector('[data-bank-payment-purpose-other]');
+      if(purpose.value==='其他' && !other.value.trim()) { showToast('请输入银行付款用途。'); other.focus(); return false; }
+      const expenseType=[...document.querySelectorAll('[data-expense-type]')].find(select=>!select.value);
+      if(expenseType) { showToast('请选择费用类型。'); expenseType.focus(); return false; }
+      return true;
+    }
+    function switchApprovalPageTab(tab) { const detail=tab==='detail'; document.getElementById('approvalDetailView').hidden=!detail; document.getElementById('approvalHistoryView').hidden=detail; document.querySelectorAll('[data-approval-tab]').forEach(button=>button.classList.toggle('active',button.dataset.approvalTab===tab)); }
+    function submitApprovalAction(action) { if(action==='approve' && !validateTodoApprovalFields()) return; const messages={ approve:'审批已提交，等待流程处理。', reject:'已发起驳回操作，请填写驳回意见。', cancel:'已取消本次审批操作。' }; showToast(messages[action]); }
+    function previewApprovalFiles() { showToast('原型演示：已打开当前单据关联的文件预览。'); }
+    function switchExpensePanel(button) { const group=button.closest('.expense-group'); const tab=button.dataset.expenseTab; group.querySelectorAll('[data-expense-tab]').forEach(item=>item.classList.toggle('active',item===button)); group.querySelectorAll('[data-expense-panel]').forEach(panel=>panel.hidden=panel.dataset.expensePanel!==tab); }
+    function renderConditionFeedback() { document.getElementById('inaccuracySection').innerHTML=`<div class="feedback-section"><label>不准确的条件 <span style="color:#d14b51">*</span></label><p class="feedback-note">请勾选不准确的条件，并分别说明原因。</p><div id="conditionFeedbackList" class="condition-feedback-list"><div class="condition-feedback-item" data-condition="发票信息"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">发票信息</label><div class="condition-reason" hidden><label>发票信息不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明发票信息的 AI 判断为何不准确"></textarea></div></div><div class="condition-feedback-item" data-condition="附件完整性"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">附件完整性</label><div class="condition-reason" hidden><label>附件完整性不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明附件完整性的 AI 判断为何不准确"></textarea></div></div><div class="condition-feedback-item" data-condition="报销标准合规"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">报销标准合规</label><div class="condition-reason" hidden><label>报销标准合规不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明报销标准合规的 AI 判断为何不准确"></textarea></div></div><div class="condition-feedback-item" data-condition="时间与时效"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">时间与时效</label><div class="condition-reason" hidden><label>时间与时效不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明时间与时效的 AI 判断为何不准确"></textarea></div></div><div class="condition-feedback-item" data-condition="业务合理性"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">业务合理性</label><div class="condition-reason" hidden><label>业务合理性不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明业务合理性的 AI 判断为何不准确"></textarea></div></div></div></div>`; }
+    function toggleConditionFeedback(checkbox) { checkbox.closest('.condition-feedback-item').querySelector('.condition-reason').hidden=!checkbox.checked; }
+    function validateConditionFeedback() { if(selectedAiFeedback!=='inaccurate') return true; const selected=[...document.querySelectorAll('[data-condition-checkbox]:checked')]; if(!selected.length) { showToast('请勾选 AI 判断不准确的条件。'); return false; } const missing=selected.find(item=>!item.closest('.condition-feedback-item').querySelector('textarea').value.trim()); if(missing) { showToast(`请填写“${missing.closest('.condition-feedback-item').dataset.condition}”不准确的原因。`); return false; } return true; }
+    function selectAiFeedback(button) { selectedAiFeedback=button.dataset.feedback; document.querySelectorAll('.feedback-option').forEach(item=>item.classList.toggle('is-selected',item===button)); document.getElementById('inaccuracySection').hidden=selectedAiFeedback!=='inaccurate'; document.getElementById('submitAiFeedback').disabled=false; }
+    function saveAiFeedback() { if(!selectedAiFeedback) { showToast('请选择 AI 判断是否准确后再暂存。'); return; } if(!validateConditionFeedback()) return; showToast('AI 审单结果反馈已暂存，不影响单据实际审批。'); }
+    function submitAiFeedback() { if(!selectedAiFeedback) { showToast('请选择 AI 判断是否准确。'); return; } if(!validateConditionFeedback()) return; showToast('AI 审单结果反馈已提交，仅用于影子审批评估，不改变单据实际审批结果。'); }
+    function alignExpenseAllocations() {
+      const allocationRows=activePaymentDocument ? activePaymentDocument.expenses.map(([type,amount,reason])=>[
+        '1',type,activePaymentDocument.project,activePaymentDocument.applicant,activePaymentDocument.department,activePaymentDocument.department,activePaymentDocument.project==='无关联项目'?'—':'¥ 168,000.00',amount,reason
+      ]) : isNonProjectApproval ? [
+        ['1','固定资产','—','陈敏','行政部','行政支持组','¥ 260,000.00','¥ 36,000.00','教学中心投影仪采购'],
+        ['1','管理费用','—','陈敏','行政部','行政支持组','¥ 120,000.00','¥ 6,500.00','会议室预约系统年度服务']
+      ] : [
+        ['1','差旅－交通','目的班级','刘宇鑫','教学运营部','教学运营组','¥ 168,000.00','¥ 960.00','北京客户拜访交通费'],
+        ['1','差旅－住宿','目的班级','刘宇鑫','教学运营部','教学运营组','¥ 168,000.00','¥ 600.00','北京客户拜访住宿费']
+      ];
+      const headers=['序号','费用类型','项目','分摊人','分摊人部门','费用承担团队','预算余额','分摊金额（人民币）','事由'];
+      if (isReimbursementApproval && !isNonProjectApproval) {
+        headers.splice(8, 0, '金额（外币，USD）');
+        allocationRows.forEach((row, index) => row.splice(8, 0, index === 0 ? 'USD 133.70' : 'USD 83.60'));
+      }
+      document.querySelectorAll('.expense-panel[data-expense-panel="allocation"] .mini-table').forEach((table,index)=>{
+        const values=allocationRows[index]; if(!values) { table.closest('.expense-group').hidden=true; return; }
+        table.innerHTML=`<thead><tr>${headers.map(header=>`<th>${header}</th>`).join('')}</tr></thead><tbody><tr>${values.map(value=>`<td>${value}</td>`).join('')}</tr></tbody>`;
+      });
+      const expenseTitle=[...document.querySelectorAll('.card-title')].find(title=>title.textContent.includes('费用、发票与业务材料'));
+      if(expenseTitle) expenseTitle.lastChild.nodeValue='费用明细';
+    }
+    function alignInvoiceAndAttachments() {
+      const invoiceHeaders=['序号','发票号码','发票类型','价税合计（元）','税率','税额','开票公司','购买方主体','购买方税号','开票日期','核验结果','操作'];
+      const invoiceGroups=[
+        [
+          ['1','26952000002709459496','电子普通发票','600.00','6%','33.96','北京交通服务有限公司','博商管理集团有限公司','91440300BS2026001','2026-07-29','核验通过'],
+          ['2','26952000002709459497','电子普通发票','360.00','6%','20.38','北京交通服务有限公司','博商管理集团有限公司','91440300BS2026001','2026-07-30','核验通过']
+        ],
+        [
+          ['1','031001900111','增值税普通发票','600.00','6%','33.96','北京金桥酒店有限公司','博商管理集团有限公司','91440300BS2026001','2026-07-30','核验通过']
+        ]
+      ];
+      const attachmentGroups=[
+        [
+          ['合同','选填','用于关联本费用类型对应的合同文件。','项目费用合同.pdf'],
+          ['其他说明材料','选填','用于补充当前费用类型的特殊业务背景或例外说明。','尚未上传']
+        ],
+        [
+          ['合同','选填','用于关联本费用类型对应的合同文件。','尚未上传'],
+          ['其他说明材料','选填','用于补充当前费用类型的特殊业务背景或例外说明。','尚未上传']
+        ]
+      ];
+      if(approvalDocumentNo === 'PAY-20260805-0081') {
+        invoiceGroups.splice(0,invoiceGroups.length,
+          [['1','044032600208','增值税专用发票','36,000.00','13%','4,141.59','深圳高新设备有限公司','深圳市博商管理咨询有限公司','91440300BS2026002','2026-08-03','核验通过']],
+          [['1','031002600207','电子普通发票','6,500.00','6%','367.92','深圳云智软件有限公司','深圳市博商管理咨询有限公司','91440300BS2026002','2026-08-04','核验通过']]
+        );
+        attachmentGroups.splice(0, attachmentGroups.length,
+          [
+            ['合同','选填','用于关联固定资产采购对应的合同文件。','办公设备采购合同.pdf'],
+            ['其他说明材料','选填','用于补充当前采购事项的特殊说明。','尚未上传']
+          ],
+          [
+            ['合同','选填','用于关联软件服务对应的合同文件。','会议室预约系统服务合同.pdf'],
+            ['其他说明材料','选填','用于补充当前服务事项的特殊说明。','尚未上传']
+          ]
+        );
+      }
+      document.querySelectorAll('.expense-group').forEach((group,index)=>{
+        const invoicePanel=group.querySelector('[data-expense-panel="invoice"]');
+        const attachmentPanel=group.querySelector('[data-expense-panel="attachment"]');
+        const invoices=invoiceGroups[index]; const attachments=attachmentGroups[index];
+        if(invoices) invoicePanel.innerHTML=`<div class="table-wrap"><table class="approval-invoice-table"><thead><tr>${invoiceHeaders.map(header=>`<th>${header}</th>`).join('')}</tr></thead><tbody>${invoices.map(row=>`<tr>${row.map((value,column)=>`<td${column===10?' class="invoice-result"':''}>${value}</td>`).join('')}<td><button class="invoice-view" type="button" onclick="showToast('原型演示：查看发票原件。')">查看</button></td></tr>`).join('')}</tbody></table></div>`;
+        if(attachments) attachmentPanel.innerHTML=`<div class="approval-attachment-guidance">附件仅归属于当前费用类型，用于该类型的业务核验。</div><div class="approval-attachment-list">${attachments.map(([name,state,description,file])=>`<article class="approval-attachment"><div class="approval-attachment-head"><strong>${name}</strong><span class="approval-attachment-state${state==='必传'?' required':''}">${state}</span></div><div class="approval-attachment-description">${description}</div><div class="approval-attachment-file${file==='尚未上传'?' missing':''}">${file}</div></article>`).join('')}</div>`;
+      });
+    }
+    function renderReadonlyInvoiceTable(invoices) {
+      const headers=['序号','发票号码','发票类型','价税合计（元）','税率','税额','开票公司','购买方主体','购买方税号','开票日期','核验结果'];
+      const rows=invoices.map((invoice,index)=>{
+        const amount=Number(String(invoice[2]).replace(/,/g,''));
+        const tax=(amount-amount/1.06).toFixed(2);
+        return [index+1,invoice[0],invoice[1],invoice[2],'6%',tax,invoice[3],'博商管理集团有限公司','91440300BS2026001',invoice[4],'核验通过'];
+      });
+      return `<div class="table-wrap"><table class="approval-invoice-table"><thead><tr>${headers.map(header=>`<th>${header}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map((value,index)=>`<td${index===10?' class="invoice-result"':''}>${value}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    }
+    function alignReimbursementInvoiceTables() {
+      if (!isReimbursementApproval) return;
+      const invoiceGroups=isNonProjectApproval
+        ? [[['142032600048','电子普通发票','880.00','深圳市城市交通服务有限公司','2026-08-03']],[['142032600052','电子普通发票','400.00','深圳市会务餐饮有限公司','2026-08-04']]]
+        : [[['033002600104','电子普通发票','2,380.00','深圳市优品办公用品有限公司','2026-08-02']]];
+      document.querySelectorAll('.expense-panel[data-expense-panel="invoice"]').forEach((panel,index)=>{
+        if (invoiceGroups[index]) panel.innerHTML=renderReadonlyInvoiceTable(invoiceGroups[index]);
+      });
+    }
+    function removeExpenseCardNotes() {
+      [...document.querySelectorAll('.card-title')]
+        .filter(title=>title.textContent.includes('费用、发票与业务材料'))
+        .forEach(title=>title.closest('.card')?.querySelector('.card-note')?.remove());
+    }
+    applyDocumentRemarks();
+    applyApprovalDocumentExample();
+    alignExpenseAllocations();
+    alignInvoiceAndAttachments();
+    renderConditionFeedback();
+    applyApprovalEntryMode();
+    applyTodoApprovalFields();
+    applyReimbursementApprovalMode();
+    if (isReimbursementApproval && new URLSearchParams(window.location.search).get('from') === 'todo') applyTodoApprovalFields();
+    alignReimbursementInvoiceTables();
+    removeExpenseCardNotes();
+  </script>
+  <script src="prototype-navigation.js"></script>
+</body>
+</html>
+

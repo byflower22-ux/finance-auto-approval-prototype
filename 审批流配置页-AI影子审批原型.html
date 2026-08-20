@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>审批流配置｜AI 影子审批原型</title>
+  <style>
+    :root { --nav:#1f3156; --nav-hover:#2c4472; --blue:#2864ee; --blue-deep:#1e4fd4; --blue-soft:#edf3ff; --ink:#18243a; --muted:#6d7a91; --line:#e3e9f2; --page:#f5f7fb; --green:#147a60; --green-soft:#eaf8f3; --amber:#9a6500; --amber-soft:#fff6e4; --red:#c13c4a; --purple:#7656d9; }
+    * { box-sizing:border-box; }
+    body { min-width:1180px; margin:0; color:var(--ink); background:var(--page); font:14px/1.45 "Microsoft YaHei","PingFang SC",Arial,sans-serif; }
+    button,input,select { font:inherit; }
+    button { cursor:pointer; }
+    .topbar { position:fixed; z-index:10; top:0; right:0; left:0; display:flex; align-items:center; justify-content:space-between; height:62px; padding:0 25px 0 22px; background:#fff; border-bottom:1px solid var(--line); }
+    .brand { display:flex; gap:11px; align-items:center; color:#273959; font-size:18px; font-weight:700; }
+    .brand-mark { display:grid; width:25px; height:25px; place-items:center; color:#fff; background:#e75159; border-radius:7px 12px 7px 12px; transform:rotate(45deg); }
+    .brand-mark span { font-size:13px; transform:rotate(-45deg); }
+    .top-actions { display:flex; gap:19px; align-items:center; color:var(--muted); font-size:12px; }
+    .avatar { display:grid; width:29px; height:29px; place-items:center; color:#fff; background:#e05358; border-radius:50%; }
+    .sidebar { position:fixed; z-index:5; top:62px; bottom:0; left:0; width:204px; padding:16px 12px; color:#cbd5e7; background:var(--nav); }
+    .side-title { display:flex; align-items:center; justify-content:space-between; padding:5px 11px 13px; color:#fff; font-size:13px; font-weight:700; }
+    .nav-item { display:flex; gap:10px; align-items:center; min-height:37px; padding:0 12px; color:#c2cde0; border-radius:6px; font-size:13px; }
+    .nav-item.active { color:#fff; background:var(--nav-hover); font-weight:700; }
+    .nav-sub { margin:3px 0 4px 37px; padding:7px 0; color:#81a9fa; font-size:13px; }
+    .nav-sub.current { color:#fff; font-weight:700; }
+    .workspace { min-height:calc(100vh - 62px); margin:62px 0 0 204px; }
+    .crumb { display:flex; gap:9px; align-items:center; height:44px; padding:0 27px; color:var(--muted); background:#fff; border-bottom:1px solid var(--line); font-size:12px; }
+    .crumb strong { color:var(--ink); }
+    .content { max-width:1510px; padding:19px 27px 54px; }
+    .toolbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; }
+    .toolbar-left,.toolbar-right { display:flex; gap:9px; align-items:center; }
+    .btn { min-height:34px; padding:0 14px; color:#47556d; background:#fff; border:1px solid #d6deeb; border-radius:6px; }
+    .btn:hover { color:var(--blue); border-color:#96b6f9; }
+    .btn.primary { color:#fff; background:var(--blue); border-color:var(--blue); }
+    .btn.primary:hover { background:var(--blue-deep); }
+    .btn.minor { min-height:29px; padding:0 10px; font-size:12px; }
+    .draft { padding:5px 10px; color:var(--amber); background:var(--amber-soft); border:1px solid #fae6b8; border-radius:99px; font-size:12px; }
+    .card { margin-bottom:16px; background:#fff; border:1px solid var(--line); border-radius:9px; box-shadow:0 7px 19px rgba(27,49,93,.045); }
+    .card-head { display:flex; align-items:center; justify-content:space-between; min-height:53px; padding:0 18px; border-bottom:1px solid var(--line); }
+    .card-title { display:flex; gap:9px; align-items:center; color:#263854; font-size:15px; font-weight:700; }
+    .num { display:grid; width:23px; height:23px; place-items:center; color:var(--blue); background:var(--blue-soft); border-radius:50%; font-size:12px; }
+    .card-note { color:var(--muted); font-size:12px; }
+    .card-body { padding:17px 18px; }
+    .flow-meta { display:grid; grid-template-columns:1.15fr 1fr .85fr 1.3fr; gap:14px 24px; }
+    .field label { display:block; margin:0 0 7px; color:#526078; font-size:12px; font-weight:600; }
+    .input,select { width:100%; height:34px; padding:0 10px; color:#2d3c55; background:#fff; border:1px solid #d8e0ec; border-radius:5px; outline:0; }
+    .readonly { display:flex; align-items:center; min-height:34px; padding:0 10px; color:#52627b; background:#f7f9fc; border:1px solid #edf0f5; border-radius:5px; }
+    .status-published { display:inline-flex; gap:5px; align-items:center; min-height:34px; padding:0 10px; color:var(--green); background:var(--green-soft); border:1px solid #caebdf; border-radius:5px; font-size:12px; }
+    .status-published::before { width:7px; height:7px; background:currentColor; border-radius:50%; content:""; }
+    .flow-canvas { display:flex; align-items:stretch; justify-content:center; gap:0; padding:14px 7px 4px; }
+    .flow-node { position:relative; width:174px; min-height:89px; padding:13px 14px; background:#fff; border:1px solid #d9e2ef; border-radius:8px; }
+    .flow-node.selected { background:#f8fbff; border:2px solid var(--blue); box-shadow:0 5px 14px rgba(40,100,238,.12); }
+    .flow-node .node-kicker { display:block; margin-bottom:6px; color:#7c8ba2; font-size:11px; }
+    .flow-node strong { display:block; color:#30405c; font-size:13px; }
+    .flow-node small { display:block; margin-top:4px; color:#8290a3; font-size:11px; }
+    .node-tag { display:inline-flex; margin-top:8px; padding:2px 6px; color:var(--blue); background:var(--blue-soft); border-radius:3px; font-size:10px; }
+    .flow-arrow { display:flex; flex:0 0 52px; align-items:center; justify-content:center; color:#9aabc0; font-size:20px; }
+    .ai-node-badge { position:absolute; top:-9px; right:10px; padding:3px 7px; color:#fff; background:var(--blue); border-radius:99px; font-size:10px; font-weight:700; }
+    .ai-config-title { display:flex; gap:10px; align-items:center; }
+    .ai-state { display:inline-flex; gap:5px; align-items:center; padding:4px 8px; color:var(--green); background:var(--green-soft); border-radius:99px; font-size:11px; }
+    .ai-state.off { color:#7a899f; background:#f0f3f7; }
+    .switch { position:relative; display:inline-flex; width:42px; height:23px; padding:0; background:#c8d1df; border:0; border-radius:99px; transition:.18s ease; }
+    .switch::after { position:absolute; top:3px; left:3px; width:17px; height:17px; background:#fff; border-radius:50%; box-shadow:0 1px 3px rgba(20,39,73,.25); content:""; transition:.18s ease; }
+    .switch.on { background:var(--blue); }
+    .switch.on::after { left:22px; }
+    .shadow-notice { display:flex; gap:10px; align-items:flex-start; margin-bottom:15px; padding:12px 14px; color:#405b85; background:#f6f9ff; border:1px solid #d6e4ff; border-radius:7px; font-size:12px; }
+    .shadow-notice strong { color:#2c4e85; }
+    .integration { display:grid; grid-template-columns:1fr 29px 1fr 29px 1.1fr 29px 1fr; align-items:center; margin-bottom:16px; padding:14px; background:#fbfcff; border:1px solid #e3e9f4; border-radius:8px; }
+    .integration-box { min-height:85px; padding:12px; background:#fff; border:1px solid #dce5f1; border-radius:7px; }
+    .integration-box strong { display:block; color:#33445f; font-size:13px; }
+    .integration-box span { display:block; margin-top:4px; color:#7b899f; font-size:11px; line-height:1.5; }
+    .integration-box.highlight { border-color:#9dbcf3; background:#f6f9ff; }
+    .integration-box.highlight strong { color:#2856aa; }
+    .integration-arrow { color:#91a5c3; text-align:center; font-size:18px; }
+    .config-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:15px 25px; }
+    .config-grid .full { grid-column:1 / -1; }
+    .field-hint { margin-top:5px; color:#8a97aa; font-size:11px; }
+    .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+    .mode-option { position:relative; min-height:91px; padding:13px 14px 13px 40px; background:#fff; border:1px solid #dce4ef; border-radius:7px; }
+    .mode-option.active { background:#f7faff; border-color:#8fb3f7; }
+    .mode-option.locked { color:#7f8da1; background:#fafbfc; }
+    .mode-option input { position:absolute; top:15px; left:14px; accent-color:var(--blue); }
+    .mode-option strong { display:block; color:#34445e; font-size:13px; }
+    .mode-option.locked strong { color:#78879b; }
+    .mode-option span { display:block; margin-top:5px; color:#77869c; font-size:11px; line-height:1.55; }
+    .scope-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px 26px; }
+    .scope-field { padding:13px 14px; background:#fbfcff; border:1px solid #e1e8f2; border-radius:7px; }
+    .scope-field label { display:block; margin-bottom:9px; color:#495a73; font-size:12px; font-weight:700; }
+    .scope-field .sub { margin:-4px 0 10px; color:#8a97aa; font-size:11px; }
+    .chips { display:flex; flex-wrap:wrap; gap:7px; }
+    .chip { display:inline-flex; gap:5px; align-items:center; padding:5px 8px; color:#36517b; background:#fff; border:1px solid #d7e0ee; border-radius:4px; font-size:12px; }
+    .chip.selected { color:#2457b6; background:#edf3ff; border-color:#acc5f7; }
+    .chip::before { color:inherit; content:"✓"; font-size:10px; }
+    .range { display:flex; gap:8px; align-items:center; }
+    .range input { width:100%; height:31px; padding:0 8px; color:#40506a; border:1px solid #d8e0ec; border-radius:4px; }
+    .range span { color:#8290a2; font-size:12px; }
+    .rule-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+    .rule-item { min-height:135px; padding:14px; background:#fff; border:1px solid #dde5f0; border-radius:7px; }
+    .rule-item .rule-top { display:flex; align-items:center; justify-content:space-between; }
+    .rule-item strong { color:#35455f; font-size:13px; }
+    .rule-item p { min-height:34px; margin:8px 0; color:#77869c; font-size:11px; line-height:1.55; }
+    .rule-state { display:inline-flex; padding:3px 6px; color:var(--green); background:var(--green-soft); border-radius:3px; font-size:10px; }
+    .rule-state.review { color:var(--amber); background:var(--amber-soft); }
+    .rule-link { padding:0; color:var(--blue); background:transparent; border:0; font-size:11px; }
+    .admission { display:grid; grid-template-columns:1.1fr .9fr; overflow:hidden; border:1px solid #dce5f1; border-radius:8px; }
+    .admission-main { padding:16px; background:#fbfcff; }
+    .admission-main h4 { margin:0 0 5px; color:#33455f; font-size:14px; }
+    .admission-main p { margin:0 0 13px; color:#7c8b9f; font-size:12px; }
+    .admission-checks { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+    .admission-check { display:flex; gap:8px; align-items:flex-start; padding:9px 10px; color:#54657d; background:#fff; border:1px solid #e0e7f0; border-radius:5px; font-size:11px; }
+    .admission-check b { display:grid; flex:0 0 auto; width:17px; height:17px; place-items:center; color:#8696ab; background:#eef2f7; border-radius:50%; font-size:10px; }
+    .admission-lock { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; color:#7b899e; background:#f6f8fb; border-left:1px solid #dfe6f0; text-align:center; }
+    .lock-icon { display:grid; width:33px; height:33px; margin-bottom:8px; place-items:center; color:#6c7f99; background:#e8edf4; border-radius:50%; font-size:15px; }
+    .admission-lock strong { color:#596b84; font-size:13px; }
+    .admission-lock span { max-width:215px; margin-top:5px; font-size:11px; line-height:1.55; }
+    .fallback { display:flex; gap:13px; align-items:flex-start; padding:14px 15px; background:#fffbf4; border:1px solid #f3dfb5; border-radius:7px; }
+    .fallback-icon { display:grid; flex:0 0 auto; width:25px; height:25px; place-items:center; color:var(--amber); background:#fff2d7; border-radius:50%; font-size:13px; }
+    .fallback strong { display:block; color:#6b5225; font-size:13px; }
+    .fallback span { display:block; margin-top:4px; color:#887450; font-size:12px; }
+    .toast { position:fixed; z-index:30; right:26px; bottom:24px; display:none; padding:11px 15px; color:#fff; background:#263b61; border-radius:6px; box-shadow:0 10px 28px rgba(28,47,81,.22); }
+    .toast.show { display:block; }
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><span class="brand-mark"><span>博</span></span>博商管理</div><div class="top-actions"><span>▦ 应用中心</span><span>● 帮助手册</span><span>▣ 日程</span><span>◆ 模块</span><span class="avatar">超</span><span>超级管理员⌄</span></div></header>
+  <aside class="sidebar"><div class="side-title"><span>⌂ 办公管理</span><span>⌄</span></div><div class="nav-item">▣ 申请</div><div class="nav-item active">⌘ 流程</div><div class="nav-sub current">审批流程</div><div class="nav-sub">流程分类</div><div class="nav-item">▥ 审批</div><div class="nav-item">▦ 记录</div><div class="nav-item">● 日程</div><div class="nav-item">◆ 项目计划</div><div class="nav-item">✦ 同学会</div><div class="nav-item">◉ 研企管理</div><div class="nav-item">◈ 智服系统</div><div class="nav-item">▤ 证书管理</div><div class="nav-item">▦ 智能报表</div><div class="nav-item">◌ 统计分析</div></aside>
+  <main class="workspace">
+    <div class="crumb"><span>办公管理</span><span>/</span><span>流程</span><span>/</span><span>审批流程</span><span>/</span><strong>付款审批流</strong><span style="margin-left:auto;color:#2864ee">AI 自动审批 · 首期影子审批配置</span></div>
+    <div class="content">
+      <div class="toolbar"><div class="toolbar-left"><button class="btn primary" onclick="saveConfig('已保存审批流配置草稿。')">保存</button><button class="btn" onclick="showToast('原型演示：配置已恢复至上次保存状态。')">取消</button></div><div class="toolbar-right"><span class="draft">● 已发布版本 v3.2 · 编辑中</span></div></div>
+      <section class="card"><div class="card-head"><div class="card-title"><span class="num">1</span>流程基础信息</div><span class="card-note">本页仅配置财务审批节点的 AI 审单能力，不改变现有审批责任边界</span></div><div class="card-body"><div class="flow-meta"><div class="field"><label>流程名称</label><input class="input" value="付款审批流"></div><div class="field"><label>流程编码</label><div class="readonly">PAYMENT_APPROVAL_V3</div></div><div class="field"><label>流程状态</label><div class="status-published">已启用</div></div><div class="field"><label>最后修改</label><div class="readonly">超级管理员 · 2026-08-05 16:45</div></div></div></div></section>
+      <section class="card"><div class="card-head"><div class="card-title"><span class="num">2</span>审批节点</div><span class="card-note">选择财务节点配置 AI 审单</span></div><div class="card-body"><div class="flow-canvas"><div class="flow-node"><span class="node-kicker">发起</span><strong>员工提交付款单</strong><small>申请与费用材料提交</small></div><div class="flow-arrow">→</div><div class="flow-node"><span class="node-kicker">业务审批</span><strong>按既有流程审批</strong><small>不接入 AI 审单</small></div><div class="flow-arrow">→</div><div id="financeApprovalNode" class="flow-node selected"><span class="ai-node-badge">AI 审单</span><span class="node-kicker">财务审批</span><strong>财务人工审批</strong><small>AI 输出建议，人工结论生效</small><span class="node-tag">当前配置节点</span></div><div class="flow-arrow">→</div><div class="flow-node"><span class="node-kicker">完成</span><strong>付款执行</strong><small>按现有付款流程处理</small></div></div></div></section>
+      <section class="card"><div class="card-head"><div class="ai-config-title"><div class="card-title"><span class="num">3</span>财务节点 AI 审单</div><span id="aiState" class="ai-state">● 已启用</span></div><button id="aiReviewSwitch" class="switch on" type="button" aria-checked="true" onclick="toggleAiReview(this)" title="启用或停用 AI 审单"></button></div><div class="card-body">
+        <div class="shadow-notice"><span>◈</span><span><strong>首期运行方式：影子审批（首期）。</strong>AI 在单据进入财务审批节点时完成审单并展示建议；财务人员仍逐笔通过、驳回或退回补件，人工结论是唯一生效结论。</span></div>
+        <div class="integration"><div class="integration-box"><strong>付款审批系统</strong><span>提交审单快照、费用类型、分摊、发票与附件</span></div><div class="integration-arrow">→</div><div class="integration-box highlight"><strong>小龙虾</strong><span>审单编排、数据汇聚、规则校验与结果回写</span></div><div class="integration-arrow">→</div><div class="integration-box highlight"><strong>腾讯 ClawPro</strong><span>读取发票图片、PDF 等多模态附件，输出结构化识别结果与证据</span></div><div class="integration-arrow">→</div><div class="integration-box"><strong>AI 审单建议</strong><span>建议通过 / 建议驳回 / 建议复核及风险证据</span></div></div>
+        <div class="config-grid"><div class="field"><label>AI 服务商</label><div class="readonly">小龙虾（多模态审单接入）</div></div><div class="field"><label>多模态识别能力</label><div class="readonly">腾讯 ClawPro</div></div><div class="field"><label>触发时机</label><select><option selected>进入“财务审批”节点时</option><option>业务审批完成后预审</option></select></div><div class="field"><label>审单结果展示</label><select><option selected>财务审批页 + 审批详情页</option><option>仅财务审批页</option></select></div><div class="field"><label>审单超时</label><select><option selected>5 分钟后转人工复核</option><option>10 分钟后转人工复核</option></select><div class="field-hint">AI 未返回结果时不阻塞财务人工审批。</div></div><div class="field"><label>结果留存</label><div class="readonly">审单快照、规则命中、证据与人工结论</div></div><div class="field full"><label>审批运行模式</label><div class="mode-grid"><label class="mode-option active"><input type="radio" name="mode" checked><strong>影子审批（首期）</strong><span>AI 生成审单建议与证据；财务人员必须完成实际审批。用于至少 15 个工作日的准确性观察与策略优化。</span></label><label class="mode-option locked"><input type="radio" name="mode" disabled><strong>自动审批（后续阶段） 🔒</strong><span>仅在影子审批达标后按场景逐步开放；当前不可启用，也不会自动通过或自动驳回任何单据。</span></label></div></div></div>
+      </div></section>
+      <section class="card"><div class="card-head"><div class="card-title"><span class="num">4</span>影子审批适用范围</div><span class="card-note">仅命中以下条件的付款单会在财务节点触发 AI 审单</span></div><div class="card-body"><div class="scope-grid"><div class="scope-field"><label>适用组织</label><div class="sub">在所选组织下发起的付款单均进入影子审单</div><div class="chips"><span class="chip selected">博商集团</span><span class="chip selected">深圳市博商管理科学研究院股份有限公司</span></div></div><div class="scope-field"><label>付款类型</label><div class="sub">统一付款单的适用场景</div><div class="chips"><span class="chip selected">付款 / 项目付款</span><span class="chip selected">固定资产采购</span></div></div><div class="scope-field"><label>费用类型</label><div class="sub">首期先覆盖规则较完整的类型；可继续添加</div><div class="chips"><span class="chip selected">固定人工－工资</span><span class="chip selected">差旅－交通</span><span class="chip selected">差旅－住宿</span><span class="chip selected">业务招待</span><button class="btn minor" type="button" onclick="showToast('原型演示：可在此选择更多费用类型。')">＋ 添加</button></div></div><div class="scope-field"><label>金额范围</label><div class="sub">金额超出范围仍进入财务人工审批，不进入首期影子评估样本</div><div class="range"><input value="0" aria-label="最低金额"><span>至</span><input value="100,000" aria-label="最高金额"><span>元</span></div></div></div></div></section>
+      <section class="card"><div class="card-head"><div class="card-title"><span class="num">5</span>审单策略与建议结论</div><span class="card-note">规则与多模态识别共同输出建议；规则不完整或证据不足时优先建议复核</span></div><div class="card-body"><div class="rule-grid"><article class="rule-item"><div class="rule-top"><strong>建议通过</strong><span class="rule-state">已配置</span></div><p>材料齐全、发票识别与验真正常、金额及业务规则均无异常，且证据完整。</p><button class="rule-link" type="button" onclick="showToast('原型演示：查看“建议通过”规则清单。')">查看规则（12）</button></article><article class="rule-item"><div class="rule-top"><strong>建议驳回</strong><span class="rule-state">已配置</span></div><p>命中明确禁止规则或权威数据不一致，例如重复报销、无效发票、金额超限且无例外依据。</p><button class="rule-link" type="button" onclick="showToast('原型演示：查看“建议驳回”规则清单。')">查看规则（8）</button></article><article class="rule-item"><div class="rule-top"><strong>建议复核</strong><span class="rule-state review">默认兜底</span></div><p>材料缺失、识别置信度不足、规则冲突或数据查询异常时，统一转财务人员复核。</p><button class="rule-link" type="button" onclick="showToast('原型演示：查看“建议复核”规则清单。')">查看规则（6）</button></article></div></div></section>
+      <section class="card"><div class="card-head"><div class="card-title"><span class="num">6</span>自动化准入条件</div><span class="card-note">首期仅记录与评估，不满足全部条件前不可开启自动通过或自动驳回</span></div><div class="card-body"><div class="admission"><div class="admission-main"><h4>影子审批达标后，按费用类型和规则场景逐步申请自动化</h4><p>配置页仅展示统一准入口径；实际是否开放，由影子评估看板与财务负责人共同确认。</p><div class="admission-checks"><div class="admission-check"><b>1</b><span>影子审批不少于 <strong>15 个工作日</strong></span></div><div class="admission-check"><b>2</b><span>自动通过候选与人工结论 <strong>100% 一致</strong>，且无实质风险漏放</span></div><div class="admission-check"><b>3</b><span>自动驳回候选与人工结论 <strong>100% 一致</strong>，且每笔有可复核证据</span></div><div class="admission-check"><b>4</b><span>数据缺失、模型异常、规则冲突均已验证 <strong>转财务人工复核</strong></span></div></div></div><div class="admission-lock"><span class="lock-icon">🔒</span><strong>自动审批未启用</strong><span>待影子评估达标、审计与降级回滚验证完成后，由财务管理员按场景开启。</span></div></div></div></section>
+      <section class="card"><div class="card-head"><div class="card-title"><span class="num">7</span>异常与人工兜底</div><span class="card-note">确保 AI 异常不会阻塞现有付款审批流程</span></div><div class="card-body"><div class="fallback"><span class="fallback-icon">!</span><div><strong>小龙虾或腾讯 ClawPro 调用超时、附件无法读取、外部数据缺失、规则冲突或证据不足</strong><span>系统记录异常原因与原始数据状态，并将审单建议标记为“建议复核”，转财务人工复核。财务可不等待 AI 结果，继续作出实际审批结论。</span></div></div></div></section>
+    </div>
+  </main>
+  <div id="toast" class="toast">操作已记录</div>
+  <script>
+    function showToast(message) { const toast=document.getElementById('toast'); toast.textContent=message; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),2600); }
+    function toggleAiReview(button) { const enabled=button.classList.toggle('on'); button.setAttribute('aria-checked',String(enabled)); const state=document.getElementById('aiState'); state.textContent=enabled?'● 已启用':'● 已停用'; state.classList.toggle('off',!enabled); if(!enabled) { state.classList.remove('ai-state'); state.classList.add('ai-state','off'); showToast('AI 审单已停用：单据将按原财务人工审批流程处理。'); } else { state.classList.remove('off'); showToast('AI 审单已启用：将在财务审批节点以影子模式运行。'); } }
+    function saveConfig(message) { showToast(message); }
+  </script>
+  <script src="prototype-navigation.js"></script>
+</body>
+</html>
