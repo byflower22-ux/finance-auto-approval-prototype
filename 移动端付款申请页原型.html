@@ -1,0 +1,1236 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>付款申请｜移动端</title>
+  <style>
+    :root { --red:#df3f43; --red-dark:#c93438; --page:#f5f6fa; --line:#edf0f4; --ink:#202632; --muted:#8b929e; --soft:#f7f8fb; --blue:#3274e8; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:#e9edf3; font:14px/1.45 "Microsoft YaHei", "PingFang SC", Arial, sans-serif; }
+    button, input, select, textarea { font:inherit; }
+    button { cursor:pointer; }
+    .mobile-shell { width:min(100%, 430px); min-height:100vh; margin:0 auto; padding-bottom:88px; background:var(--page); }
+    .mobile-topbar { position:sticky; z-index:8; top:0; color:#fff; background:var(--red); box-shadow:0 1px 0 rgba(0,0,0,.05); }
+    .statusbar { height:29px; display:flex; align-items:end; justify-content:space-between; padding:0 22px 6px; font-size:13px; font-weight:700; }
+    .status-icons { font-size:12px; letter-spacing:3px; }
+    .navrow { height:56px; display:grid; grid-template-columns:52px 1fr 52px; align-items:center; }
+    .navrow button, .navrow a { width:52px; height:56px; display:grid; place-items:center; color:#fff; background:transparent; border:0; text-decoration:none; }
+    .back { font-size:35px; font-weight:200; line-height:1; }
+    .navrow strong { text-align:center; font-size:17px; }
+    .draft-link { font-size:14px; font-weight:600; }
+    .page-caption { display:flex; align-items:center; justify-content:space-between; padding:13px 16px 8px; color:#6f7888; font-size:12px; }
+    .page-caption span { color:#a1a8b4; }
+    .application-stepper { display:grid; grid-template-columns:repeat(2,1fr); gap:0; margin:0 12px 10px; padding:10px 0 2px; background:#fff; border:1px solid #e7ebf1; border-radius:8px; }
+    .application-step { position:relative; display:flex; flex-direction:column; align-items:center; gap:5px; color:#a2aab6; background:transparent; border:0; font-size:11px; }
+    .application-step::after { position:absolute; top:11px; left:calc(50% + 16px); width:calc(100% - 32px); height:1px; background:#e2e6ed; content:''; }
+    .application-step:last-child::after { display:none; }
+    .application-step-dot { position:relative; z-index:1; display:grid; place-items:center; width:23px; height:23px; color:#9da6b3; background:#f3f5f8; border:1px solid #dfe4eb; border-radius:50%; font-size:11px; }
+    .application-step.active { color:#c93438; font-weight:700; }
+    .application-step.active .application-step-dot { color:#fff; background:var(--red); border-color:var(--red); }
+    .application-step.done { color:#5574a6; }
+    .application-step.done .application-step-dot { color:#fff; background:#6d8fc5; border-color:#6d8fc5; }
+    .application-step.done::after { background:#9fb5d8; }
+    .mobile-section { margin:0 0 12px; background:transparent; }
+    .step-panel[hidden] { display:none; }
+    .section-title { display:flex; align-items:center; justify-content:space-between; min-height:46px; margin:0; padding:0 16px; color:#202632; background:#fff; border-bottom:1px solid #e6eaf0; font-size:16px; font-weight:700; }
+    .section-title small { color:var(--muted); font-size:12px; font-weight:400; }
+    .form-row { min-height:51px; display:flex; align-items:center; gap:12px; padding:0 16px; background:#fff; border-bottom:1px solid var(--line); }
+    .form-row:last-child { border-bottom:0; }
+    .form-row.field-error { background:#fff8f8; }
+    .form-row.field-error .form-label { color:var(--red); font-weight:700; }
+    .form-row.field-error .form-control, .form-row.field-error .picker-value { color:var(--red); }
+    .loan-details.field-error { background:#fff8f8; }
+    .form-label { min-width:92px; color:#727b89; }
+    .form-label.req::after { margin-left:3px; color:var(--red); content:'*'; }
+    .form-control, .form-value { flex:1; min-width:0; min-height:42px; display:flex; align-items:center; padding:0 12px; color:#2b303a; text-align:left; background:#f8fafc; border:1px solid #dfe4ec; border-radius:8px; outline:0; }
+    .form-control { height:42px; min-height:42px; border:1px solid #dfe4ec; border-radius:8px; }
+    select.form-control { appearance:none; padding-right:31px; background-color:#f8fafc; background-image:linear-gradient(45deg, transparent 50%, #8c96a5 50%), linear-gradient(135deg, #8c96a5 50%, transparent 50%); background-position:calc(100% - 14px) 17px, calc(100% - 8px) 17px; background-size:6px 6px; background-repeat:no-repeat; }
+    input.form-control::placeholder, textarea.form-control::placeholder { color:#b2b8c2; }
+    .form-value { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    input.form-control, textarea.form-control { padding-right:0; background:transparent; border:0; border-radius:0; text-align:right; }
+    input.form-control.readonly-field { background:transparent; border:0; }
+    .form-value { justify-content:flex-end; text-align:right; }
+    .readonly-field { color:#8d96a5; background:transparent; border:0; border-radius:0; }
+    .picker-value { display:flex; align-items:center; justify-content:flex-end; gap:8px; color:#2b303a; background:transparent; border:0; border-radius:0; }
+    .picker-value::after { color:#aeb5c0; content:'›'; font-size:22px; line-height:1; }
+    .pick-row { width:100%; display:flex; align-items:center; justify-content:flex-end; gap:14px; }
+    .pick-row label { display:inline-flex; align-items:center; gap:5px; color:#4a5260; }
+    .pick-row input { width:16px; height:16px; margin:0; accent-color:var(--red); }
+    .subsection-title { min-height:40px; display:flex; align-items:center; margin-top:10px; padding:0 16px; color:#29384f; background:#fff; border-top:1px solid #e1e6ed; border-bottom:1px solid #e1e6ed; box-shadow:inset 3px 0 0 var(--red); font-size:13px; font-weight:700; }
+    .section-title + .subsection-title { margin-top:0; }
+    .project-row, .overseas-field, .loan-details { display:none; }
+    .project-row.show, .overseas-field.show, .loan-details.show { display:flex; }
+    .loan-details { margin-top:0; padding:12px 16px 14px; background:#fff8f8; border-top:1px solid #fee3e4; }
+    .loan-details.show { display:block; }
+    .loan-debt { display:flex; justify-content:space-between; margin-bottom:10px; color:#6e7480; font-size:13px; }
+    .loan-debt strong { color:var(--red); }
+    .loan-card { display:flex; align-items:center; gap:10px; padding:11px; background:#fff; border:1px solid #f0dddd; border-radius:6px; }
+    .loan-card input { width:17px; height:17px; margin:0; accent-color:var(--red); }
+    .loan-card div { flex:1; }
+    .loan-card b { display:block; color:#333b48; font-size:13px; }
+    .loan-card span { display:block; margin-top:2px; color:#979fab; font-size:12px; }
+    .loan-card em { color:#d74246; font-style:normal; font-weight:700; }
+    .loan-select-trigger { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:46px; padding:0 2px; color:#4a6fa9; background:transparent; border:0; border-bottom:1px solid #f0dddd; font-size:13px; text-align:left; }
+    .loan-select-trigger::after { color:#9ca6b4; content:'›'; font-size:22px; }
+    .selected-loan-card { margin-top:10px; padding:0 12px; background:#fff; border:1px solid #e4e8ee; border-radius:6px; }
+    .selected-loan-card + .selected-loan-card { margin-top:9px; }
+    .selected-loan-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .selected-loan-head strong { color:#333b48; font-size:13px; }
+    .selected-loan-head { min-height:43px; }
+    .selected-loan-head strong { color:#2e3948; font-size:14px; }
+    .selected-loan-head button { color:#df3f43; background:transparent; border:0; font-size:12px; }
+    .selected-loan-head .change-loan-document { font-size:0; }
+    .selected-loan-head .change-loan-document::after { content:'删除'; font-size:12px; }
+    .selected-loan-meta { display:grid; grid-template-columns:1fr 1fr; gap:5px 16px; padding:8px 0; color:#7d8795; border-top:1px solid #f0f2f5; font-size:11px; }
+    .selected-loan-meta span:nth-child(3), .selected-loan-meta span:nth-child(4) { color:#596575; }
+    .loan-offset-row { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:50px; padding:0; border-top:1px solid #f0f1f4; color:#5e6877; font-size:12px; }
+    .loan-offset-row label { white-space:nowrap; }
+    .loan-offset-row input { flex:1; width:auto; min-width:0; min-height:42px; height:42px; padding:0; color:#303845; background:transparent; border:0; border-radius:0; outline:0; text-align:right; }
+    .loan-offset-row input::placeholder { color:#b3bbc5; }
+    .loan-picker-tip { padding:9px 16px; color:#3274e8; background:#f2f7ff; font-size:12px; line-height:1.55; }
+    .loan-picker-search { display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--red); }
+    .loan-picker-search input { flex:1; height:34px; padding:0 11px; color:#303845; background:#fff; border:0; border-radius:6px; outline:0; }
+    .loan-picker-options { max-height:min(58vh, 470px); overflow:auto; }
+    .loan-picker-option { display:block; width:100%; padding:11px 16px; color:#303845; background:#fff; border:0; border-bottom:1px solid var(--line); text-align:left; }
+    .loan-picker-option.active { background:#fff7f7; }
+    .loan-picker-option-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .loan-picker-option-head strong { font-size:13px; }
+    .loan-picker-option-head span { color:#4d5664; font-size:12px; }
+    .loan-picker-option-head::before { width:17px; height:17px; margin-right:8px; border:1px solid #cfd5dd; border-radius:3px; content:''; }
+    .loan-picker-option.active .loan-picker-option-head::before { color:#fff; background:var(--red); border-color:var(--red); content:'✓'; font-size:12px; line-height:16px; text-align:center; }
+    .loan-picker-option-meta { display:grid; grid-template-columns:1fr 1fr; gap:3px 14px; margin:8px 0 0 25px; color:#7c8795; font-size:11px; }
+    .loan-picker-empty { padding:28px 16px; color:#9aa4b2; text-align:center; }
+    .labor-tax-field { display:none; }
+    .labor-tax-field.show { display:flex; }
+    #loanPickerModal { align-items:stretch; }
+    #loanPickerModal .modal-sheet { height:100%; display:flex; flex-direction:column; border-radius:0; }
+    #loanPickerModal .sheet-head { display:grid; grid-template-columns:52px 1fr 52px; flex:0 0 85px; padding:29px 0 0; color:#fff; background:var(--red); border-bottom:0; }
+    #loanPickerModal .sheet-head strong { text-align:center; }
+    #loanPickerModal .sheet-head button { color:#fff; }
+    #loanPickerModal .loan-picker-options { flex:1; max-height:none; }
+    .company-picker-options { flex:1; overflow:auto; background:#fff; }
+    .company-picker-option { display:block; width:100%; min-height:60px; padding:0 16px; color:#202632; background:#fff; border:0; border-bottom:1px solid #e6e9ee; font-size:15px; text-align:left; }
+    .company-picker-option.active { color:var(--red); font-weight:700; }
+    .company-picker-option.active::after { float:right; content:'✓'; }
+    #companyPickerModal { align-items:stretch; }
+    #companyPickerModal .modal-sheet { height:100%; display:flex; flex-direction:column; border-radius:0; }
+    #companyPickerModal .sheet-head { display:grid; grid-template-columns:52px 1fr 52px; flex:0 0 85px; padding:29px 0 0; color:#fff; background:var(--red); border-bottom:0; }
+    #companyPickerModal .sheet-head strong { text-align:center; }
+    #companyPickerModal .sheet-head button { color:#fff; }
+    .company-picker-search { display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--red); }
+    .company-picker-search input { flex:1; height:42px; padding:0 13px; color:#303845; background:#fff; border:0; border-radius:21px; outline:0; font-size:15px; }
+    .full-picker-modal { align-items:stretch; }
+    .full-picker-modal .modal-sheet { height:100%; display:flex; flex-direction:column; border-radius:0; }
+    .full-picker-modal .sheet-head { display:grid; grid-template-columns:52px 1fr 52px; flex:0 0 85px; padding:29px 0 0; color:#fff; background:var(--red); border-bottom:0; }
+    .full-picker-modal .sheet-head strong { text-align:center; }
+    .full-picker-modal .sheet-head button { color:#fff; }
+    .picker-search { padding:10px 12px; background:var(--red); }
+    .picker-search input { width:100%; height:42px; padding:0 13px; color:#303845; background:#fff; border:0; border-radius:21px; outline:0; font-size:15px; }
+    .employee-picker-search-row[hidden] { display:none; }
+    .employee-search-toggle { color:#fff !important; font-size:28px !important; font-weight:300; line-height:1; }
+    .employee-picker-breadcrumb { display:flex; align-items:center; gap:10px; min-height:58px; padding:0 16px; color:#a0a5af; background:#f7f7fb; border-bottom:1px solid #eef0f4; font-size:15px; }
+    .employee-picker-breadcrumb strong { color:var(--red); font-weight:500; }
+    .employee-picker-breadcrumb span { color:#c5c8cf; font-size:24px; font-weight:300; }
+    .employee-directory-group { padding:10px 16px; color:#555c66; background:#f3f3f3; font-size:13px; }
+    .employee-org-row { display:flex; align-items:center; justify-content:space-between; min-height:80px; padding:0 24px; color:#202632; background:#fff; border:0; border-bottom:1px solid #f0f1f4; font-size:17px; text-align:left; }
+    .employee-org-row::before { width:48px; height:48px; margin-right:14px; border:1px solid #e1e5ea; border-radius:50%; background:radial-gradient(circle at 50% 30%, #fff 0 8px, transparent 9px), radial-gradient(circle at 31% 65%, #fff 0 7px, transparent 8px), radial-gradient(circle at 69% 65%, #fff 0 7px, transparent 8px); box-shadow:inset 0 0 0 10px #fafbfc; content:''; }
+    .employee-org-row::after { color:#b8bdc5; content:'›'; font-size:32px; font-weight:200; }
+    .employee-member-row { display:flex; align-items:center; width:100%; min-height:80px; padding:0 22px 0 35px; color:#202632; background:#fff; border:0; border-bottom:1px solid #f0f1f4; text-align:left; }
+    .employee-member-avatar { display:grid; place-items:center; width:52px; height:52px; margin-right:14px; overflow:hidden; color:#8a5b36; background:#ffe2bd; border-radius:50%; font-size:24px; }
+    .employee-member-avatar.photo { color:#fff; background:#dfe4e9; }
+    .employee-member-main { min-width:0; flex:1; }
+    .employee-member-name { display:block; font-size:16px; }
+    .employee-member-department { display:block; margin-top:3px; color:#a0a5af; font-size:14px; }
+    .employee-member-phone { color:#aab2bc; font-size:25px; transform:rotate(-25deg); }
+    .employee-picker-modal .picker-foot { display:none; }
+    .picker-options { flex:1; overflow:auto; background:#fff; }
+    .project-picker-option, .employee-picker-option { position:relative; display:block; width:100%; padding:13px 16px 13px 48px; color:#303845; background:#fff; border:0; border-bottom:1px solid #e6e9ee; text-align:left; }
+    .project-picker-option::before, .employee-picker-option::before { position:absolute; top:17px; left:17px; width:19px; height:19px; border:1px solid #cfd5dd; border-radius:4px; content:''; }
+    .project-picker-option.active, .employee-picker-option.active { background:#fff7f7; }
+    .project-picker-option.active::before, .employee-picker-option.active::before { color:#fff; background:var(--red); border-color:var(--red); content:'✓'; font-size:13px; line-height:18px; text-align:center; }
+    .employee-picker-option::before { border-radius:50%; }
+    .employee-picker-option.active::before { content:'●'; font-size:12px; line-height:17px; }
+    .picker-option-title { display:block; font-size:15px; font-weight:700; }
+    .picker-option-meta { display:grid; grid-template-columns:1fr 1fr; gap:3px 12px; margin-top:5px; color:#8993a2; font-size:12px; }
+    .picker-foot { flex:0 0 auto; padding:11px 16px calc(11px + env(safe-area-inset-bottom)); background:#fff; border-top:1px solid #e6ebf2; }
+    .picker-foot button { width:100%; height:44px; color:#fff; background:var(--red); border:0; border-radius:6px; font-weight:700; }
+    .expense-type-layout { display:grid; grid-template-columns:42% 58%; flex:1; min-height:0; overflow:hidden; background:#f5f6fa; }
+    .expense-type-categories, .expense-type-subcategories { overflow:auto; }
+    .expense-type-categories { background:#f3f5f8; }
+    .expense-type-categories button, .expense-type-subcategories button { display:block; width:100%; min-height:54px; padding:0 14px; color:#596575; background:transparent; border:0; border-bottom:1px solid #e7eaf0; text-align:left; }
+    .expense-type-categories button.active { color:var(--red); background:#fff; border-left:3px solid var(--red); font-weight:700; }
+    .expense-type-subcategories { background:#fff; }
+    .expense-type-subcategories button { padding-left:18px; color:#303845; }
+    .expense-type-subcategories button.active { color:var(--red); background:#fff7f7; font-weight:700; }
+    .notice { display:flex; gap:7px; align-items:center; margin:10px 16px; padding:8px 10px; color:#8b6818; background:#fff8e7; border-left:3px solid #e5ad35; font-size:12px; }
+    .notice i { font-style:normal; font-weight:700; }
+    #expenseDetails[hidden] { display:none; }
+    .expense-trigger { width:calc(100% - 32px); height:38px; margin:2px 16px 14px; color:#fff; background:var(--red); border:0; border-radius:5px; font-weight:700; }
+    .expense-trigger:disabled { color:#aeb3bc; background:#eceff3; cursor:not-allowed; }
+    #openExpenses { display:none; }
+    .expense-card { position:relative; margin:10px 12px; overflow:hidden; background:#fff; border:1px solid #e5e9ef; border-radius:8px; box-shadow:0 2px 6px rgba(31,44,64,.04); }
+    .expense-summary-card { width:100%; display:grid; grid-template-columns:1fr auto 20px; align-items:center; gap:8px; min-height:67px; padding:10px 44px 10px 12px; color:#283242; text-align:left; background:#fff; border:0; }
+    .expense-summary-card:active { background:#f7f9fc; }
+    .expense-summary-main { min-width:0; }
+    .expense-summary-title { display:block; overflow:hidden; color:#29384f; font-size:14px; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
+    .expense-summary-subtitle { display:block; margin-top:4px; overflow:hidden; color:#8993a2; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
+    .expense-summary-meta { color:#d84246; font-size:13px; font-weight:700; white-space:nowrap; }
+    .expense-summary-arrow { color:#aab2be; font-size:23px; line-height:1; }
+    .delete-expense-card { position:absolute; z-index:1; top:50%; right:10px; width:26px; height:26px; padding:0; color:#fff; background:var(--red); border:0; border-radius:50%; font-size:0; transform:translateY(-50%); }
+    .delete-expense-card::after { content:'−'; font-size:17px; font-weight:700; }
+    .expense-card.open { border-color:#d8e3f5; box-shadow:0 4px 12px rgba(53,86,133,.1); }
+    .expense-card-head { display:flex; align-items:center; justify-content:space-between; min-height:44px; padding:0 16px; color:#283242; background:#fff; border-bottom:1px solid #e6eaf0; font-size:14px; font-weight:700; }
+    .expense-card-head span { display:flex; align-items:center; gap:7px; }
+    .expense-card-head span::before { width:4px; height:16px; border-radius:2px; background:var(--red); content:''; }
+    .expense-card-head button { color:#7c8796; background:transparent; border:0; font-size:12px; }
+    .expense-editor-sheet[hidden] { display:none; }
+    .expense-editor-sheet { position:fixed; z-index:18; top:0; bottom:0; left:50%; width:min(100%,430px); overflow-y:auto; padding-bottom:84px; background:#eef1f6; box-shadow:0 0 0 100vmax rgba(27,34,46,.42); transform:translateX(-50%); }
+    .expense-editor-topbar { position:sticky; z-index:2; top:0; display:grid; grid-template-columns:52px 1fr 52px; align-items:center; height:85px; padding-top:29px; color:#fff; background:var(--red); }
+    .expense-editor-topbar button { width:52px; height:56px; color:#fff; background:transparent; border:0; }
+    .expense-editor-topbar .editor-back { font-size:34px; font-weight:200; line-height:1; }
+    .expense-editor-topbar strong { text-align:center; font-size:17px; }
+    .expense-editor-topbar .editor-done { font-size:13px; font-weight:700; }
+    .expense-editor-actions { position:fixed; z-index:19; bottom:0; left:50%; width:min(100%,430px); display:grid; grid-template-columns:1fr 1.2fr; gap:8px; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); background:#fff; border-top:1px solid #e6ebf2; transform:translateX(-50%); }
+    .expense-editor-actions button { height:42px; border-radius:7px; font-size:14px; font-weight:700; }
+    #cancelExpenseEditor { color:#5d6878; background:#fff; border:1px solid #d7dde6; }
+    #saveExpenseEditor { color:#fff; background:var(--red); border:1px solid var(--red); }
+    .expense-block { margin-top:8px; overflow:hidden; background:#fff; }
+    .expense-block:first-of-type { margin-top:0; }
+    .expense-card:not(.expense-type-selected) .expense-allocation,
+    .expense-card:not(.expense-type-selected) .expense-material-sheet { display:none !important; }
+    .expense-block-title { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:44px; padding:0 16px; color:#283242; background:#fff; border-bottom:1px solid #e6eaf0; }
+    .expense-block-title strong { display:flex; align-items:center; gap:7px; font-size:14px; }
+    .expense-block-title strong::before { width:3px; height:15px; border-radius:2px; background:var(--red); content:''; }
+    .expense-block-title span { color:#9aa3b0; font-size:11px; text-align:right; }
+    .expense-field { display:flex; align-items:center; min-height:44px; padding:0 13px; border-bottom:1px solid var(--line); }
+    .expense-field:last-child { border-bottom:0; }
+    .expense-field.field-error { background:#fff8f8; box-shadow:inset 3px 0 0 var(--red); }
+    .expense-field.field-error label, .allocation-field.field-error > span { color:var(--red); font-weight:700; }
+    .expense-field label { min-width:81px; color:#77808e; font-size:13px; }
+    .expense-field input, .expense-field select { flex:1; min-width:0; height:42px; padding:0 10px; color:#303845; text-align:left; background:#f8fafc; border:1px solid #dfe4ec; border-radius:8px; outline:0; }
+    .expense-field input, .allocation-row input, .invoice-form-grid input { padding-right:0; background:transparent; border:0; border-radius:0; text-align:right; }
+    .expense-field input[readonly], .allocation-row input[readonly] { color:#8993a2; background:#f1f3f6; }
+    .expense-subsection-title { padding:9px 13px 5px; color:#8a93a1; background:#fff; font-size:12px; font-weight:700; }
+    .allocation-list { padding:0 0 1px; background:#f5f6fa; }
+    .expense-allocation .expense-block-title span { display:none; }
+    .allocation-row { position:relative; display:block; margin:0 16px 24px; padding:8px 12px 10px; background:#fff; border:1px solid #e8ebef; border-radius:9px; box-shadow:none; }
+    .allocation-row:first-child { margin-top:16px; }
+    .allocation-row:last-child { border-bottom:1px solid #e8ebef; }
+    .allocation-grid { display:block; }
+    .allocation-field { position:relative; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.45fr); align-items:center; gap:8px; min-height:48px; padding:0; color:#8b929d; border-bottom:1px solid #f0f1f3; font-size:13px; }
+    .allocation-field span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .allocation-field span em { color:var(--red); font-style:normal; }
+    .allocation-field:not(:first-child) { border-bottom:0; }
+    .allocation-field.wide { display:block; min-height:0; padding-top:12px; border-bottom:0; }
+    .allocation-field.wide > span { display:block; margin-bottom:7px; }
+    .allocation-row select, .allocation-row input { width:100%; min-width:0; height:42px; padding:0; color:#303845; background:transparent; border:0; border-radius:0; outline:0; font-size:13px; text-align:right; }
+    .allocation-field > .mobile-choice-trigger { grid-column:2; min-height:42px; padding-right:21px; font-size:13px; }
+    .allocation-field > .mobile-choice-trigger::after { right:1px; color:#aeb5be; font-size:20px; }
+    .allocation-field > .mobile-choice-trigger:disabled::after { display:none; }
+    .allocation-team + .mobile-choice-trigger { padding-right:0; color:#8c939e; }
+    .allocation-team + .mobile-choice-trigger::after { display:none; }
+    .project-expense .allocation-team + .mobile-choice-trigger { padding-right:21px; color:#303845; }
+    .project-expense .allocation-team + .mobile-choice-trigger::after { display:block; }
+    .auto-applicant-allocation .allocation-field:first-child em { display:none; }
+    .auto-applicant-allocation .allocation-owner + .mobile-choice-trigger,
+    .auto-applicant-allocation .allocation-team + .mobile-choice-trigger { padding-right:0; color:#8c939e; opacity:1; }
+    .allocation-row input[readonly], .allocation-row select:disabled { color:#8c939e; background:transparent; border:0; }
+    .allocation-row input:not([readonly]) { text-align:right; }
+    .allocation-project-field { display:none; }
+    .project-expense .allocation-project-field { display:grid; }
+    .allocation-row .allocation-reason { display:block; width:100%; min-height:57px; height:auto; padding:0 0 3px; color:#303845; text-align:left !important; line-height:1.55; }
+    .allocation-amount-field::after { position:absolute; right:0; bottom:10px; color:#aeb5be; content:'✎'; font-size:16px; pointer-events:none; }
+    .allocation-amount-field .allocation-amount { padding-right:22px; }
+    .allocation-remove { position:absolute; top:-14px; right:-7px; width:22px; height:22px; padding:0; color:#fff; background:var(--red); border:0; border-radius:50%; font-size:0; line-height:22px; }
+    .allocation-remove::after { content:'−'; font-size:16px; font-weight:700; }
+    .add-allocation { width:calc(100% - 32px); height:40px; margin:0 16px 16px; color:#5874a6; background:#f5f8ff; border:1px dashed #b9c9e8; border-radius:6px; font-size:13px; }
+    .material-launcher { display:none; }
+    .material-launcher button { min-height:35px; color:#5874a6; background:#f5f8ff; border:1px solid #d7e2f5; border-radius:5px; font-size:12px; }
+    .expense-material-sheet[hidden] { display:block; }
+    .expense-material-sheet { display:block; margin-top:8px; padding-bottom:4px; background:#fff; }
+    .material-panel[hidden] { display:block; }
+    .material-panel-title { display:flex; align-items:center; justify-content:space-between; min-height:38px; padding:0 13px; color:#5a6575; background:#fbfcfd; border-bottom:1px solid #e8ecf2; font-size:13px; font-weight:700; }
+    .material-panel-title button { color:#8993a2; background:transparent; border:0; font-size:12px; }
+    .material-panel-title em { color:var(--red); font-style:normal; }
+    .expense-invoice .material-panel-title, .expense-attachments .material-panel-title { min-height:44px; padding:0 16px; color:#283242; background:#fff; font-size:14px; }
+    .expense-invoice .material-panel-title strong, .expense-attachments .material-panel-title strong { display:flex; align-items:center; gap:7px; }
+    .expense-invoice .material-panel-title strong::before, .expense-attachments .material-panel-title strong::before { width:3px; height:15px; border-radius:2px; background:var(--red); content:''; }
+    .expense-invoice.field-error { box-shadow:inset 3px 0 0 var(--red); }
+    .add-invoice-link, .add-attachment-link { color:var(--red) !important; font-size:12px !important; }
+    .invoice-empty { min-height:63px; display:grid; place-items:center; color:#a2a9b4; border-bottom:1px solid #edf0f4; font-size:12px; }
+    .invoice-empty.hidden { display:none; }
+    .attachment-dropzone { display:flex; align-items:center; justify-content:space-between; min-height:43px; margin:0 13px 9px; padding:0 12px; color:#9aa3af; background:#fff; border:1px dashed #d9dee6; font-size:12px; }
+    .attachment-dropzone .upload-attachment { min-height:28px; color:var(--red); background:transparent; border:0; font-size:12px; }
+    .invoice-action-sheet { border-radius:14px 14px 0 0; }
+    .invoice-action-options { padding:6px 16px 14px; }
+    .invoice-action-options button { display:block; width:100%; min-height:70px; padding:13px 0; color:#202632; background:#fff; border:0; border-bottom:1px solid #edf0f4; text-align:left; }
+    .invoice-action-options strong, .invoice-action-options span { display:block; }
+    .invoice-action-options strong { font-size:15px; }
+    .invoice-action-options span { margin-top:4px; color:#98a1ae; font-size:12px; }
+    .invoice-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:10px 13px 9px; }
+    .invoice-action, .upload-invoice, .upload-attachment { display:flex; align-items:center; justify-content:center; min-height:34px; color:#476ca8; background:#f5f8ff; border:1px solid #d7e2f5; border-radius:4px; font-size:12px; cursor:pointer; }
+    .invoice-input, .attachment-input { display:none; }
+    .attachment-category { padding:10px 13px 0; border-top:1px solid var(--line); }
+    .attachment-category:first-child { border-top:0; }
+    .attachment-category-head { display:flex; align-items:center; justify-content:space-between; color:#5d6878; font-size:12px; font-weight:700; }
+    .attachment-category-head span { color:#a0a8b4; font-weight:400; }
+    .attachment-upload-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 0 3px; }
+    .attachment-upload-row .upload-attachment { flex:0 0 92px; min-height:30px; }
+    .file-list { display:flex; flex-wrap:wrap; gap:5px; padding:0 11px 9px; }
+    .invoice-files { display:block; }
+    .invoice-files .invoice-record { width:100%; min-width:0; margin:0 0 8px; }
+    .file-item { max-width:100%; padding:4px 7px; overflow:hidden; color:#5c6675; background:#f7f8fa; border-radius:3px; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
+    .invoice-record { margin:0 11px 8px; padding:9px 10px 0; color:#536174; background:#fff; border:1px solid #e1e6ed; border-radius:5px; font-size:11px; }
+    .invoice-record-head { display:flex; align-items:center; gap:6px; min-height:23px; color:#29384f; }
+    .invoice-record-head strong { color:#1e2937; font-size:12px; }
+    .invoice-record-head em { color:#7d8794; font-style:normal; }
+    .invoice-record-actions { display:flex; gap:7px; margin-left:auto; }
+    .invoice-record-actions button { padding:0; color:var(--red); background:transparent; border:0; font-size:11px; }
+    .invoice-record-seller { padding:4px 0 7px; color:#647084; border-bottom:1px solid #edf0f4; }
+    .invoice-record-amounts { display:grid; grid-template-columns:1fr 1fr; margin:0 -10px; border-bottom:1px solid #edf0f4; }
+    .invoice-record-amounts span { display:flex; flex-direction:column; gap:3px; padding:7px 10px; color:#8a94a2; }
+    .invoice-record-amounts span + span { border-left:1px solid #edf0f4; }
+    .invoice-record-amounts b { color:#273343; font-size:12px; }
+    #invoiceManualModal { align-items:stretch; }
+    #invoiceManualModal .modal-sheet { height:100%; display:flex; flex-direction:column; border-radius:0; }
+    #invoiceManualModal .sheet-head { display:grid; grid-template-columns:52px 1fr 52px; flex:0 0 85px; padding:29px 0 0; color:#fff; background:var(--red); border-bottom:0; }
+    #invoiceManualModal .sheet-head strong { text-align:center; }
+    #invoiceManualModal .sheet-head button { color:#fff; }
+    #invoiceManualModal .invoice-form-grid { display:block; flex:1; padding:0; background:#fff; }
+    .invoice-form-grid label { position:relative; min-height:54px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 16px; color:#4f5b6b; border-bottom:1px solid var(--line); font-size:13px; }
+    .invoice-form-grid label.wide { display:flex; }
+    .invoice-form-grid input { flex:1; min-width:0; height:42px; padding:0; color:#303845; background:transparent; border:0; outline:0; text-align:right; }
+    .invoice-form-grid input::placeholder { color:#b4bbc5; }
+    .invoice-form-grid .invoice-attachment-upload { min-height:42px; color:var(--red); background:transparent; border:0; }
+    .invoice-manual-attachment { display:none !important; }
+    .expense-summary { display:flex; justify-content:space-between; padding:12px 16px 4px; color:#697383; font-size:13px; }
+    .expense-summary strong { color:#d84246; font-size:16px; }
+    .add-expense { width:calc(100% - 32px); height:38px; margin:12px 16px 15px; color:var(--red); background:#fff; border:1px solid #efb5b7; border-radius:5px; font-weight:700; }
+    .mobile-bottom-actions { position:fixed; z-index:17; right:max(0px, calc((100vw - 430px) / 2)); bottom:0; left:max(0px, calc((100vw - 430px) / 2)); display:grid; grid-template-columns:1fr 1.05fr 1.2fr; gap:8px; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); background:#fff; border-top:1px solid #e9edf3; box-shadow:0 -4px 14px rgba(31,43,61,.06); }
+    .mobile-bottom-actions.two-actions { grid-template-columns:1fr 1fr; }
+    .mobile-bottom-actions button { min-width:0; height:46px; border:1px solid transparent; border-radius:8px; font-weight:700; font-size:15px; white-space:nowrap; }
+    #saveDraft { color:#4f5c6e; background:#fff; border-color:#d8dee7; }
+    #submitApplication { color:#fff; background:var(--red); border-color:var(--red); box-shadow:0 4px 8px rgba(223,63,67,.2); }
+    #stepBack { order:1; }
+    #saveDraft { order:2; }
+    #stepNext, #submitApplication { order:3; }
+    #stepBack { color:#657286; background:#f1f3f6; border-color:#f1f3f6; }
+    #stepNext { color:#fff; background:var(--red); border-color:var(--red); }
+    .review-summary { margin:0 12px 12px; overflow:hidden; background:#fff; border:1px solid #e5e9ef; border-radius:8px; }
+    .review-summary-row { display:flex; justify-content:space-between; gap:12px; min-height:45px; padding:0 13px; align-items:center; border-bottom:1px solid var(--line); }
+    .review-summary-row:last-child { border-bottom:0; }
+    .review-summary-row span { color:#7b8594; font-size:12px; }
+    .review-summary-row strong { max-width:62%; overflow:hidden; color:#303845; font-size:13px; text-align:right; text-overflow:ellipsis; white-space:nowrap; }
+    .mobile-toast { position:fixed; z-index:30; top:76px; left:50%; display:flex; align-items:center; max-width:calc(100vw - 38px); padding:10px 14px; color:#fff; background:rgba(28,34,45,.92); border-radius:6px; box-shadow:0 8px 20px rgba(19,27,42,.2); text-align:center; line-height:1.45; transform:translate(-50%, -14px); opacity:0; pointer-events:none; transition:.2s ease; }
+    .mobile-toast.show { transform:translate(-50%, 0); opacity:1; }
+    .mobile-modal { position:fixed; z-index:20; inset:0; display:flex; align-items:flex-end; background:rgba(27,34,46,.45); }
+    .mobile-modal[hidden] { display:none; }
+    #mobileDateModal { z-index:31; }
+    .modal-sheet { width:min(100%, 430px); margin:0 auto; overflow:hidden; background:#fff; border-radius:14px 14px 0 0; }
+    .sheet-head { display:flex; align-items:center; justify-content:space-between; height:54px; padding:0 16px; border-bottom:1px solid var(--line); font-size:16px; font-weight:700; }
+    .sheet-head button { color:#8e96a3; background:transparent; border:0; font-size:22px; }
+    .recipient-option { width:100%; display:flex; align-items:center; gap:10px; min-height:62px; padding:0 16px; color:#303845; text-align:left; background:#fff; border:0; border-bottom:1px solid var(--line); }
+    .recipient-option b { display:block; font-size:14px; }
+    .recipient-option span { display:block; margin-top:3px; color:#929aa7; font-size:12px; }
+    .recipient-option::after { margin-left:auto; color:transparent; content:'✓'; font-size:18px; }
+    .recipient-option.active::after { color:var(--red); }
+    .sheet-foot { padding:11px 16px calc(11px + env(safe-area-inset-bottom)); }
+    .sheet-foot button { width:100%; height:44px; color:#fff; background:var(--red); border:0; border-radius:6px; font-weight:700; }
+    .mobile-choice-source { position:absolute !important; width:1px !important; height:1px !important; margin:-1px !important; overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important; border:0 !important; opacity:0 !important; pointer-events:none !important; }
+    .mobile-choice-trigger { position:relative; display:flex; align-items:center; justify-content:flex-end; width:100%; min-height:42px; padding:0 26px 0 0; color:#303845; background:transparent; border:0; border-radius:0; font:inherit; text-align:right; }
+    .mobile-choice-trigger::after { position:absolute; right:12px; color:#8b95a4; content:'›'; font-size:22px; line-height:1; transform:rotate(90deg); }
+    .mobile-choice-trigger.navigation-picker-trigger::after { transform:none; }
+    .mobile-choice-trigger.placeholder { color:#9aa4b2; }
+    .expense-field .mobile-choice-trigger { min-height:40px; }
+    .expense-field select.expense-subcategory + .mobile-choice-trigger { display:none; }
+    .choice-options { max-height:min(58vh, 430px); overflow:auto; }
+    .choice-option { width:100%; min-height:54px; padding:0 17px; color:#303845; background:#fff; border:0; border-bottom:1px solid var(--line); font-size:15px; text-align:left; }
+    .choice-option.active { color:var(--red); background:#fff7f7; font-weight:700; }
+    .choice-option.active::after { float:right; content:'✓'; font-size:18px; }
+    .date-sheet { padding-bottom:calc(11px + env(safe-area-inset-bottom)); }
+    .date-toolbar { display:flex; align-items:center; justify-content:space-between; padding:10px 16px 4px; }
+    .date-toolbar button { width:40px; height:40px; color:#5c6878; background:#f3f5f8; border:0; border-radius:20px; font-size:20px; }
+    .date-toolbar strong { font-size:16px; }
+    .date-week { display:grid; grid-template-columns:repeat(7,1fr); padding:4px 12px; color:#9aa4b2; font-size:12px; text-align:center; }
+    .date-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; padding:4px 12px 12px; }
+    .date-cell { min-height:42px; color:#303845; background:#fff; border:0; border-radius:21px; font-size:14px; }
+    .date-cell.muted { color:#c2c8d0; }
+    .date-cell.selected { color:#fff; background:var(--red); font-weight:700; }
+    .date-cell.today { box-shadow:inset 0 0 0 1px #efb5b7; }
+    @media (min-width:431px) { .mobile-bottom-actions { right:calc((100vw - 430px) / 2); left:calc((100vw - 430px) / 2); } }
+  </style>
+</head>
+<body>
+  <main class="mobile-shell">
+    <header class="mobile-topbar">
+      <div class="statusbar"><span>09:46</span><span class="status-icons">••• ◔ ▱</span></div>
+      <div class="navrow"><a class="back" href="移动端申请入口页原型.html" aria-label="返回申请入口">‹</a><strong id="pageTitle">付款申请</strong><span aria-hidden="true"></span></div>
+    </header>
+    <div class="page-caption"><span>填写基础信息后维护费用明细</span><span>标注 * 为必填项</span></div>
+    <nav class="application-stepper" id="applicationStepper" aria-label="申请步骤"><button class="application-step active" type="button" data-step="1"><span class="application-step-dot">1</span><span>基础信息</span></button><button class="application-step" type="button" data-step="2"><span class="application-step-dot">2</span><span>费用明细</span></button></nav>
+
+    <section class="mobile-section step-panel" id="basicInfoSection" aria-labelledby="basicInfoTitle">
+      <h2 class="section-title" id="basicInfoTitle">基础信息</h2>
+      <div class="subsection-title">申请信息</div>
+      <div class="form-row"><span class="form-label req">标题</span><input id="documentTitle" class="form-control" required placeholder="请填写付款标题" aria-label="标题"></div>
+      <div class="form-row"><span class="form-label req">费用时间</span><input id="expenseDate" class="form-control" type="text" readonly placeholder="请选择费用时间" required aria-label="费用时间"></div>
+      <div class="form-row"><span class="form-label req">付款类型</span><select id="paymentKind" class="form-control" required aria-label="付款类型"><option value="">请选择</option><option value="ordinary">付款</option><option value="project">项目付款</option></select></div>
+      <div class="form-row"><span class="form-label req">付款主体</span><select id="companyEntity" class="form-control" required aria-label="付款主体"><option value="">请选择</option><option>深圳市博商管理科学研究院股份有限公司</option><option>博商管理咨询（深圳）有限公司</option></select></div>
+      <div class="form-row"><span class="form-label req">是否有发票</span><div class="pick-row"><label><input type="radio" name="hasInvoice" value="no">否</label><label><input type="radio" name="hasInvoice" value="yes">是</label></div></div>
+      <div class="form-row"><span class="form-label req">是否付劳务费</span><div class="pick-row"><label><input type="radio" name="serviceFee" value="no" checked>否</label><label><input type="radio" name="serviceFee" value="yes">是</label></div></div>
+      <div class="form-row project-row" id="projectField"><span class="form-label req">本单关联项目</span><select id="projectName" class="form-control" aria-label="本单关联项目"><option value="">请选择项目</option><option>2026 春季总裁班项目</option><option>华南区域公开课项目</option><option>年度客户服务提升项目</option><option>管理培训数字化项目</option></select></div>
+      <div class="form-row"><span class="form-label">申请人</span><span class="form-value readonly-field">陈敏</span></div>
+      <div class="form-row"><span class="form-label">申请部门</span><span class="form-value readonly-field">博商集团 / 行政部</span></div>
+      <div class="subsection-title">收款信息</div>
+      <div class="form-row"><span class="form-label req">收款方类型</span><div class="pick-row"><label><input type="radio" name="payeeType" value="linked" checked>链接付款</label><label><input type="radio" name="payeeType" value="company">公司</label><label><input type="radio" name="payeeType" value="person">个人</label></div></div>
+      <div class="form-row"><span class="form-label req">收款单位</span><button class="form-control picker-value" type="button" id="recipientName" aria-label="选择收款单位">陈敏</button></div>
+      <div class="form-row" id="recipientBankRow"><span class="form-label req">开户行</span><button type="button" id="recipientBankPickerTrigger" class="form-control picker-value" aria-label="选择开户行">招商银行深圳分行</button><input id="recipientBankManual" class="form-control" value="招商银行深圳分行" aria-label="开户行" placeholder="请输入开户行" hidden></div>
+      <input id="recipientBank" type="hidden" value="招商银行深圳分行">
+      <div class="form-row"><span class="form-label req">银行账号</span><input id="recipientAccount" class="form-control" value="6225 8888 0462 9551" aria-label="银行账号" placeholder="请输入银行账号"></div>
+      <div class="form-row"><span class="form-label req">是否海外付款</span><div class="pick-row"><label><input type="radio" name="overseas" value="no" checked>否</label><label><input type="radio" name="overseas" value="yes">是</label></div></div>
+      <div class="form-row overseas-field" id="currencyField"><span class="form-label req">币种</span><select id="currency" class="form-control" aria-label="币种"><option value="">请选择</option><option>CNY</option><option>USD</option><option>HKD</option><option>SGD</option></select></div>
+      <div class="form-row overseas-field" id="swiftField"><span class="form-label req">SWIFT Code</span><input id="swiftCode" class="form-control" placeholder="请输入 SWIFT Code" aria-label="SWIFT Code"></div>
+      <div hidden>
+      <div class="subsection-title"></div>
+      <div class="form-row"><span class="form-label req">是否使用借款单冲抵</span><div class="pick-row"><label><input type="radio" name="loanOffset" value="no">否</label><label><input type="radio" name="loanOffset" value="yes">是</label></div></div>
+      <div class="loan-details" id="loanDetails"><div class="loan-debt"><span>当前剩余欠款</span><strong id="loanDebtTotal">CNY 5,000.00</strong></div><button type="button" class="loan-select-trigger" id="selectLoanDocument">选择借款单</button><div class="selected-loan-card-list" id="selectedLoanDocument" hidden></div></div>
+      </div>
+      <div class="subsection-title">补充说明</div>
+      <div class="form-row"><span class="form-label req">备注</span><input id="remark" class="form-control" required placeholder="请填写付款用途说明" aria-label="备注"></div>
+      <button class="expense-trigger" id="openExpenses" type="button" disabled>填写费用明细</button>
+    </section>
+
+    <section class="mobile-section step-panel" id="expenseDetails" hidden aria-labelledby="expenseTitle">
+      <h2 class="section-title" id="expenseTitle">费用明细 <small>按费用类型填写</small></h2>
+      <div id="expenseList"></div>
+      <div class="expense-summary"><span>合计金额</span><strong id="expenseTotal">¥ 0.00</strong></div>
+      <button class="add-expense" type="button" id="addExpense">＋ 添加费用类型</button>
+    </section>
+    <footer class="mobile-bottom-actions"><button type="button" id="submitApplication" hidden>提交送审</button><button type="button" id="saveDraft">暂存草稿</button><button type="button" id="stepBack" hidden>上一步</button><button type="button" id="stepNext">下一步</button></footer>
+  </main>
+
+  <div class="mobile-modal" id="recipientModal" hidden role="dialog" aria-modal="true" aria-labelledby="recipientModalTitle"><div class="modal-sheet"><div class="sheet-head"><strong id="recipientModalTitle">选择领款人</strong><button type="button" id="closeRecipientPicker" aria-label="关闭">×</button></div><div id="recipientOptions"></div><div class="sheet-foot"><button type="button" id="confirmRecipient">确定</button></div></div></div>
+  <div class="mobile-modal" id="mobileChoiceModal" hidden role="dialog" aria-modal="true" aria-labelledby="mobileChoiceTitle"><div class="modal-sheet"><div class="sheet-head"><strong id="mobileChoiceTitle">请选择</strong><button type="button" id="closeMobileChoice" aria-label="关闭">×</button></div><div class="choice-options" id="mobileChoiceOptions"></div></div></div>
+  <div class="mobile-modal" id="mobileDateModal" hidden role="dialog" aria-modal="true" aria-labelledby="mobileDateTitle"><div class="modal-sheet date-sheet"><div class="sheet-head"><strong id="mobileDateTitle">选择费用时间</strong><button type="button" id="closeMobileDate" aria-label="关闭">×</button></div><div class="date-toolbar"><button type="button" id="datePrev" aria-label="上个月">‹</button><strong id="dateMonthLabel"></strong><button type="button" id="dateNext" aria-label="下个月">›</button></div><div class="date-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div><div class="date-grid" id="mobileDateGrid"></div></div></div>
+  <div class="mobile-modal" id="loanPickerModal" hidden role="dialog" aria-modal="true" aria-labelledby="loanPickerTitle"><div class="modal-sheet"><div class="sheet-head"><button type="button" id="closeLoanPicker" aria-label="返回">‹</button><strong id="loanPickerTitle">选择借款单</strong><span aria-hidden="true"></span></div><div class="loan-picker-tip">仅支持选择与付款主体及币种相同、状态为待还款或还款中的借款单</div><div class="loan-picker-search"><input id="loanPickerSearch" type="search" placeholder="搜索借款单号或借款人" aria-label="搜索借款单"></div><div class="loan-picker-options" id="loanPickerOptions"></div><div class="sheet-foot"><button type="button" id="confirmLoanDocument" disabled>确认选择</button></div></div></div>
+  <div class="mobile-modal" id="companyPickerModal" hidden role="dialog" aria-modal="true" aria-labelledby="companyPickerTitle"><div class="modal-sheet"><div class="sheet-head"><button type="button" id="closeCompanyPicker" aria-label="返回">‹</button><strong id="companyPickerTitle">选择主体公司</strong><span aria-hidden="true"></span></div><div class="company-picker-search"><input id="companyPickerSearch" type="search" placeholder="请输入搜索信息..." aria-label="搜索主体公司"></div><div class="company-picker-options" id="companyPickerOptions"></div></div></div>
+  <div class="mobile-modal full-picker-modal" id="projectPickerModal" hidden role="dialog" aria-modal="true" aria-labelledby="projectPickerTitle"><div class="modal-sheet"><div class="sheet-head"><button type="button" id="closeProjectPicker" aria-label="返回">‹</button><strong id="projectPickerTitle">选择关联项目</strong><span aria-hidden="true"></span></div><div class="picker-search"><input id="projectPickerSearch" type="search" placeholder="搜索项目名称或负责人" aria-label="搜索关联项目"></div><div class="picker-options" id="projectPickerOptions"></div><div class="picker-foot"><button type="button" id="confirmProjectPicker">确认选择</button></div></div></div>
+  <div class="mobile-modal full-picker-modal" id="expenseTypePickerModal" hidden role="dialog" aria-modal="true" aria-labelledby="expenseTypePickerTitle"><div class="modal-sheet"><div class="sheet-head"><button type="button" id="closeExpenseTypePicker" aria-label="返回">‹</button><strong id="expenseTypePickerTitle">选择费用类型</strong><span aria-hidden="true"></span></div><div class="expense-type-layout"><div class="expense-type-categories" id="expenseTypeCategories"></div><div class="expense-type-subcategories" id="expenseTypeSubcategories"></div></div></div></div>
+   <div class="mobile-modal full-picker-modal employee-picker-modal" id="recipientPickerModal" hidden role="dialog" aria-modal="true" aria-labelledby="recipientPickerTitle"><div class="modal-sheet"><div class="sheet-head"><button type="button" id="closeRecipientPickerPage" aria-label="返回">‹</button><strong id="recipientPickerTitle">选择员工</strong><button type="button" class="employee-search-toggle" id="recipientSearchToggle" aria-label="搜索员工">⌕</button></div><div class="picker-search employee-picker-search-row" id="recipientSearchRow" hidden><input id="recipientPickerSearch" type="search" placeholder="搜索姓名或部门" aria-label="搜索员工"></div><div class="employee-picker-breadcrumb"><strong>全公司</strong><span>›</span><span>博商管理</span></div><div class="employee-org-list"><button type="button" class="employee-org-row">产品 BG</button><button type="button" class="employee-org-row">国内业务 BG</button><button type="button" class="employee-org-row">后台赋能</button><button type="button" class="employee-org-row">生态合作伙伴</button></div><div class="picker-options" id="recipientPickerOptions"></div><div class="picker-foot"><button type="button" id="confirmRecipientPicker">确认选择</button></div></div></div>
+   <div class="mobile-modal full-picker-modal" id="recipientBankPickerModal" hidden role="dialog" aria-modal="true" aria-labelledby="recipientBankPickerTitle"><div class="modal-sheet"><div class="sheet-head"><button type="button" id="closeRecipientBankPicker" aria-label="返回">‹</button><strong id="recipientBankPickerTitle">选择开户行</strong><span aria-hidden="true"></span></div><div class="picker-search"><input id="recipientBankPickerSearch" type="search" placeholder="搜索开户行名称" aria-label="搜索开户行"></div><div class="picker-options" id="recipientBankPickerOptions"></div><div class="picker-foot"><button type="button" id="confirmRecipientBankPicker">确认选择</button></div></div></div>
+   <div class="mobile-modal full-picker-modal employee-picker-modal" id="allocationOwnerPickerModal" hidden role="dialog" aria-modal="true" aria-labelledby="allocationOwnerPickerTitle"><div class="modal-sheet"><div class="sheet-head"><button type="button" id="closeAllocationOwnerPicker" aria-label="返回">‹</button><strong id="allocationOwnerPickerTitle">选择员工</strong><button type="button" class="employee-search-toggle" id="allocationOwnerSearchToggle" aria-label="搜索员工">⌕</button></div><div class="picker-search employee-picker-search-row" id="allocationOwnerSearchRow" hidden><input id="allocationOwnerPickerSearch" type="search" placeholder="搜索姓名或部门" aria-label="搜索员工"></div><div class="employee-picker-breadcrumb"><strong>全公司</strong><span>›</span><span>博商管理</span></div><div class="employee-org-list"><button type="button" class="employee-org-row">产品 BG</button><button type="button" class="employee-org-row">国内业务 BG</button><button type="button" class="employee-org-row">后台赋能</button><button type="button" class="employee-org-row">生态合作伙伴</button></div><div class="picker-options" id="allocationOwnerPickerOptions"></div><div class="picker-foot"><button type="button" id="confirmAllocationOwnerPicker">确认选择</button></div></div></div>
+  <div class="mobile-modal full-picker-modal" id="allocationTeamPickerModal" hidden role="dialog" aria-modal="true" aria-labelledby="allocationTeamPickerTitle"><div class="modal-sheet"><div class="sheet-head"><button type="button" id="closeAllocationTeamPicker" aria-label="返回">‹</button><strong id="allocationTeamPickerTitle">选择费用承担团队</strong><span aria-hidden="true"></span></div><div class="picker-search"><input id="allocationTeamPickerSearch" type="search" placeholder="搜索团队名称" aria-label="搜索费用承担团队"></div><div class="picker-options" id="allocationTeamPickerOptions"></div><div class="picker-foot"><button type="button" id="confirmAllocationTeamPicker">确认选择</button></div></div></div>
+  <div class="mobile-modal" id="invoiceActionModal" hidden role="dialog" aria-modal="true" aria-labelledby="invoiceActionTitle"><div class="modal-sheet invoice-action-sheet"><div class="sheet-head"><strong id="invoiceActionTitle">添加发票</strong><button type="button" id="closeInvoiceAction" aria-label="关闭">×</button></div><div class="invoice-action-options"><button type="button" data-invoice-choice="ocr"><strong>OCR 识别发票</strong><span>拍照或从相册选择发票影像</span></button><button type="button" data-invoice-choice="manual"><strong>手动录入发票</strong><span>填写发票基本信息</span></button></div></div></div>
+  <div class="mobile-modal full-picker-modal" id="invoiceManualModal" hidden role="dialog" aria-modal="true" aria-labelledby="invoiceManualTitle"><div class="modal-sheet"><div class="sheet-head"><button type="button" id="closeInvoiceManual" aria-label="返回">‹</button><strong id="invoiceManualTitle">录入发票</strong><span aria-hidden="true"></span></div><div class="invoice-form-grid"><label>发票号码 *<input id="invoiceNumber" required placeholder="请输入发票号码"></label><label>开票公司 *<input id="invoiceSeller" required placeholder="请输入开票公司"></label><label>发票类型 *<input id="invoiceType" placeholder="例如：增值税专用发票"></label><label>开票日期<input id="invoiceDate" type="text" readonly placeholder="年 / 月 / 日"></label><label>购买方主体 *<input id="invoiceBuyer" value="深圳市博商管理科学研究院股份有限公司"></label><label>发票金额 *<input id="invoiceTotal" type="number" min="0" step="0.01" required placeholder="请输入发票金额"></label><label>税额 *<input id="invoiceTax" type="number" min="0" step="0.01" required placeholder="请输入税额"></label><label>税率<input id="invoiceTaxRate" placeholder="例如 6%"></label><label class="wide">附件 *<button type="button" class="invoice-attachment-upload" id="uploadInvoiceAttachment">上传附件</button><input class="invoice-manual-attachment" type="file" accept="image/*,.pdf" multiple></label></div><div class="sheet-foot"><button type="button" id="confirmInvoiceManual">确认</button></div></div></div>
+  <div class="mobile-toast" id="mobileToast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      const recipients = [
+        { name:'陈敏', department:'行政部', bank:'招商银行深圳分行', account:'6225 8888 0462 9551' },
+        { name:'刘宇鑫', department:'教学运营部', bank:'中国银行深圳福田支行', account:'6216 8890 1288 0326' },
+        { name:'张明', department:'项目管理部', bank:'平安银行深圳分行', account:'6221 5520 0901 4438' },
+        { name:'刘炳成', department:'博商管理', bank:'招商银行深圳分行', account:'6222 0000 0000 0001' },
+        { name:'姚金明', department:'博商管理', bank:'招商银行深圳分行', account:'6222 0000 0000 0002' },
+        { name:'刘新一', department:'博商管理', bank:'招商银行深圳分行', account:'6222 0000 0000 0003' },
+        { name:'庞婷', department:'博商管理', bank:'招商银行深圳分行', account:'6222 0000 0000 0004' },
+        { name:'卢颖心', department:'博商管理', bank:'招商银行深圳分行', account:'6222 0000 0000 0005' },
+        { name:'AAA 测试 2', department:'博商管理', bank:'招商银行深圳分行', account:'6222 0000 0000 0006' },
+        { name:'杨富集', department:'博商管理', bank:'招商银行深圳分行', account:'6222 0000 0000 0007' }
+      ];
+      const projects = [
+        { id:'project-1', name:'2026 春季总裁班项目', type:'培训项目', owner:'刘宇鑫', endDate:'2026-06-30', status:'进行中' },
+        { id:'project-2', name:'华南区域公开课项目', type:'公开课项目', owner:'张明', endDate:'2026-09-30', status:'进行中' },
+        { id:'project-3', name:'年度客户服务提升项目', type:'客户项目', owner:'陈敏', endDate:'2026-12-31', status:'进行中' },
+        { id:'project-4', name:'管理培训数字化项目', type:'内部项目', owner:'刘宇鑫', endDate:'2026-11-30', status:'进行中' }
+      ];
+      const loanDocuments = [
+        { number:'JK202511050001', borrower:'王世涛（B09912）', company:'深圳市博商管理科学研究院股份有限公司', status:'待还款', currency:'CNY', total:10000, repaid:0, planned:'2024-11-29 14:22:11', actual:'2024-11-29 14:22:11' },
+        { number:'JK202511050001', borrower:'王世涛（B09912）', company:'深圳市博商管理科学研究院股份有限公司', status:'还款中', currency:'CNY', total:10000, repaid:1000, planned:'2024-11-29 14:22:11', actual:'2024-11-29 14:22:11' },
+        { number:'JK202511050001', borrower:'王世涛（B09912）', company:'深圳市博商管理科学研究院股份有限公司', status:'待还款', currency:'CNY', total:10000, repaid:10000, planned:'2024-11-29 14:22:11', actual:'2024-11-29 14:22:11' }
+      ].map((item, index) => ({ ...item, id:`loan-${index + 1}`, remaining:item.total - item.repaid, offsetAmount:'' }));
+      const companyEntities = [
+        '深圳市博商管理科学研究院股份有限公司', '博商管理咨询（深圳）有限公司', '深圳市商小满餐饮管理有限公司',
+        '深圳市博商太阳定位咨询有限公司', '深圳市博商魔投科技有限公司', '北京寻悟文化传播有限公司',
+        '深圳市博商成效咨询有限公司', '深圳市笃行智慧文化发展有限公司', '深圳市凡七文化传媒有限公司',
+        '深圳市元智成文化传媒有限公司', '深圳市创美管理咨询有限公司', '江西星辰全服智能科技有限公司',
+        '武汉市前沿优客文化传媒有限公司', '广州市前沿领学文化传媒有限公司', '深圳市尚诺文化传媒有限公司',
+        '北京亿量文化传媒有限公司', '深圳市恒心智慧文化发展有限公司'
+      ];
+      const kind = document.getElementById('paymentKind');
+      const projectName = document.getElementById('projectName');
+      const projectField = document.getElementById('projectField');
+      const documentTitle = document.getElementById('documentTitle');
+      const expenseDate = document.getElementById('expenseDate');
+      const companyEntity = document.getElementById('companyEntity');
+      const remark = document.getElementById('remark');
+      const recipientName = document.getElementById('recipientName');
+      const recipientBank = document.getElementById('recipientBank');
+      const recipientBankManual = document.getElementById('recipientBankManual');
+      const recipientBankPickerTrigger = document.getElementById('recipientBankPickerTrigger');
+      const recipientAccount = document.getElementById('recipientAccount');
+      const loanDetails = document.getElementById('loanDetails');
+      const expenseDetails = document.getElementById('expenseDetails');
+      const basicInfoSection = document.getElementById('basicInfoSection');
+      const openExpenses = document.getElementById('openExpenses');
+      const stepBack = document.getElementById('stepBack');
+      const stepNext = document.getElementById('stepNext');
+      const submitApplication = document.getElementById('submitApplication');
+      const bottomActions = document.querySelector('.mobile-bottom-actions');
+      const toast = document.getElementById('mobileToast');
+      let selectedRecipient = recipients[0];
+      let activeInvoiceCard = null;
+      let toastTimer;
+      let mobileChoiceTarget = null;
+      let mobileDateTarget = null;
+      let mobileDateCursor = new Date();
+      let selectedLoans = [];
+      let pendingLoans = [];
+      let selectedProjects = [];
+      let pendingProjects = [];
+      let expenseProjectTarget = null;
+      let expenseTypeTarget = null;
+      let expenseTypeCategory = '';
+      let pendingRecipient = selectedRecipient;
+      let selectedCompany = companyEntity.value || '';
+      let allocationOwnerTarget = null;
+      let pendingAllocationOwner = '';
+      let allocationTeamTarget = null;
+      let pendingAllocationTeam = '';
+      let bankMode = '';
+      let pendingRecipientBank = '';
+
+      function showToast(message) { clearTimeout(toastTimer); toast.textContent = message; toast.classList.add('show'); toastTimer = setTimeout(() => toast.classList.remove('show'), 2500); }
+      function checkedValue(name) { return document.querySelector(`input[name="${name}"]:checked`)?.value || ''; }
+      function refreshChoiceTrigger(select) {
+        const trigger = select?.nextElementSibling;
+        if (!trigger || !trigger.classList.contains('mobile-choice-trigger')) return;
+        const option = select.options[select.selectedIndex];
+        const projectSelection = select.id === 'projectName' ? selectedProjects.map(project => project.name).join('、') : '';
+        const companySelection = select.id === 'companyEntity' ? selectedCompany : '';
+        const expenseSelection = select.classList.contains('expense-category') ? [option?.textContent, select.closest('.expense-card')?.querySelector('.expense-subcategory')?.value].filter(Boolean).join(' / ') : '';
+        const hasValue = select.id === 'projectName' ? selectedProjects.length > 0 : Boolean(select.value);
+        trigger.textContent = companySelection || projectSelection || expenseSelection || option?.textContent || '请选择';
+        trigger.classList.toggle('placeholder', !hasValue);
+        trigger.disabled = Boolean(select.disabled);
+        trigger.setAttribute('aria-disabled', String(Boolean(select.disabled)));
+      }
+      function enhanceChoiceSelect(select, title) {
+        if (!select || select.dataset.mobileChoiceReady) return;
+        select.dataset.mobileChoiceReady = 'true';
+        select.classList.add('mobile-choice-source');
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'mobile-choice-trigger';
+        if (select.classList.contains('allocation-owner') || select.classList.contains('allocation-team')) trigger.classList.add('navigation-picker-trigger');
+        trigger.setAttribute('aria-label', title || select.getAttribute('aria-label') || '请选择');
+        trigger.addEventListener('click', () => {
+          if (select.id === 'companyEntity') return openCompanyPicker();
+          if (select.id === 'projectName') return openProjectPicker();
+          if (select.classList.contains('allocation-owner')) return openAllocationOwnerPicker(select);
+          if (select.classList.contains('allocation-team')) return openAllocationTeamPicker(select);
+          if (select.classList.contains('expense-category') || select.classList.contains('expense-subcategory')) return openExpenseTypePicker(select);
+          return openMobileChoice(select);
+        });
+        select.insertAdjacentElement('afterend', trigger);
+        select.addEventListener('change', () => refreshChoiceTrigger(select));
+        refreshChoiceTrigger(select);
+      }
+      function openMobileChoice(select) {
+        if (!select || select.disabled) return;
+        mobileChoiceTarget = select;
+        const title = select.getAttribute('aria-label') || '请选择';
+        document.getElementById('mobileChoiceTitle').textContent = `选择${title}`;
+        const options = document.getElementById('mobileChoiceOptions');
+        options.innerHTML = [...select.options].map((option, index) => `<button type="button" class="choice-option${option.value === select.value ? ' active' : ''}" data-index="${index}">${option.textContent}</button>`).join('');
+        options.querySelectorAll('.choice-option').forEach(option => option.addEventListener('click', () => {
+          const selected = mobileChoiceTarget.options[Number(option.dataset.index)];
+          mobileChoiceTarget.value = selected.value;
+          mobileChoiceTarget.dispatchEvent(new Event('change', { bubbles:true }));
+          refreshChoiceTrigger(mobileChoiceTarget);
+          document.getElementById('mobileChoiceModal').hidden = true;
+          mobileChoiceTarget = null;
+        }));
+        document.getElementById('mobileChoiceModal').hidden = false;
+      }
+      function toDateValue(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
+      function parseDateValue(value) { const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || ''); return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : new Date(); }
+      function renderMobileDate() {
+        const year = mobileDateCursor.getFullYear();
+        const month = mobileDateCursor.getMonth();
+        document.getElementById('dateMonthLabel').textContent = `${year}年${month + 1}月`;
+        const grid = document.getElementById('mobileDateGrid');
+        const first = new Date(year, month, 1);
+        const start = new Date(year, month, 1 - first.getDay());
+        const selectedValue = mobileDateTarget?.value || '';
+        const todayValue = toDateValue(new Date());
+        grid.innerHTML = Array.from({ length:42 }, (_, index) => {
+          const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index);
+          const value = toDateValue(date);
+          const muted = date.getMonth() !== month;
+          return `<button type="button" class="date-cell${muted ? ' muted' : ''}${value === selectedValue ? ' selected' : ''}${value === todayValue ? ' today' : ''}" data-date="${value}">${date.getDate()}</button>`;
+        }).join('');
+        grid.querySelectorAll('.date-cell').forEach(cell => cell.addEventListener('click', () => {
+          if (!mobileDateTarget) return;
+          mobileDateTarget.value = cell.dataset.date;
+          mobileDateTarget.dispatchEvent(new Event('change', { bubbles:true }));
+          document.getElementById('mobileDateModal').hidden = true;
+          mobileDateTarget = null;
+        }));
+      }
+      function openMobileDatePicker(input = expenseDate) {
+        mobileDateTarget = input;
+        mobileDateCursor = parseDateValue(input.value);
+        document.getElementById('mobileDateTitle').textContent = input.id === 'invoiceDate' ? '选择开票日期' : '选择费用时间';
+        renderMobileDate();
+        document.getElementById('mobileDateModal').hidden = false;
+      }
+      function enhanceDateInput(input) {
+        if (!input || input.dataset.mobileDateReady) return;
+        input.dataset.mobileDateReady = 'true';
+        input.addEventListener('click', () => openMobileDatePicker(input));
+        input.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openMobileDatePicker(input); } });
+      }
+      function enhanceAllChoices(root = document) { root.querySelectorAll('select:not(.mobile-choice-source)').forEach(select => enhanceChoiceSelect(select)); }
+      function resetExpenseDetails() {
+        document.getElementById('expenseList').replaceChildren();
+        document.getElementById('expenseTotal').textContent = '¥ 0.00';
+        expenseDetails.hidden = true;
+        expenseTypeTarget = null;
+        activeInvoiceCard = null;
+        expenseProjectTarget = null;
+      }
+      function updateAutomaticAllocationRowState(row) {
+        const owner = row?.querySelector('.allocation-owner');
+        const team = row?.querySelector('.allocation-team');
+        const remove = row?.querySelector('.allocation-remove');
+        if (!owner || !team || !remove) return;
+        const locked = kind.value === 'ordinary' && row.dataset.autoApplicantAllocation === 'true';
+        owner.disabled = locked;
+        team.disabled = kind.value !== 'project';
+        row.classList.toggle('auto-applicant-allocation', locked);
+        remove.hidden = locked;
+        refreshChoiceTrigger(owner);
+        refreshChoiceTrigger(team);
+      }
+      function updatePaymentKind() { const isProject = kind.value === 'project'; projectField.classList.toggle('show', isProject); projectName.required = isProject; if (!isProject) { selectedProjects = []; projectName.value = ''; refreshChoiceTrigger(projectName); } document.querySelectorAll('.allocation-row').forEach(row => { updateAllocationOwner(row); updateAutomaticAllocationRowState(row); }); document.querySelectorAll('.expense-card').forEach(card => card.classList.toggle('project-expense', isProject)); refreshBasicCompletion(); }
+      const updateReimbursementKind = updatePaymentKind;
+      function updateOverseasFields() { const overseas = checkedValue('overseas') === 'yes'; document.getElementById('currencyField').classList.toggle('show', overseas); document.getElementById('swiftField').classList.toggle('show', overseas); document.getElementById('currency').required = overseas; document.getElementById('swiftCode').required = overseas; updatePayeeTypeState(); refreshBasicCompletion(); }
+      function updateLoanDetails() {
+        const usingLoan = checkedValue('loanOffset') === 'yes';
+        loanDetails.classList.toggle('show', usingLoan);
+        if (usingLoan) openLoanPicker();
+        else { selectedLoans = []; pendingLoans = []; document.getElementById('selectedLoanDocument').hidden = true; document.getElementById('selectedLoanDocument').innerHTML = ''; }
+        refreshBasicCompletion();
+      }
+      function clearBasicFieldErrors() {
+        document.querySelectorAll('.field-error').forEach(row => { row.classList.remove('field-error'); row.removeAttribute('aria-invalid'); });
+      }
+      function getMissingBasicFields(mark = true) {
+        const missing = [];
+        if (mark) clearBasicFieldErrors();
+        const check = (field, label, valid) => { if (valid) return; missing.push(label); if (mark) { const row = field?.closest('.form-row, .loan-details'); row?.classList.add('field-error'); row?.setAttribute('aria-invalid', 'true'); } };
+        check(documentTitle, '标题', Boolean(documentTitle.value.trim()));
+        check(expenseDate, '费用时间', Boolean(expenseDate.value));
+        check(kind, '付款类型', Boolean(kind.value));
+        check(companyEntity, '主体公司', Boolean(companyEntity.value));
+        check(document.querySelector('input[name="hasInvoice"]'), '是否有发票', Boolean(checkedValue('hasInvoice')));
+        check(document.querySelector('input[name="serviceFee"]'), '是否付劳务费', Boolean(checkedValue('serviceFee')));
+        check(recipientName, '收款单位', Boolean(recipientName.textContent.trim()));
+        check(document.querySelector('input[name="payeeType"]'), '收款方类型', Boolean(checkedValue('payeeType')));
+        const linkedPayee = checkedValue('payeeType') === 'linked';
+        if (!linkedPayee) {
+          check(recipientAccount, '银行账号', Boolean(recipientAccount.value.trim()));
+          const bankValue = recipientBank.value.trim();
+          const hasBankValue = Boolean(bankValue && bankValue !== '请选择开户行');
+          check(checkedValue('overseas') === 'yes' ? recipientBankManual : recipientBankPickerTrigger, '开户行', hasBankValue);
+        }
+        check(document.querySelector('input[name="overseas"]'), '是否海外付款', Boolean(checkedValue('overseas')));
+        const overseas = checkedValue('overseas') === 'yes';
+        if (overseas) {
+          check(document.getElementById('currency'), '币种', Boolean(document.getElementById('currency').value));
+          check(document.getElementById('swiftCode'), 'SWIFT Code', Boolean(document.getElementById('swiftCode').value.trim()));
+        }
+        const usingLoan = false;
+        if (kind.value === 'project') check(projectName, '本单关联项目', Boolean(selectedProjects.length));
+        check(remark, '备注', Boolean(remark.value.trim()));
+        return missing;
+      }
+      function isBasicComplete() { return getMissingBasicFields(false).length === 0; }
+      function promptBasicValidation() {
+        const missingFields = getMissingBasicFields();
+        if (!missingFields.length) return true;
+        showToast(`请填写：${missingFields.join('、')}`);
+        return false;
+      }
+      function refreshBasicCompletion() { clearBasicFieldErrors(); openExpenses.disabled = !isBasicComplete(); }
+      const expenseSubcategories = { 办公费:['办公用品','办公耗材','快递费'], 差旅费:['交通费','住宿费','餐费'], 业务招待费:['客户招待','商务餐费'], 固定人工:['工资','劳务费'] };
+      const ownerDepartments = { 陈敏:'行政部', 刘宇鑫:'教学运营部', 张明:'项目管理部' };
+      const ownerTeams = { 陈敏:'行政运营组', 刘宇鑫:'教学运营组', 张明:'项目支持组' };
+      const teamBudgetBalances = { 行政运营组:'¥ 128,000.00', 教学运营组:'¥ 86,500.00', 项目支持组:'¥ 54,200.00', 市场支持组:'¥ 39,800.00' };
+      const teams = ['行政运营组','教学运营组','项目支持组','市场支持组'];
+      function updateExpenseSubcategory(select, category) { select.innerHTML = '<option value="">请选择子类</option>' + (expenseSubcategories[category] || []).map(item => `<option>${item}</option>`).join(''); refreshChoiceTrigger(select); }
+      function ensureApplicantAllocation(card) {
+        const category = card?.querySelector('.expense-category')?.value;
+        const subcategory = card?.querySelector('.expense-subcategory')?.value;
+        const row = card?.querySelector('.allocation-row');
+        if (!row) return;
+        if (kind.value !== 'project' && category && subcategory) {
+          row.dataset.autoApplicantAllocation = 'true';
+          const owner = row.querySelector('.allocation-owner');
+          owner.value = '陈敏';
+          updateAllocationOwner(row);
+        }
+        updateAutomaticAllocationRowState(row);
+      }
+      function updateExpenseDetailVisibility(card) {
+        const complete = Boolean(card?.querySelector('.expense-category')?.value && card?.querySelector('.expense-subcategory')?.value);
+        card?.classList.toggle('expense-type-selected', complete);
+      }
+      function updateInvoiceVisibility() {
+        const hasInvoice = checkedValue('hasInvoice') !== 'no';
+        document.querySelectorAll('.material-launcher [data-material-action="invoice"], .expense-invoice').forEach(node => { node.hidden = !hasInvoice; });
+        document.querySelectorAll('.expense-invoice').forEach(node => { node.querySelector('.material-panel-title strong em')?.toggleAttribute('hidden', !hasInvoice); });
+      }
+      function updateServiceFeeState() {
+        const enabled = checkedValue('serviceFee') === 'yes';
+        document.querySelectorAll('.labor-tax-field').forEach(field => field.classList.toggle('show', enabled));
+        document.querySelectorAll('.labor-tax-input').forEach(input => { input.required = enabled; if (enabled) { const amount = input.closest('.allocation-row')?.querySelector('.allocation-amount'); input.value = calculateLaborTax(amount?.value); } });
+      }
+      function updatePayeeTypeState() {
+        const linked = checkedValue('payeeType') === 'linked';
+        const overseas = checkedValue('overseas') === 'yes';
+        const nextMode = linked ? 'linked' : overseas ? 'overseas' : 'domestic';
+        if (bankMode && bankMode !== nextMode) {
+          recipientBank.value = ''; recipientBankManual.value = '';
+          recipientBankPickerTrigger.textContent = '请选择开户行';
+        }
+        bankMode = nextMode;
+        document.getElementById('recipientBankRow').hidden = linked;
+        document.getElementById('recipientAccount')?.closest('.form-row')?.removeAttribute('hidden');
+        recipientBankManual.hidden = nextMode !== 'overseas';
+        recipientBankPickerTrigger.hidden = nextMode !== 'domestic';
+        recipientBankManual.required = nextMode === 'overseas';
+        recipientBank.value = nextMode === 'overseas' ? recipientBankManual.value : recipientBankPickerTrigger.textContent.trim();
+      }
+      function renderProjectOptions(keyword = '') {
+        const normalized = keyword.trim().toLowerCase();
+        const sourceProjects = expenseProjectTarget ? selectedProjects : projects;
+        const options = sourceProjects.filter(project => !normalized || `${project.name}${project.type}${project.owner}`.toLowerCase().includes(normalized));
+        const container = document.getElementById('projectPickerOptions');
+        container.innerHTML = options.length ? options.map(project => `<button type="button" class="project-picker-option${pendingProjects.some(item => item.id === project.id) ? ' active' : ''}" data-project-id="${project.id}"><span class="picker-option-title">${project.name}</span><span class="picker-option-meta"><span>项目类型：${project.type}</span><span>负责人：${project.owner}</span><span>结束日期：${project.endDate}</span><span>状态：${project.status}</span></span></button>`).join('') : '<div class="loan-picker-empty">没有符合条件的项目</div>';
+        container.querySelectorAll('.project-picker-option').forEach(option => option.addEventListener('click', () => {
+          const project = projects.find(item => item.id === option.dataset.projectId);
+          pendingProjects = pendingProjects.some(item => item.id === project.id) ? pendingProjects.filter(item => item.id !== project.id) : [...pendingProjects, project];
+          renderProjectOptions(document.getElementById('projectPickerSearch').value);
+          document.getElementById('confirmProjectPicker').disabled = !pendingProjects.length;
+        }));
+      }
+      function openProjectPicker(card = null) {
+        expenseProjectTarget = card;
+        pendingProjects = card ? [] : selectedProjects.slice();
+        document.getElementById('projectPickerSearch').value = '';
+        renderProjectOptions();
+        document.getElementById('confirmProjectPicker').disabled = !pendingProjects.length;
+        document.getElementById('projectPickerModal').hidden = false;
+      }
+      function confirmProjectPicker() {
+        if (!pendingProjects.length) return showToast('请选择至少一个关联项目');
+        if (expenseProjectTarget) {
+          const card = expenseProjectTarget;
+          pendingProjects.forEach(project => addAllocationRow(card, '陈敏', false, project));
+          updateExpenseSummary(card);
+          expenseProjectTarget = null;
+          document.getElementById('projectPickerModal').hidden = true;
+          return;
+        }
+        selectedProjects = pendingProjects.slice();
+        projectName.value = selectedProjects[0].name;
+        refreshChoiceTrigger(projectName);
+        projectName.dispatchEvent(new Event('change', { bubbles:true }));
+        document.getElementById('projectPickerModal').hidden = true;
+        refreshBasicCompletion();
+      }
+      function renderExpenseTypePicker() {
+        const categories = Object.keys(expenseSubcategories);
+        const categoryContainer = document.getElementById('expenseTypeCategories');
+        const subcategoryContainer = document.getElementById('expenseTypeSubcategories');
+        categoryContainer.innerHTML = categories.map(category => `<button type="button" class="${category === expenseTypeCategory ? 'active' : ''}" data-category="${category}">${category}</button>`).join('');
+        subcategoryContainer.innerHTML = (expenseSubcategories[expenseTypeCategory] || []).map(subcategory => `<button type="button" class="${expenseTypeTarget?.querySelector('.expense-subcategory')?.value === subcategory ? 'active' : ''}" data-subcategory="${subcategory}">${subcategory}</button>`).join('') || '<div class="loan-picker-empty">请先选择费用类型</div>';
+        categoryContainer.querySelectorAll('button').forEach(button => button.addEventListener('click', () => { expenseTypeCategory = button.dataset.category; renderExpenseTypePicker(); }));
+        subcategoryContainer.querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
+          if (!expenseTypeTarget) return;
+          const categorySelect = expenseTypeTarget.querySelector('.expense-category');
+          const subcategorySelect = expenseTypeTarget.querySelector('.expense-subcategory');
+          categorySelect.value = expenseTypeCategory;
+          categorySelect.dispatchEvent(new Event('change', { bubbles:true }));
+          subcategorySelect.value = button.dataset.subcategory;
+          subcategorySelect.dispatchEvent(new Event('change', { bubbles:true }));
+          refreshChoiceTrigger(categorySelect); refreshChoiceTrigger(subcategorySelect); updateExpenseSummary(expenseTypeTarget);
+          document.getElementById('expenseTypePickerModal').hidden = true;
+          expenseTypeTarget = null;
+        }));
+      }
+      function openExpenseTypePicker(select) {
+        const card = select.closest('.expense-card');
+        if (!card) return;
+        expenseTypeTarget = card;
+        expenseTypeCategory = card.querySelector('.expense-category').value || Object.keys(expenseSubcategories)[0];
+        renderExpenseTypePicker();
+        document.getElementById('expenseTypePickerModal').hidden = false;
+      }
+      function updateAllocationOwner(row) {
+        const owner = row.querySelector('.allocation-owner').value;
+        const team = row.querySelector('.allocation-team');
+        row.querySelector('.allocation-owner-department').value = ownerDepartments[owner] || '';
+        if (kind.value === 'project') {
+          team.disabled = false;
+          if (!team.value) team.value = teams[0];
+        } else {
+          team.value = ownerTeams[owner] || team.value || teams[0];
+          team.disabled = true;
+        }
+        refreshChoiceTrigger(team);
+        row.querySelector('.allocation-team-balance').value = teamBudgetBalances[team.value] || '';
+      }
+      function updateAllocationTeam(row) { row.querySelector('.allocation-team-balance').value = teamBudgetBalances[row.querySelector('.allocation-team').value] || ''; }
+      function addAllocationRow(card, owner = '陈敏', automatic = false, project = null) {
+        const list = card.querySelector('.allocation-list');
+        const row = document.createElement('div'); row.className = 'allocation-row allocation-card';
+        if (automatic) row.dataset.autoApplicantAllocation = 'true';
+        row.innerHTML = `<div class="allocation-grid"><label class="allocation-field allocation-project-field"><span>项目</span><input class="allocation-project-name" readonly value="${project?.name || ''}" aria-label="项目"></label><label class="allocation-field"><span>分摊人 <em>*</em></span><select class="allocation-owner" aria-label="分摊人"><option${owner === '陈敏' ? ' selected' : ''}>陈敏</option><option${owner === '刘宇鑫' ? ' selected' : ''}>刘宇鑫</option><option${owner === '张明' ? ' selected' : ''}>张明</option></select></label><label class="allocation-field"><span>分摊人部门</span><input class="allocation-owner-department" readonly value="" aria-label="分摊人部门"></label><label class="allocation-field"><span>费用承担团队</span><select class="allocation-team" aria-label="费用承担团队">${teams.map(item => `<option>${item}</option>`).join('')}</select></label><label class="allocation-field"><span>预算余额</span><input class="allocation-team-balance" readonly value="" aria-label="预算余额"></label><label class="allocation-field allocation-amount-field"><span>分摊金额 <em>*</em></span><input class="allocation-amount" type="number" min="0" step="0.01" required placeholder="请输入金额" aria-label="分摊金额"></label><label class="allocation-field labor-tax-field"><span>劳务个税</span><input class="labor-tax-input" type="number" min="0" step="0.01" placeholder="自动计算" aria-label="劳务个税"></label><label class="allocation-field wide"><span>事由 <em>*</em></span><input class="allocation-reason" type="text" required placeholder="请填写本笔费用事由" aria-label="事由"></label></div><button class="allocation-remove" type="button" aria-label="删除分摊">×</button>`;
+        row.querySelector('.allocation-owner').addEventListener('change', () => { updateAllocationOwner(row); });
+        row.querySelector('.allocation-team').addEventListener('change', () => updateAllocationTeam(row));
+        row.querySelector('.allocation-amount').addEventListener('input', () => { updateExpenseTotal(); updateExpenseSummary(card); if (checkedValue('serviceFee') === 'yes') row.querySelector('.labor-tax-input').value = calculateLaborTax(row.querySelector('.allocation-amount').value); });
+        row.querySelector('.allocation-reason').addEventListener('input', () => updateExpenseSummary(card));
+        row.querySelector('.allocation-remove').addEventListener('click', () => { if (list.children.length > 1) { row.remove(); updateExpenseTotal(); updateExpenseSummary(card); } else showToast('至少保留一条分摊'); });
+        list.appendChild(row);
+        enhanceAllChoices(row);
+        updateAllocationOwner(row);
+        updateAutomaticAllocationRowState(row);
+        refreshChoiceTrigger(row.querySelector('.allocation-team'));
+        updateExpenseSummary(card);
+      }
+      function calculateLaborTax(value) { const amount = Number(value); if (!Number.isFinite(amount) || amount <= 800) return '0.00'; const taxable = amount <= 4000 ? amount - 800 : amount * 0.8; return (taxable <= 20000 ? taxable * 0.2 : taxable <= 50000 ? taxable * 0.3 - 2000 : taxable * 0.4 - 7000).toFixed(2); }
+      function bindUploadControl(card, inputSelector, listSelector) {
+        const input = card.querySelector(inputSelector); const list = card.querySelector(listSelector);
+        input.addEventListener('change', () => { [...input.files].forEach(file => { const item = document.createElement('span'); item.className = 'file-item'; item.textContent = `${file.type.startsWith('image/') ? '图片 · ' : ''}${file.name}`; list.appendChild(item); }); input.value = ''; updateExpenseSummary(card); });
+      }
+      function bindInvoiceActions(card) {
+        const invoiceInput = card.querySelector('.invoice-input');
+        card.querySelector('[data-invoice-action="add"]').addEventListener('click', () => openInvoiceActionModal(card));
+        invoiceInput.addEventListener('change', () => {
+          if (invoiceInput.files.length) {
+            [...invoiceInput.files].forEach(file => appendInvoiceRecord(card, { number:file.name, type:'OCR 识别发票', seller:'识别结果待回填', total:'0.00', tax:'0.00', linked:'0.00', imageName:file.name }));
+            if (invoiceInput.dataset.mode === 'ocr') showToast('已提交 OCR 识别，识别结果将回填发票信息。');
+          }
+          invoiceInput.dataset.mode = ''; invoiceInput.value = ''; updateExpenseSummary(card);
+        });
+      }
+      function openInvoiceActionModal(card) { activeInvoiceCard = card; document.getElementById('invoiceActionModal').hidden = false; }
+      function startInvoiceAction(action) {
+        if (!activeInvoiceCard) return;
+        const input = activeInvoiceCard.querySelector('.invoice-input');
+        document.getElementById('invoiceActionModal').hidden = true;
+        if (action === 'manual') { document.getElementById('invoiceManualModal').hidden = false; return; }
+        input.dataset.mode = 'ocr'; input.click();
+      }
+      function appendInvoiceRecord(card, data) {
+        const record = document.createElement('div');
+        record.className = 'invoice-record';
+        const formatInvoiceAmount = value => Number(value || 0).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+        record.innerHTML = `<div class="invoice-record-head"><strong>${data.number}</strong><em>${data.type}</em><span class="invoice-record-actions"><button type="button" data-invoice-view>查看影像</button><button type="button" data-invoice-remove>删除</button></span></div><div class="invoice-record-seller">${data.seller}</div><div class="invoice-record-amounts"><span>价税合计<b>${formatInvoiceAmount(data.total)}</b></span><span>税额<b>${formatInvoiceAmount(data.tax)}</b></span></div>`;
+        const list = card.querySelector('.invoice-files');
+        list.appendChild(record);
+        record.querySelector('[data-invoice-view]').addEventListener('click', () => showToast(data.imageName ? `查看发票影像：${data.imageName}` : '暂无发票影像'));
+        record.querySelector('[data-invoice-remove]').addEventListener('click', () => { record.remove(); updateExpenseSummary(card); });
+      }
+      function saveManualInvoice() {
+        const number = document.getElementById('invoiceNumber').value.trim();
+        const total = document.getElementById('invoiceTotal').value.trim();
+        const seller = document.getElementById('invoiceSeller').value.trim();
+        if (!number || !total || !seller) return showToast('请补充发票号码、价税合计和开票公司');
+        if (activeInvoiceCard) { appendInvoiceRecord(activeInvoiceCard, { number, type:document.getElementById('invoiceType').value || '发票', seller, total, tax:document.getElementById('invoiceTax').value || '0' }); updateExpenseSummary(activeInvoiceCard); }
+        document.getElementById('invoiceManualModal').hidden = true;
+        document.querySelectorAll('#invoiceManualModal input').forEach(input => { input.value = ''; });
+        showToast('已保存手工录入发票');
+      }
+      function updateExpenseSummary(card) {
+        const category = card.querySelector('.expense-category')?.value || '未选择费用类型';
+        const subcategory = card.querySelector('.expense-subcategory')?.value || '待选择子类';
+        const amount = [...card.querySelectorAll('.allocation-amount')].reduce((sum, input) => sum + (Number(input.value) || 0), 0);
+        const allocationCount = card.querySelectorAll('.allocation-row').length;
+        const invoiceCount = card.querySelectorAll('.invoice-files > *').length;
+        const attachmentCount = card.querySelectorAll('.contract-files > *, .other-files > *').length;
+        card.querySelector('.expense-summary-title').textContent = category;
+        card.querySelector('.expense-summary-subtitle').textContent = `${subcategory} · ${allocationCount} 条分摊${checkedValue('hasInvoice') === 'no' ? '' : ` · 发票 ${invoiceCount}`} · 附件 ${attachmentCount}`;
+        card.querySelector('.expense-summary-meta').textContent = `¥ ${amount.toFixed(2)}`;
+        card.querySelector('.invoice-count').textContent = invoiceCount;
+        card.querySelector('.attachment-count').textContent = attachmentCount;
+        card.querySelector('.invoice-empty')?.classList.toggle('hidden', invoiceCount > 0);
+      }
+      function openExpenseEditor(card) {
+        document.querySelectorAll('.expense-card').forEach(item => { if (item !== card) { item.classList.remove('open'); item.querySelector('.expense-editor-sheet').hidden = true; } });
+        card.classList.add('open');
+        card.querySelector('.expense-editor-sheet').hidden = false;
+        card.scrollIntoView({ behavior:'smooth', block:'start' });
+      }
+      function closeExpenseEditor(card) { card.classList.remove('open'); card.querySelector('.expense-editor-sheet').hidden = true; }
+      function validateExpenseEditor(card) {
+        card.querySelectorAll('.allocation-field, .expense-invoice').forEach(field => field.classList.remove('field-error'));
+        const missing = [];
+        const category = card.querySelector('.expense-category');
+        if (!category.value) { missing.push('费用类型'); category.closest('.expense-field').classList.add('field-error'); }
+        const rows = [...card.querySelectorAll('.allocation-row')];
+        if (!rows.length) { missing.push('分摊明细'); card.querySelector('.expense-allocation').classList.add('field-error'); }
+        rows.forEach(row => {
+          const checks = [
+            [row.querySelector('.allocation-owner'), '分摊人'],
+            [row.querySelector('.allocation-amount'), '分摊金额'],
+            [row.querySelector('.allocation-reason'), '事由']
+          ];
+          checks.forEach(([input, label]) => {
+            const field = input.closest('.allocation-field');
+            if (!String(input.value || '').trim()) { field.classList.add('field-error'); if (!missing.includes(label)) missing.push(label); }
+          });
+          if (checkedValue('serviceFee') === 'yes' && !String(row.querySelector('.labor-tax-input')?.value || '').trim()) {
+            row.querySelector('.labor-tax-field')?.classList.add('field-error');
+            if (!missing.includes('劳务个税')) missing.push('劳务个税');
+          }
+        });
+        if (checkedValue('hasInvoice') !== 'no' && !card.querySelectorAll('.invoice-files > *').length) { missing.push('发票'); card.querySelector('.expense-invoice').classList.add('field-error'); }
+        if (missing.length) { showToast(`请填写：${missing.join('、')}`); return false; }
+        return true;
+      }
+      function saveExpenseEditor(card) {
+        if (!validateExpenseEditor(card)) return;
+        card.dataset.saved = 'true';
+        closeExpenseEditor(card);
+        updateExpenseSummary(card);
+      }
+      function removeExpenseCard(card) {
+        closeExpenseEditor(card);
+        card.remove();
+        updateExpenseTotal();
+      }
+      function cancelExpenseEditor(card) {
+        if (card.dataset.saved !== 'true') return removeExpenseCard(card);
+        closeExpenseEditor(card);
+      }
+      function openMaterialSheet(card, type) {
+        const sheet = card.querySelector('.expense-material-sheet');
+        sheet.hidden = false;
+        sheet.querySelectorAll('.material-panel').forEach(panel => { panel.hidden = panel.dataset.materialPanel !== type; });
+      }
+      function normalizeAttachmentSections(card) {
+        const attachments = card.querySelector('.expense-attachments');
+        const contractDropzone = attachments.querySelector('.attachment-dropzone');
+        const contractFiles = attachments.querySelector('.contract-files');
+        attachments.querySelector('[data-attachment-category="contract"]')?.remove();
+        const contractCategory = document.createElement('div');
+        contractCategory.className = 'attachment-category';
+        contractCategory.dataset.attachmentCategory = 'contract';
+        contractCategory.innerHTML = '<div class="attachment-category-head">合同 <span>选填</span></div>';
+        contractCategory.append(contractDropzone, contractFiles);
+        attachments.insertBefore(contractCategory, attachments.querySelector('[data-attachment-category="other"]'));
+      }
+      function addExpenseRow() {
+        const card = document.createElement('article'); card.className = 'expense-card';
+        card.classList.toggle('project-expense', kind.value === 'project');
+        card.innerHTML = '<button class="expense-summary-card" type="button" aria-label="编辑费用明细"><span class="expense-summary-main"><strong class="expense-summary-title">未选择费用类型</strong><span class="expense-summary-subtitle">待选择类型 · 0 条分摊 · 发票 0 · 附件 0</span></span><span class="expense-summary-meta">¥ 0.00</span><span class="expense-summary-arrow">›</span></button><div class="expense-editor-sheet" hidden><div class="expense-card-head"><span>编辑费用明细</span><button class="remove-expense" type="button" aria-label="删除费用明细">删除</button></div><section class="expense-block expense-core"><div class="expense-block-title"><strong>费用信息</strong><span>选择费用类型</span></div><div class="expense-field"><label>费用类型 *</label><select class="expense-category" required aria-label="费用类型"><option value="">请选择</option><option>办公费</option><option>差旅费</option><option>业务招待费</option><option>固定人工</option></select><select class="expense-subcategory" required aria-label="费用类型子类" hidden><option value="">请先选择类型</option></select></div></section><section class="expense-block expense-allocation"><div class="expense-block-title"><strong>分摊明细</strong><span>填写承担人和金额</span></div><div class="allocation-list"></div><button class="add-allocation" type="button">＋ 增加分摊</button></section><div class="material-launcher"><button type="button" data-material-action="invoice">发票 <span class="invoice-count">0</span></button><button type="button" data-material-action="attachment">附件 <span class="attachment-count">0</span></button></div><div class="expense-material-sheet" hidden><section class="expense-block expense-invoice material-panel" data-material-panel="invoice" hidden><div class="material-panel-title"><strong>发票 <em>*</em></strong><button type="button" class="add-invoice-link" data-invoice-action="add">＋ 添加发票</button></div><div class="invoice-empty">暂未添加发票</div><div class="file-list invoice-files"></div><input class="invoice-input" type="file" accept="image/*,.pdf" multiple></section><section class="expense-block expense-attachments material-panel" data-material-panel="attachment" hidden><div class="material-panel-title"><strong>附件</strong></div><div class="attachment-dropzone"><span>＋ 上传附件（非必填）</span><label class="upload-attachment">选择文件<input class="attachment-input contract-input" type="file" multiple></label></div><div class="file-list contract-files"></div><div class="attachment-category" data-attachment-category="contract" hidden></div><div class="attachment-category" data-attachment-category="other" hidden><div class="file-list other-files"></div><input class="attachment-input other-input" type="file" multiple></div></section></div><button class="expense-close" id="closeExpenseEditor" type="button">完成编辑</button></div>';
+        const editorSheet = card.querySelector('.expense-editor-sheet');
+        card.querySelectorAll('.expense-invoice, .expense-attachments').forEach(section => section.classList.add('expense-material-section'));
+        card.querySelector('.expense-card-head')?.remove();
+        card.querySelector('.expense-core .expense-block-title span')?.remove();
+        editorSheet.insertAdjacentHTML('afterbegin', '<div class="expense-editor-topbar"><button class="editor-back" id="expenseEditorBack" type="button" aria-label="返回费用明细">‹</button><strong>费用明细</strong><button class="editor-done" type="button">完成</button></div>');
+        const closeButton = card.querySelector('.expense-close');
+        const editorActions = document.createElement('div'); editorActions.className = 'expense-editor-actions';
+        editorActions.innerHTML = '<button type="button" id="cancelExpenseEditor">取消</button><button type="button" id="saveExpenseEditor">保存</button>';
+        closeButton.replaceWith(editorActions);
+        card.querySelector('.editor-done')?.remove();
+        card.querySelector('.expense-summary-card').insertAdjacentHTML('afterend', '<button class="delete-expense-card" type="button" aria-label="删除费用明细">删除</button>');
+        card.querySelector('.expense-summary-card').addEventListener('click', () => openExpenseEditor(card));
+        card.querySelector('.delete-expense-card').addEventListener('click', () => removeExpenseCard(card));
+        card.querySelector('.editor-back').addEventListener('click', () => cancelExpenseEditor(card));
+        card.querySelector('#cancelExpenseEditor').addEventListener('click', () => cancelExpenseEditor(card));
+        card.querySelector('#saveExpenseEditor').addEventListener('click', () => saveExpenseEditor(card));
+        card.querySelector('.expense-category').addEventListener('change', event => { updateExpenseSubcategory(card.querySelector('.expense-subcategory'), event.target.value); ensureApplicantAllocation(card); updateExpenseDetailVisibility(card); updateExpenseSummary(card); });
+        card.querySelector('.expense-subcategory').addEventListener('change', () => { ensureApplicantAllocation(card); updateExpenseDetailVisibility(card); updateExpenseSummary(card); });
+        card.querySelector('.add-allocation').addEventListener('click', () => kind.value === 'project' ? openProjectPicker(card) : addAllocationRow(card));
+        card.querySelectorAll('[data-material-action]').forEach(button => button.addEventListener('click', () => openMaterialSheet(card, button.dataset.materialAction)));
+        card.querySelectorAll('[data-close-material]').forEach(button => button.addEventListener('click', () => { card.querySelector('.expense-material-sheet').hidden = true; }));
+        const otherAttachment = card.querySelector('[data-attachment-category="other"]');
+        otherAttachment.hidden = false;
+        otherAttachment.innerHTML = '<div class="attachment-category-head">其他说明材料 <span>选填</span></div><div class="attachment-dropzone"><span>＋ 上传其他说明材料</span><label class="upload-attachment">选择文件<input class="attachment-input other-input" type="file" multiple></label></div><div class="file-list other-files"></div>';
+        normalizeAttachmentSections(card);
+        if (kind.value === 'ordinary') addAllocationRow(card, '陈敏', true);
+        bindInvoiceActions(card);
+        bindUploadControl(card, '.contract-input', '.contract-files');
+        bindUploadControl(card, '.other-input', '.other-files');
+        card.querySelectorAll('.attachment-dropzone').forEach(dropzone => dropzone.addEventListener('click', event => { if (!event.target.closest('label')) dropzone.querySelector('input').click(); }));
+        enhanceAllChoices(card);
+        document.getElementById('expenseList').appendChild(card);
+        updateExpenseSummary(card);
+        return card;
+      }
+      function updateExpenseTotal() { const total = [...document.querySelectorAll('.allocation-amount')].reduce((sum, input) => sum + (Number(input.value) || 0), 0); document.getElementById('expenseTotal').textContent = `¥ ${total.toFixed(2)}`; }
+      function validateExpenseFields() { if (expenseDetails.querySelectorAll('.expense-card').length === 0) return false; const expenseFields = [...expenseDetails.querySelectorAll('[required]')]; return expenseFields.length > 0 && expenseFields.every(field => String(field.value || '').trim()); }
+      function updateReviewSummary() {
+        return true;
+      }
+      function formatLoanAmount(amount) { return `${Number(amount).toFixed(2)}`; }
+      function renderLoanOptions(keyword = '') {
+        const normalized = keyword.trim().toLowerCase();
+        const options = loanDocuments.filter(loan => !normalized || `${loan.number}${loan.borrower}`.toLowerCase().includes(normalized));
+        const container = document.getElementById('loanPickerOptions');
+        if (!options.length) { container.innerHTML = '<div class="loan-picker-empty">没有符合条件的借款单</div>'; return; }
+        container.innerHTML = options.map(loan => {
+          const index = loanDocuments.indexOf(loan);
+          const active = pendingLoans.includes(loan);
+          return `<button type="button" class="loan-picker-option${active ? ' active' : ''}" data-index="${index}"><div class="loan-picker-option-head"><strong>${loan.number}</strong><span>${loan.borrower}</span></div><div class="loan-picker-option-meta"><span>主体公司：${loan.company}</span><span>状态：${loan.status}</span><span>币种：${loan.currency}</span><span>总借款金额：${formatLoanAmount(loan.total)}</span><span>已还款金额：${formatLoanAmount(loan.repaid)}</span><span>剩余欠款金额：${formatLoanAmount(loan.remaining)}</span><span>计划还款时间：${loan.planned}</span><span>实际还款时间：${loan.actual}</span></div></button>`;
+        }).join('');
+        container.querySelectorAll('.loan-picker-option').forEach(option => option.addEventListener('click', () => {
+          const loan = loanDocuments[Number(option.dataset.index)];
+          pendingLoans = pendingLoans.includes(loan) ? pendingLoans.filter(item => item !== loan) : [...pendingLoans, loan];
+          renderLoanOptions(document.getElementById('loanPickerSearch').value);
+          document.getElementById('confirmLoanDocument').disabled = !pendingLoans.length;
+        }));
+      }
+      function updateSelectedLoan() {
+        const summary = document.getElementById('selectedLoanDocument');
+        if (!selectedLoans.length) { summary.hidden = true; summary.innerHTML = ''; return; }
+        summary.hidden = false;
+        summary.innerHTML = selectedLoans.map((loan, index) => `<div class="selected-loan-card"><div class="selected-loan-head"><strong>${loan.number}</strong><button type="button" class="change-loan-document" data-index="${index}">删除</button></div><div class="selected-loan-meta"><span>状态：${loan.status}</span><span>币种：${loan.currency}</span><span>总借款：${formatLoanAmount(loan.total)}</span><span>剩余欠款：${formatLoanAmount(loan.remaining)}</span></div><div class="loan-offset-row"><label for="${index === 0 ? 'loanOffsetAmount' : `loanOffsetAmount-${index}`}">本次抵冲金额 *</label><input id="${index === 0 ? 'loanOffsetAmount' : `loanOffsetAmount-${index}`}" class="loan-offset-amount" type="text" inputmode="decimal" value="${loan.offsetAmount || ''}" placeholder="请输入金额" aria-label="${loan.number}本次抵冲金额"></div></div>`).join('');
+        summary.querySelectorAll('.change-loan-document').forEach(button => { button.textContent = '删除'; button.addEventListener('click', () => { selectedLoans.splice(Number(button.dataset.index), 1); updateSelectedLoan(); refreshBasicCompletion(); }); });
+        summary.querySelectorAll('.loan-offset-amount').forEach((input, index) => input.addEventListener('input', event => { selectedLoans[index].offsetAmount = event.target.value; refreshBasicCompletion(); }));
+        const remainingTotal = selectedLoans.reduce((sum, loan) => sum + loan.remaining, 0);
+        document.getElementById('loanDebtTotal').textContent = `CNY ${formatLoanAmount(remainingTotal)}`;
+      }
+      function openLoanPicker() {
+        pendingLoans = selectedLoans.slice();
+        document.getElementById('loanPickerSearch').value = '';
+        renderLoanOptions();
+        document.getElementById('confirmLoanDocument').disabled = !pendingLoans.length;
+        document.getElementById('loanPickerModal').hidden = false;
+      }
+      function confirmLoanDocument() {
+        if (!pendingLoans.length) return showToast('请选择至少一笔借款单');
+        selectedLoans = pendingLoans.slice();
+        updateSelectedLoan();
+        document.getElementById('loanPickerModal').hidden = true;
+        refreshBasicCompletion();
+      }
+      function renderCompanyOptions(keyword = '') {
+        const normalized = keyword.trim().toLowerCase();
+        const options = companyEntities.filter(company => !normalized || company.toLowerCase().includes(normalized));
+        const container = document.getElementById('companyPickerOptions');
+        container.innerHTML = options.length ? options.map(company => `<button type="button" class="company-picker-option${company === selectedCompany ? ' active' : ''}" data-company="${company}">${company}</button>`).join('') : '<div class="loan-picker-empty">没有符合条件的主体公司</div>';
+        container.querySelectorAll('.company-picker-option').forEach(option => option.addEventListener('click', () => applyCompanySelection(option.textContent)));
+      }
+      function applyCompanySelection(company) {
+        const value = String(company || '').trim();
+        if (!value) return;
+        selectedCompany = value;
+        if (![...companyEntity.options].some(option => option.value === value)) companyEntity.add(new Option(value, value));
+        companyEntity.value = value;
+        refreshChoiceTrigger(companyEntity);
+        companyEntity.dispatchEvent(new Event('change', { bubbles:true }));
+        document.getElementById('mobileChoiceModal').hidden = true;
+        document.getElementById('companyPickerModal').hidden = true;
+        refreshBasicCompletion();
+      }
+      function openCompanyPicker() {
+        document.getElementById('companyPickerSearch').value = '';
+        renderCompanyOptions();
+        document.getElementById('companyPickerModal').hidden = false;
+      }
+      function setStep(step) {
+        if (step > 1 && !promptBasicValidation()) return;
+        const target = Math.max(1, Math.min(2, step));
+        document.querySelectorAll('.expense-card.open').forEach(card => closeExpenseEditor(card));
+        basicInfoSection.hidden = target !== 1;
+        expenseDetails.hidden = target !== 2;
+        document.querySelectorAll('.application-step').forEach(item => { const value = Number(item.dataset.step); item.classList.toggle('active', value === target); item.classList.toggle('done', value < target); });
+        stepBack.hidden = target === 1;
+        stepNext.hidden = target === 2;
+        submitApplication.hidden = target !== 2;
+        bottomActions.classList.toggle('two-actions', target === 1);
+        if (target === 2 && !expenseDetails.querySelector('.expense-card')) { const card = addExpenseRow(); openExpenseEditor(card); }
+        window.scrollTo({ top:0, behavior:'smooth' });
+      }
+      function renderAllocationOwnerPicker(keyword = '') {
+        const normalized = keyword.trim().toLowerCase();
+        const options = recipients.filter(recipient => !normalized || `${recipient.name}${recipient.department}`.toLowerCase().includes(normalized));
+        const container = document.getElementById('allocationOwnerPickerOptions');
+        container.innerHTML = `<div class="employee-directory-group">部门成员</div>${options.length ? options.map(recipient => `<button class="employee-member-row${recipient.name === pendingAllocationOwner ? ' active' : ''}" type="button" data-owner="${recipient.name}"><span class="employee-member-avatar">●</span><span class="employee-member-main"><span class="employee-member-name">${recipient.name}</span><span class="employee-member-department">${recipient.department}</span></span><span class="employee-member-phone">⌕</span></button>`).join('') : '<div class="loan-picker-empty">没有符合条件的员工</div>'}`;
+        container.querySelectorAll('.employee-member-row').forEach(option => option.addEventListener('click', () => { pendingAllocationOwner = option.dataset.owner; confirmAllocationOwnerPicker(); }));
+      }
+      function openAllocationOwnerPicker(select) {
+        allocationOwnerTarget = select;
+        pendingAllocationOwner = select.value || '';
+        document.getElementById('allocationOwnerSearchRow').hidden = true;
+        document.getElementById('allocationOwnerPickerSearch').value = '';
+        renderAllocationOwnerPicker();
+        document.getElementById('confirmAllocationOwnerPicker').disabled = !pendingAllocationOwner;
+        document.getElementById('allocationOwnerPickerModal').hidden = false;
+      }
+      function confirmAllocationOwnerPicker() {
+        if (!allocationOwnerTarget || !pendingAllocationOwner) return showToast('请选择分摊人');
+        allocationOwnerTarget.value = pendingAllocationOwner;
+        allocationOwnerTarget.dispatchEvent(new Event('change', { bubbles:true }));
+        const row = allocationOwnerTarget.closest('.allocation-row');
+        if (row) { updateAllocationOwner(row); refreshChoiceTrigger(allocationOwnerTarget); }
+        document.getElementById('allocationOwnerPickerModal').hidden = true;
+        allocationOwnerTarget = null;
+      }
+      function renderAllocationTeamPicker(keyword = '') {
+        const normalized = keyword.trim().toLowerCase();
+        const options = teams.filter(team => !normalized || team.toLowerCase().includes(normalized));
+        const container = document.getElementById('allocationTeamPickerOptions');
+        container.innerHTML = options.length ? options.map(team => `<button class="employee-picker-option${team === pendingAllocationTeam ? ' active' : ''}" type="button" data-team="${team}"><span class="picker-option-title">${team}</span></button>`).join('') : '<div class="loan-picker-empty">没有符合条件的团队</div>';
+        container.querySelectorAll('.employee-picker-option').forEach(option => option.addEventListener('click', () => {
+          pendingAllocationTeam = option.dataset.team;
+          renderAllocationTeamPicker(document.getElementById('allocationTeamPickerSearch').value);
+          document.getElementById('confirmAllocationTeamPicker').disabled = false;
+        }));
+      }
+      function openAllocationTeamPicker(select) {
+        if (!select || select.disabled) return;
+        allocationTeamTarget = select;
+        pendingAllocationTeam = select.value || '';
+        document.getElementById('allocationTeamPickerSearch').value = '';
+        renderAllocationTeamPicker();
+        document.getElementById('confirmAllocationTeamPicker').disabled = !pendingAllocationTeam;
+        document.getElementById('allocationTeamPickerModal').hidden = false;
+      }
+      function confirmAllocationTeamPicker() {
+        if (!allocationTeamTarget || !pendingAllocationTeam) return showToast('请选择费用承担团队');
+        allocationTeamTarget.value = pendingAllocationTeam;
+        allocationTeamTarget.dispatchEvent(new Event('change', { bubbles:true }));
+        const row = allocationTeamTarget.closest('.allocation-row');
+        if (row) updateAllocationTeam(row);
+        refreshChoiceTrigger(allocationTeamTarget);
+        document.getElementById('allocationTeamPickerModal').hidden = true;
+        allocationTeamTarget = null;
+      }
+      function renderRecipientPicker(keyword = '') {
+        const normalized = keyword.trim().toLowerCase();
+        const isCompany = checkedValue('payeeType') === 'company';
+        const options = (isCompany ? companyEntities.map(name => ({ name, department:'企业收款方', bank:'招商银行深圳科技园支行', account:'6225 8888 0462 9551' })) : recipients).filter(recipient => !normalized || `${recipient.name}${recipient.department}`.toLowerCase().includes(normalized));
+        const container = document.getElementById('recipientPickerOptions');
+        container.innerHTML = `<div class="employee-directory-group">${isCompany ? '收款单位' : '部门成员'}</div>${options.length ? options.map((recipient, index) => `<button class="employee-member-row${recipient.name === pendingRecipient.name ? ' active' : ''}" type="button" data-index="${index}"><span class="employee-member-avatar">●</span><span class="employee-member-main"><span class="employee-member-name">${recipient.name}</span><span class="employee-member-department">${recipient.department}</span></span><span class="employee-member-phone">⌕</span></button>`).join('') : '<div class="loan-picker-empty">没有符合条件的收款方</div>'}`;
+        container.querySelectorAll('.employee-member-row').forEach(option => option.addEventListener('click', () => { pendingRecipient = options[Number(option.dataset.index)]; applyRecipient(); }));
+      }
+      function renderRecipientBankPicker(keyword = '') {
+        const normalized = keyword.trim().toLowerCase();
+        const options = ['招商银行深圳分行', '中国银行深圳福田支行', '平安银行深圳分行', '中国农业银行股份有限公司博商街1666支行'].filter(bank => !normalized || bank.toLowerCase().includes(normalized));
+        const container = document.getElementById('recipientBankPickerOptions');
+        container.innerHTML = options.length ? options.map(bank => `<button class="employee-picker-option${bank === pendingRecipientBank ? ' active' : ''}" type="button" data-bank="${bank}"><span class="picker-option-title">${bank}</span></button>`).join('') : '<div class="loan-picker-empty">没有符合条件的开户行</div>';
+        container.querySelectorAll('[data-bank]').forEach(option => option.addEventListener('click', () => { pendingRecipientBank = option.dataset.bank; renderRecipientBankPicker(document.getElementById('recipientBankPickerSearch').value); document.getElementById('confirmRecipientBankPicker').disabled = false; }));
+      }
+      function openRecipientBankPicker() {
+        if (checkedValue('payeeType') === 'linked' || checkedValue('overseas') === 'yes') return;
+        pendingRecipientBank = recipientBank.value && recipientBank.value !== '请选择开户行' ? recipientBank.value : '';
+        document.getElementById('recipientBankPickerSearch').value = '';
+        renderRecipientBankPicker();
+        document.getElementById('confirmRecipientBankPicker').disabled = !pendingRecipientBank;
+        document.getElementById('recipientBankPickerModal').hidden = false;
+      }
+      function confirmRecipientBankPicker() {
+        if (!pendingRecipientBank) return showToast('请选择开户行');
+        recipientBank.value = pendingRecipientBank;
+        recipientBankPickerTrigger.textContent = pendingRecipientBank;
+        document.getElementById('recipientBankPickerModal').hidden = true;
+        refreshBasicCompletion();
+      }
+      function openRecipientPicker() {
+        if (!checkedValue('payeeType')) return showToast('请先选择收款方类型');
+        pendingRecipient = selectedRecipient;
+        const isCompany = checkedValue('payeeType') === 'company';
+        document.getElementById('recipientPickerTitle').textContent = isCompany ? '选择收款单位' : '选择收款人';
+        document.getElementById('recipientPickerSearch').placeholder = isCompany ? '搜索收款单位' : '搜索姓名或部门';
+        document.getElementById('recipientSearchRow').hidden = true;
+        document.getElementById('recipientPickerSearch').value = '';
+        renderRecipientPicker();
+        document.getElementById('recipientPickerModal').hidden = false;
+      }
+      function applyRecipient() { selectedRecipient = pendingRecipient; recipientName.textContent = selectedRecipient.name; recipientBank.value = selectedRecipient.bank; recipientBankManual.value = selectedRecipient.bank; recipientBankPickerTrigger.textContent = selectedRecipient.bank; recipientAccount.value = selectedRecipient.account; updatePayeeTypeState(); document.getElementById('recipientPickerModal').hidden = true; document.getElementById('recipientModal').hidden = true; refreshBasicCompletion(); }
+      function validateAndSubmit() {
+        if (!promptBasicValidation()) return;
+        if (!validateExpenseFields()) return showToast('请补充费用明细的必填字段');
+        showToast('付款申请已提交，等待审批');
+      }
+
+      kind.addEventListener('change', () => { resetExpenseDetails(); updatePaymentKind(); });
+      projectName.addEventListener('change', refreshBasicCompletion);
+      documentTitle.addEventListener('input', refreshBasicCompletion);
+      expenseDate.addEventListener('change', refreshBasicCompletion);
+      companyEntity.addEventListener('change', refreshBasicCompletion);
+      document.querySelectorAll('input[name="hasInvoice"]').forEach(input => input.addEventListener('change', () => { updateInvoiceVisibility(); refreshBasicCompletion(); }));
+      document.querySelectorAll('input[name="serviceFee"]').forEach(input => input.addEventListener('change', () => { updateServiceFeeState(); refreshBasicCompletion(); }));
+      document.querySelectorAll('input[name="payeeType"]').forEach(input => input.addEventListener('change', () => { updatePayeeTypeState(); refreshBasicCompletion(); }));
+      recipientBankManual.addEventListener('input', event => { recipientBank.value = event.target.value; refreshBasicCompletion(); });
+      recipientAccount.addEventListener('input', refreshBasicCompletion);
+      remark.addEventListener('input', refreshBasicCompletion);
+      document.querySelectorAll('input[name="overseas"]').forEach(input => input.addEventListener('change', updateOverseasFields));
+      document.querySelectorAll('input[name="loanOffset"]').forEach(input => input.addEventListener('change', updateLoanDetails));
+      document.getElementById('currency').addEventListener('change', refreshBasicCompletion);
+      document.getElementById('swiftCode').addEventListener('input', refreshBasicCompletion);
+      recipientName.addEventListener('click', openRecipientPicker);
+      recipientBankPickerTrigger.addEventListener('click', openRecipientBankPicker);
+      document.getElementById('closeRecipientBankPicker').addEventListener('click', () => { document.getElementById('recipientBankPickerModal').hidden = true; pendingRecipientBank = recipientBank.value; });
+      document.getElementById('confirmRecipientBankPicker').addEventListener('click', confirmRecipientBankPicker);
+      document.getElementById('recipientBankPickerSearch').addEventListener('input', event => renderRecipientBankPicker(event.target.value));
+      document.getElementById('closeRecipientPicker').addEventListener('click', () => { document.getElementById('recipientModal').hidden = true; });
+      document.getElementById('confirmRecipient').addEventListener('click', applyRecipient);
+      document.getElementById('closeRecipientPickerPage').addEventListener('click', () => { document.getElementById('recipientPickerModal').hidden = true; pendingRecipient = selectedRecipient; });
+      document.getElementById('confirmRecipientPicker').addEventListener('click', applyRecipient);
+      document.getElementById('recipientPickerSearch').addEventListener('input', event => renderRecipientPicker(event.target.value));
+      document.getElementById('recipientSearchToggle').addEventListener('click', () => { const row = document.getElementById('recipientSearchRow'); row.hidden = !row.hidden; if (!row.hidden) document.getElementById('recipientPickerSearch').focus(); });
+      document.getElementById('closeAllocationOwnerPicker').addEventListener('click', () => { document.getElementById('allocationOwnerPickerModal').hidden = true; allocationOwnerTarget = null; });
+      document.getElementById('confirmAllocationOwnerPicker').addEventListener('click', confirmAllocationOwnerPicker);
+      document.getElementById('allocationOwnerPickerSearch').addEventListener('input', event => renderAllocationOwnerPicker(event.target.value));
+      document.getElementById('allocationOwnerSearchToggle').addEventListener('click', () => { const row = document.getElementById('allocationOwnerSearchRow'); row.hidden = !row.hidden; if (!row.hidden) document.getElementById('allocationOwnerPickerSearch').focus(); });
+      document.getElementById('closeAllocationTeamPicker').addEventListener('click', () => { document.getElementById('allocationTeamPickerModal').hidden = true; allocationTeamTarget = null; });
+      document.getElementById('confirmAllocationTeamPicker').addEventListener('click', confirmAllocationTeamPicker);
+      document.getElementById('allocationTeamPickerSearch').addEventListener('input', event => renderAllocationTeamPicker(event.target.value));
+      document.getElementById('closeInvoiceManual').addEventListener('click', () => { document.getElementById('invoiceManualModal').hidden = true; });
+      document.getElementById('confirmInvoiceManual').addEventListener('click', saveManualInvoice);
+      document.getElementById('closeInvoiceAction').addEventListener('click', () => { document.getElementById('invoiceActionModal').hidden = true; activeInvoiceCard = null; });
+      document.querySelectorAll('[data-invoice-choice]').forEach(button => button.addEventListener('click', () => startInvoiceAction(button.dataset.invoiceChoice)));
+      document.getElementById('uploadInvoiceAttachment').addEventListener('click', () => document.querySelector('.invoice-manual-attachment').click());
+      document.querySelector('.invoice-manual-attachment').addEventListener('change', event => { if (event.target.files.length) showToast(`已选择 ${event.target.files.length} 个发票附件`); });
+      document.getElementById('closeMobileChoice').addEventListener('click', () => { document.getElementById('mobileChoiceModal').hidden = true; mobileChoiceTarget = null; });
+      document.getElementById('closeMobileDate').addEventListener('click', () => { document.getElementById('mobileDateModal').hidden = true; mobileDateTarget = null; });
+      document.getElementById('closeLoanPicker').addEventListener('click', () => { document.getElementById('loanPickerModal').hidden = true; pendingLoans = selectedLoans.slice(); });
+      document.getElementById('closeCompanyPicker').addEventListener('click', () => { document.getElementById('companyPickerModal').hidden = true; });
+      document.getElementById('companyPickerSearch').addEventListener('input', event => renderCompanyOptions(event.target.value));
+      document.getElementById('closeProjectPicker').addEventListener('click', () => { document.getElementById('projectPickerModal').hidden = true; pendingProjects = expenseProjectTarget ? [] : selectedProjects.slice(); expenseProjectTarget = null; });
+      document.getElementById('projectPickerSearch').addEventListener('input', event => renderProjectOptions(event.target.value));
+      document.getElementById('confirmProjectPicker').addEventListener('click', confirmProjectPicker);
+      document.getElementById('closeExpenseTypePicker').addEventListener('click', () => { document.getElementById('expenseTypePickerModal').hidden = true; expenseTypeTarget = null; });
+      document.getElementById('selectLoanDocument').addEventListener('click', openLoanPicker);
+      document.getElementById('confirmLoanDocument').addEventListener('click', confirmLoanDocument);
+      document.getElementById('loanPickerSearch').addEventListener('input', event => renderLoanOptions(event.target.value));
+      document.getElementById('datePrev').addEventListener('click', () => { mobileDateCursor = new Date(mobileDateCursor.getFullYear(), mobileDateCursor.getMonth() - 1, 1); renderMobileDate(); });
+      document.getElementById('dateNext').addEventListener('click', () => { mobileDateCursor = new Date(mobileDateCursor.getFullYear(), mobileDateCursor.getMonth() + 1, 1); renderMobileDate(); });
+      enhanceDateInput(expenseDate);
+      enhanceDateInput(document.getElementById('invoiceDate'));
+      enhanceAllChoices();
+      openExpenses.addEventListener('click', () => setStep(2));
+      document.getElementById('addExpense').addEventListener('click', () => { const card = addExpenseRow(); openExpenseEditor(card); });
+      stepBack.addEventListener('click', () => setStep(document.querySelector('.application-step.active') ? Number(document.querySelector('.application-step.active').dataset.step) - 1 : 1));
+      stepNext.addEventListener('click', () => setStep(document.querySelector('.application-step.active') ? Number(document.querySelector('.application-step.active').dataset.step) + 1 : 2));
+      document.querySelectorAll('.application-step').forEach(item => item.addEventListener('click', () => setStep(Number(item.dataset.step))));
+      document.getElementById('saveDraft').addEventListener('click', () => showToast('已暂存草稿'));
+      document.getElementById('submitApplication').addEventListener('click', validateAndSubmit);
+      refreshBasicCompletion();
+      updateInvoiceVisibility();
+      updateServiceFeeState();
+      updatePayeeTypeState();
+      setStep(1);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>报销审批｜移动端</title>
+  <style>
+    :root { --red:#df3f43; --red-dark:#c93438; --page:#f4f6fa; --line:#e7ebf1; --ink:#202632; --muted:#7d8796; --blue:#3274e8; --green:#147a60; --amber:#a66b10; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:#e8edf4; font:14px/1.45 "Microsoft YaHei", "PingFang SC", Arial, sans-serif; }
+    button { font:inherit; cursor:pointer; }
+    .mobile-shell { width:min(100%,430px); min-height:100vh; margin:0 auto; padding-bottom:88px; background:var(--page); }
+    .mobile-topbar { position:sticky; z-index:5; top:0; color:#fff; background:var(--red); box-shadow:0 1px 0 rgba(0,0,0,.06); }
+    .statusbar { display:flex; align-items:flex-end; justify-content:space-between; height:29px; padding:0 22px 6px; font-size:13px; font-weight:700; }
+    .status-icons { letter-spacing:3px; font-size:12px; }
+    .navrow { display:grid; grid-template-columns:52px 1fr 52px; align-items:center; height:56px; }
+    .navrow a { display:grid; place-items:center; width:52px; height:56px; color:#fff; text-decoration:none; }
+    .navrow strong { text-align:center; font-size:17px; }
+    .back { font-size:35px; font-weight:200; line-height:1; }
+    .approval-tabs { position:sticky; z-index:4; top:85px; display:grid; grid-template-columns:1fr 1fr; height:42px; background:#fff; border-bottom:1px solid var(--line); }
+    .approval-tab { position:relative; color:#606a79; background:#fff; border:0; font-size:14px; }
+    .approval-tab.active { color:var(--red); font-weight:700; }
+    .approval-tab.active::after { position:absolute; right:0; bottom:-1px; left:0; height:2px; background:var(--red); content:''; }
+    .tab-panel[hidden] { display:none; }
+    .document-card { margin:0 0 10px; background:#fff; }
+    .section-head { display:flex; align-items:center; justify-content:space-between; min-height:44px; padding:0 16px; border-bottom:1px solid var(--line); }
+    .section-head strong { display:flex; align-items:center; gap:7px; color:#283242; font-size:15px; }
+    .section-head strong::before { width:3px; height:15px; border-radius:2px; background:var(--red); content:''; }
+    .section-head span { color:#9aa3af; font-size:12px; }
+    .info-row { display:flex; align-items:center; gap:12px; min-height:50px; padding:0 16px; border-bottom:1px solid #f0f2f5; }
+    .info-row:last-child { border-bottom:0; }
+    .info-label { flex:0 0 102px; color:#747e8d; font-size:13px; }
+    .info-value { flex:1; min-width:0; overflow:hidden; color:#303845; text-align:right; text-overflow:ellipsis; white-space:nowrap; }
+    .info-value.muted { color:#8e97a5; }
+    .project-tags { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:5px; }
+    .project-tag { padding:3px 7px; color:#2f68be; background:#edf5ff; border:1px solid #d4e4fb; border-radius:4px; font-size:12px; }
+    .loan-card { margin:12px 16px; padding:11px 12px; background:#fff8f8; border:1px solid #f4dfe0; border-radius:6px; }
+    .loan-card-head { display:flex; align-items:center; justify-content:space-between; gap:12px; color:#303845; font-size:13px; font-weight:700; }
+    .loan-card-head span { color:var(--red); }
+    .loan-card-meta { display:grid; grid-template-columns:1fr 1fr; gap:6px 14px; margin-top:9px; padding-top:9px; color:#7a8595; border-top:1px solid #f2e6e7; font-size:12px; }
+    .expense-record { margin:10px 12px; overflow:hidden; background:#fff; border:1px solid #e5eaf1; border-radius:7px; }
+    .expense-record-head { display:flex; align-items:center; gap:8px; min-height:51px; padding:0 12px; border-bottom:1px solid #edf0f4; }
+    .expense-record-head strong { flex:1; color:#283242; font-size:14px; }
+    .expense-record-head span { color:#7d8796; font-size:12px; }
+    .expense-record-head b { color:#d33d42; font-size:16px; }
+    .detail-list { padding:0 12px; }
+    .detail-row { display:flex; align-items:flex-start; gap:8px; min-height:38px; padding:9px 0; border-bottom:1px solid #f0f2f5; }
+    .detail-row:last-child { border-bottom:0; }
+    .detail-row span { flex:0 0 86px; color:#8a93a1; font-size:12px; }
+    .detail-row b { flex:1; color:#354052; font-size:12px; font-weight:500; text-align:right; word-break:break-all; }
+    .subsection { padding:9px 16px 5px; color:#727d8c; background:#f8f9fb; border-bottom:1px solid var(--line); font-size:12px; font-weight:700; }
+    .invoice-item, .attachment-item { margin:10px 12px; padding:10px 12px; background:#fbfcfe; border:1px solid #e5eaf1; border-radius:6px; }
+    .invoice-head, .attachment-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .invoice-head strong, .attachment-head strong { color:#303845; font-size:13px; }
+    .invoice-head em { padding:2px 6px; color:#3d71be; background:#edf5ff; border-radius:3px; font-size:11px; font-style:normal; }
+    .invoice-meta { display:grid; grid-template-columns:1fr 1fr; gap:5px 12px; margin-top:8px; color:#7d8794; font-size:12px; }
+    .invoice-meta b { color:#303845; font-weight:500; text-align:right; }
+    .attachment-head span { color:#8d96a5; font-size:12px; }
+    .attachment-file { margin-top:7px; color:#3d71be; font-size:12px; }
+    .approval-flow { padding:3px 16px 17px; background:#fff; }
+    .flow-step { position:relative; display:grid; grid-template-columns:28px 1fr auto; gap:10px; align-items:start; min-height:62px; padding-top:14px; }
+    .flow-step::before { position:absolute; top:38px; left:13px; width:1px; height:30px; background:#dfe5ed; content:''; }
+    .flow-step:last-child::before { display:none; }
+    .flow-dot { display:grid; place-items:center; width:27px; height:27px; color:#8c97a6; background:#f0f3f7; border:1px solid #dfe5ed; border-radius:50%; font-size:12px; }
+    .flow-step.done .flow-dot { color:#fff; background:var(--green); border-color:var(--green); }
+    .flow-step.current .flow-dot { color:#fff; background:var(--red); border-color:var(--red); }
+    .flow-name { color:#303845; font-size:13px; font-weight:700; }
+    .flow-desc { display:block; margin-top:3px; color:#8a94a2; font-size:12px; font-weight:400; }
+    .flow-time { color:#9aa3b0; font-size:11px; white-space:nowrap; }
+    .approval-actions { position:fixed; z-index:6; bottom:0; left:50%; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; width:min(100%,430px); padding:10px 16px calc(10px + env(safe-area-inset-bottom)); background:#fff; border-top:1px solid #e6ebf2; transform:translateX(-50%); }
+    .approval-actions button { height:43px; border-radius:4px; font-size:14px; font-weight:700; }
+    #rejectApproval { color:#c74448; background:#fff; border:1px solid #edc9cb; }
+    #approveApproval { color:#fff; background:var(--red); border:1px solid var(--red); }
+    #moreApproval { color:#c74448; background:#fff; border:1px solid #edc9cb; }
+    .toast { position:fixed; z-index:10; top:76px; left:50%; display:none; max-width:min(360px,calc(100vw - 40px)); padding:10px 14px; color:#fff; background:rgba(31,38,49,.94); border-radius:6px; box-shadow:0 8px 18px rgba(26,34,48,.18); font-size:13px; text-align:center; transform:translateX(-50%); }
+    .toast.show { display:block; }
+  </style>
+</head>
+<body>
+  <main class="mobile-shell" data-readonly-document>
+    <header class="mobile-topbar">
+      <div class="statusbar"><span>09:46</span><span class="status-icons">••• ◔ ▱</span></div>
+      <div class="navrow"><a class="back" href="移动端审批列表页原型.html" aria-label="返回审批列表">‹</a><strong>审批详情</strong><span aria-hidden="true"></span></div>
+    </header>
+    <nav class="approval-tabs" aria-label="审批详情内容">
+      <button class="approval-tab active" type="button" id="documentTab" role="tab" aria-selected="true" aria-controls="documentPanel">单据详情</button>
+      <button class="approval-tab" type="button" id="flowTab" role="tab" aria-selected="false" aria-controls="flowPanel">审批流程</button>
+    </nav>
+
+    <div class="tab-panel" id="documentPanel" role="tabpanel" aria-labelledby="documentTab">
+    <section class="document-card"><div class="section-head"><strong>基础信息</strong><span>项目报销</span></div><div class="info-row"><span class="info-label">标题</span><span class="info-value">华南区域公开课项目办公费用</span></div><div class="info-row"><span class="info-label">费用时间</span><span class="info-value">2026-08-21</span></div><div class="info-row"><span class="info-label">报销类型</span><span class="info-value">项目报销</span></div><div class="info-row"><span class="info-label">主体公司</span><span class="info-value">深圳市博商管理科学研究院股份有限公司</span></div><div class="info-row"><span class="info-label">关联项目</span><span class="info-value project-tags"><span class="project-tag">华南区域公开课项目</span></span></div><div class="info-row"><span class="info-label">申请人</span><span class="info-value">陈敏</span></div><div class="info-row"><span class="info-label">申请部门</span><span class="info-value muted">博商集团 / 行政部</span></div></section>
+
+    <section class="document-card"><div class="section-head"><strong>领款信息</strong><span>只读</span></div><div class="info-row"><span class="info-label">领款人</span><span class="info-value">陈敏</span></div><div class="info-row"><span class="info-label">开户行</span><span class="info-value muted">招商银行深圳分行</span></div><div class="info-row"><span class="info-label">银行卡账号</span><span class="info-value muted">6225 8888 0462 9551</span></div><div class="info-row"><span class="info-label">是否海外付款</span><span class="info-value">否</span></div></section>
+
+    <section class="document-card"><div class="section-head"><strong>借款单冲抵</strong><span>已关联 1 笔</span></div><div class="info-row"><span class="info-label">是否冲抵借款</span><span class="info-value">是</span></div><article class="loan-card"><div class="loan-card-head"><strong>JK202608120001</strong><span>本次抵冲 ¥ 2,380.00</span></div><div class="loan-card-meta"><span>借款主体</span><span>深圳市博商管理科学研究院股份有限公司</span><span>剩余欠款</span><span>¥ 6,000.00</span></div></article></section>
+
+    <section class="document-card"><div class="section-head"><strong>费用明细</strong><span>1 条费用</span></div><article class="expense-record"><div class="expense-record-head"><strong>办公费 / 办公用品</strong><span>1 条分摊</span><b>¥ 2,380.00</b></div><div class="detail-list"><div class="detail-row"><span>项目</span><b>华南区域公开课项目</b></div><div class="detail-row"><span>分摊人</span><b>陈敏 · 行政部</b></div><div class="detail-row"><span>费用承担团队</span><b>行政运营组</b></div><div class="detail-row"><span>分摊金额</span><b>¥ 2,380.00</b></div><div class="detail-row"><span>事由</span><b>项目办公文具及耗材采购</b></div></div></article><div class="subsection">发票</div><article class="invoice-item"><div class="invoice-head"><strong>033002600104</strong><em>电子普通发票</em></div><div class="invoice-meta"><span>开票公司</span><b>深圳市优品办公用品有限公司</b><span>价税合计</span><b>¥ 2,380.00</b><span>开票日期</span><b>2026-08-20</b><span>核验结果</span><b>核验通过</b></div></article><div class="subsection">附件</div><article class="attachment-item"><div class="attachment-head"><strong>合同</strong><span>选填</span></div><div class="attachment-file">项目办公用品采购合同.pdf</div></article><article class="attachment-item"><div class="attachment-head"><strong>其他说明材料</strong><span>选填</span></div><div class="attachment-file">办公用品明细清单.pdf</div></article></section>
+
+    </div>
+
+    <div class="tab-panel" id="flowPanel" role="tabpanel" aria-labelledby="flowTab" hidden>
+      <section class="document-card"><div class="section-head"><strong>审批流程</strong><span>当前节点</span></div><div class="approval-flow"><div class="flow-step done"><span class="flow-dot">✓</span><div class="flow-name">陈敏<span class="flow-desc">申请人 · 已提交申请</span></div><span class="flow-time">今天 09:32</span></div><div class="flow-step current"><span class="flow-dot">2</span><div class="flow-name">财务审批<span class="flow-desc">待您处理</span></div><span class="flow-time">待审批</span></div><div class="flow-step"><span class="flow-dot">3</span><div class="flow-name">出纳付款<span class="flow-desc">审批通过后流转</span></div><span class="flow-time">未开始</span></div></div></section>
+    </div>
+  </main>
+  <footer class="approval-actions"><button type="button" id="rejectApproval">驳回</button><button type="button" id="approveApproval">同意</button><button type="button" id="moreApproval">更多</button></footer>
+  <div class="toast" id="approvalToast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      const toast = document.getElementById('approvalToast');
+      const documentTab = document.getElementById('documentTab');
+      const flowTab = document.getElementById('flowTab');
+      const documentPanel = document.getElementById('documentPanel');
+      const flowPanel = document.getElementById('flowPanel');
+      let timer = null;
+      function showToast(message) { clearTimeout(timer); toast.textContent = message; toast.classList.add('show'); timer = setTimeout(() => toast.classList.remove('show'), 2400); }
+      function switchApprovalTab(tab) {
+        const showDocument = tab === 'document';
+        documentTab.classList.toggle('active', showDocument);
+        documentTab.setAttribute('aria-selected', String(showDocument));
+        flowTab.classList.toggle('active', !showDocument);
+        flowTab.setAttribute('aria-selected', String(!showDocument));
+        documentPanel.hidden = !showDocument;
+        flowPanel.hidden = showDocument;
+      }
+      function submitApproval(action) {
+        const approved = action === 'approve';
+        if (!window.confirm(approved ? '确认同意该报销申请？' : '确认驳回该报销申请？')) return;
+        document.getElementById('approveApproval').disabled = true;
+        document.getElementById('rejectApproval').disabled = true;
+        document.getElementById('moreApproval').disabled = true;
+        showToast(approved ? '审批已同意，单据将流转至下一节点。' : '已驳回该报销申请。');
+      }
+      documentTab.addEventListener('click', () => switchApprovalTab('document'));
+      flowTab.addEventListener('click', () => switchApprovalTab('flow'));
+      document.getElementById('approveApproval').addEventListener('click', () => submitApproval('approve'));
+      document.getElementById('rejectApproval').addEventListener('click', () => submitApproval('reject'));
+      document.getElementById('moreApproval').addEventListener('click', () => showToast('更多审批操作暂未配置。'));
+    })();
+  </script>
+</body>
+</html>

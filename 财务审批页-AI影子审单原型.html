@@ -220,6 +220,16 @@
     const isNonProjectApproval = approvalSearch.get('approvalKind') === 'non-project';
     const isReimbursementApproval = approvalSearch.get('documentType') === 'reimbursement';
     const approvalDocumentNo = approvalSearch.get('documentNo');
+    const approvalAiStatus = approvalSearch.get('aiStatus') || ({
+      'PAY-20260805-0081': '未开放',
+      'PAY-20260805-0088': '未开放',
+      'PAY-20260804-0074': '审单失败',
+      'EXP-20260805-0048': '未开放'
+    }[approvalDocumentNo] || '');
+    const approvalAiSuggestion = approvalSearch.get('aiSuggestion') || ({
+      'EXP-20260805-0055': '建议驳回'
+    }[approvalDocumentNo] || '');
+    const aiReviewUnavailable = ['未审批', '未开放', '审单失败'].includes(approvalAiStatus);
     const paymentApprovalDocuments = {
       'PAY-20260805-0086': { applicant:'刘宇鑫', department:'教学运营部', title:'2026 年 8 月项目差旅费用付款', expenseTime:'2026-07-28 至 2026-07-30', paymentType:'项目付款', payer:'博商管理集团有限公司', invoice:'是', amount:'¥ 1,560.00', project:'目的班级', payeeType:'公司', payee:'深圳同鹏餐饮管理有限公司', account:'6225 8888 0462 9551', overseas:'否', bank:'招商银行深圳科技园支行', currency:'CNY', remark:'用于项目班级客户拜访的交通及住宿费用付款。', expenses:[['差旅－交通','¥ 960.00','北京客户拜访交通费'],['差旅－住宿','¥ 600.00','北京客户拜访住宿费']] },
       'PAY-20260805-0081': { applicant:'陈敏', department:'教学运营部', title:'教学中心投影仪采购付款', expenseTime:'2026-08-01 至 2026-08-05', paymentType:'付款', payer:'深圳市博商管理咨询有限公司', invoice:'是', amount:'¥ 42,500.00', project:'无关联项目', payeeType:'公司', payee:'深圳高新设备有限公司', account:'6225 8888 0731 6204', overseas:'否', bank:'中国银行深圳科技园支行', currency:'CNY', remark:'教学中心多媒体设备采购及会议室预约系统年度服务费用。', expenses:[['固定资产－办公设备','¥ 36,000.00','教学中心投影仪采购'],['管理费用－软件服务','¥ 6,500.00','会议室预约系统年度服务']] },
@@ -233,6 +243,7 @@
     function closeWorkspaceTab(tab,event) { event.stopPropagation(); const fallback=tab.dataset.closeRoute; if(tab.classList.contains('active') && fallback) { window.location.href=fallback; return; } tab.remove(); }
     function toggleReviewDrawer() { if(document.body.classList.contains('office-approval-entry')) return; const drawer=document.getElementById('reviewDrawer'); const layout=document.getElementById('approvalLayout'); const button=document.getElementById('openReviewDrawer'); const willOpen=!drawer.classList.contains('show'); drawer.classList.toggle('show',willOpen); layout.classList.toggle('is-collapsed',!willOpen); drawer.setAttribute('aria-hidden',String(!willOpen)); if(button) button.textContent=willOpen?'← 收起审单面板':'✦ 展开审单面板'; }
     function applyApprovalEntryMode() { if(new URLSearchParams(window.location.search).get('from') === 'office-approval') { document.body.classList.add('office-approval-entry'); const drawer=document.getElementById('reviewDrawer'); const layout=document.getElementById('approvalLayout'); drawer.hidden=true; drawer.classList.remove('show'); drawer.setAttribute('aria-hidden','true'); layout.classList.add('is-collapsed'); } }
+    function applyAiReviewVisibility() { if(!aiReviewUnavailable) return; document.body.classList.add('ai-review-unavailable'); const drawer=document.getElementById('reviewDrawer'); const layout=document.getElementById('approvalLayout'); document.querySelector('.ai-card')?.setAttribute('hidden',''); document.querySelector('.feedback-card')?.setAttribute('hidden',''); if(drawer) { drawer.hidden=true; drawer.classList.remove('show'); drawer.setAttribute('aria-hidden','true'); } layout?.classList.add('is-collapsed'); }
     function applyDocumentRemarks() {
       const paymentSection=[...document.querySelectorAll('.document-section')].find(section=>section.querySelector('.document-section-title')?.textContent.includes('付款信息'));
       const paymentGrid=paymentSection?.querySelector('.document-grid');
@@ -246,7 +257,7 @@
         const readonly=field?.querySelector('.readonly-value');
         if(readonly) { readonly.classList.remove('tagged'); readonly.textContent=value; }
       };
-      document.title = '付款单审批｜AI 审批意见原型';
+document.title = '付款申请审批｜AI 审批意见原型';
       const activeTab = document.querySelector('.workspace-tab.active');
       if (activeTab?.firstChild) activeTab.firstChild.textContent = '付款审批';
       document.querySelector('.document-context').innerHTML=`<span>申请人：<strong>${activePaymentDocument.applicant}</strong></span><span>申请部门：<strong>${activePaymentDocument.department}</strong></span><span>申请单号：<strong>${approvalDocumentNo || 'PAY-20260805-0086'}</strong></span>`;
@@ -269,13 +280,13 @@
     }
     function applyReimbursementApprovalMode() {
       if (!isReimbursementApproval) return;
-      document.title = '报销单审批｜AI 审批意见原型';
+document.title = '报销申请审批｜AI 审批意见原型';
       const isNonProjectReimbursement = approvalDocumentNo ? approvalDocumentNo === 'EXP-20260805-0048' : isNonProjectApproval;
       const reimbursementNumber = approvalDocumentNo || (isNonProjectReimbursement ? 'EXP-20260805-0048' : 'EXP-20260805-0042');
       const activeTab = document.querySelector('.workspace-tab.active');
       if (activeTab?.firstChild) activeTab.firstChild.textContent = '报销审批';
       const detailLink = document.querySelector('.detail-link');
-      detailLink.textContent = '查看完整报销单 ↗';
+      detailLink.textContent = '查看完整报销申请 ↗';
       detailLink.onclick = () => { window.location.href = `审批详情页-AI影子审批原型.html?documentType=reimbursement&approvalKind=${isNonProjectReimbursement ? 'non-project' : 'project'}&documentNo=${encodeURIComponent(reimbursementNumber)}`; };
       const reimbursementSection = [...document.querySelectorAll('.document-section')].find(section => section.querySelector('.document-section-title')?.textContent.includes('付款信息'));
       reimbursementSection.querySelector('.document-section-title').textContent = '报销信息';
@@ -328,9 +339,9 @@
         return `<section class="expense-group"><div class="expense-head"><span class="expense-tag">费用类型</span><strong>${expense.type}</strong><span>1 条明细 · 1 张发票 · 2 个附件</span><span class="expense-amount">${expense.amount}</span></div><div class="expense-tabs"><button class="active" type="button" data-expense-tab="allocation" onclick="switchExpensePanel(this)">费用明细</button><button type="button" data-expense-tab="invoice" onclick="switchExpensePanel(this)">发票（1）</button><button type="button" data-expense-tab="attachment" onclick="switchExpensePanel(this)">附件（2）</button></div><div class="expense-panel" data-expense-panel="allocation"><table class="mini-table"><thead><tr>${allocationHeaders.map(header => `<th>${header}</th>`).join('')}</tr></thead><tbody><tr>${allocationValues.map(value => `<td>${value}</td>`).join('')}</tr></tbody></table></div><div class="expense-panel" data-expense-panel="invoice" hidden><div class="table-wrap"><table class="approval-invoice-table"><thead><tr><th>序号</th><th>发票号码</th><th>发票类型</th><th>价税合计（元）</th><th>开票公司</th><th>开票日期</th><th>核验结果</th></tr></thead><tbody><tr><td>1</td><td>${expense.invoice[0]}</td><td>${expense.invoice[1]}</td><td>${expense.invoice[2]}</td><td>${expense.invoice[3]}</td><td>${expense.invoice[4]}</td><td class="invoice-result">核验通过</td></tr></tbody></table></div></div><div class="expense-panel" data-expense-panel="attachment" hidden><div class="approval-attachment-list"><article class="approval-attachment"><div class="approval-attachment-head"><strong>合同</strong><span class="approval-attachment-state">选填</span></div><div class="approval-attachment-description">用于关联当前费用类型对应的合同文件。</div><div class="approval-attachment-file">${index === 0 ? '客户拜访费用说明.pdf' : '尚未上传'}</div></article><article class="approval-attachment"><div class="approval-attachment-head"><strong>其他说明材料</strong><span class="approval-attachment-state">选填</span></div><div class="approval-attachment-description">用于补充当前费用类型的业务背景说明。</div><div class="approval-attachment-file">${isNonProject && index === 1 ? '客户拜访餐费说明.pdf' : '尚未上传'}</div></article></div></div></section>`;
       }).join('');
       const opinion = document.querySelector('.final-opinion');
-      if (opinion) { opinion.querySelector('strong').textContent = isNonProject ? '建议复核' : '建议通过'; opinion.querySelector('p').textContent = documentData.aiOpinion; }
+      if (opinion) { opinion.querySelector('strong').textContent = approvalAiSuggestion || (isNonProject ? '建议复核' : '建议通过'); opinion.querySelector('p').textContent = approvalAiSuggestion === '建议驳回' ? '合同信息与发票不一致，建议驳回后补充材料。' : documentData.aiOpinion; }
       const checks = [...document.querySelectorAll('.check-item')];
-      const checkMessages = isNonProject ? [
+      let checkMessages = isNonProject ? [
         ['通过','2 张关联发票均已验真，发票金额合计 ¥1,280.00。'],
         ['需复核','已上传合同类材料，尚需补充客户拜访行程说明。'],
         ['需复核','客户拜访餐费需补充业务事由说明。'],
@@ -339,7 +350,14 @@
       ] : [
         ['通过','关联发票金额与项目报销金额一致。'], ['通过','合同及其他说明材料已按费用类型归档。'], ['通过','办公用品费用符合项目预算标准。'], ['通过','费用发生时间在申请时效范围内。'], ['通过','费用事由与关联项目一致。']
       ];
-      checks.forEach((item, index) => { const [status, message] = checkMessages[index] || []; const statusNode = item.querySelector('.check-status'); const messageNode = item.querySelector('.check-opinion'); if (statusNode) { statusNode.textContent = status; statusNode.className = `check-status ${status === '通过' ? 'pass' : 'review'}`; } if (messageNode) messageNode.textContent = message; });
+      if (approvalAiSuggestion === '建议驳回') checkMessages = [
+        ['不通过','发票与合同信息不一致，当前材料无法支持本次付款。'],
+        ['不通过','合同类材料中的供应商信息与申请收款方不一致。'],
+        ['需复核','费用业务合理性需补充核验后再处理。'],
+        ['通过','费用发生时间在申请时效范围内。'],
+        ['需复核','建议补充业务说明后重新提交。']
+      ];
+      checks.forEach((item, index) => { const [status, message] = checkMessages[index] || []; const statusNode = item.querySelector('.check-status'); const messageNode = item.querySelector('.check-opinion'); if (statusNode) { statusNode.textContent = status; statusNode.className = `check-status ${status === '通过' ? 'pass' : status === '不通过' ? 'fail' : 'review'}`; } if (messageNode) messageNode.textContent = message; });
     }
     function toggleBankPaymentPurposeOther(select) { const other=document.querySelector('[data-bank-payment-purpose-other]'); other.hidden=select.value!=='其他'; if(other.hidden) other.value=''; }
     function applyTodoApprovalFields() {
@@ -366,12 +384,25 @@
       return true;
     }
     function switchApprovalPageTab(tab) { const detail=tab==='detail'; document.getElementById('approvalDetailView').hidden=!detail; document.getElementById('approvalHistoryView').hidden=detail; document.querySelectorAll('[data-approval-tab]').forEach(button=>button.classList.toggle('active',button.dataset.approvalTab===tab)); }
-    function submitApprovalAction(action) { if(action==='approve' && !validateTodoApprovalFields()) return; const messages={ approve:'审批已提交，等待流程处理。', reject:'已发起驳回操作，请填写驳回意见。', cancel:'已取消本次审批操作。' }; showToast(messages[action]); }
+    function submitApprovalAction(action) { if(action==='approve' && !validateAiFeedbackForApproval()) return; if(action==='approve' && !validateTodoApprovalFields()) return; const messages={ approve:'审批已提交，等待流程处理。', reject:'已发起驳回操作，请填写驳回意见。', cancel:'已取消本次审批操作。' }; showToast(messages[action]); }
     function previewApprovalFiles() { showToast('原型演示：已打开当前单据关联的文件预览。'); }
     function switchExpensePanel(button) { const group=button.closest('.expense-group'); const tab=button.dataset.expenseTab; group.querySelectorAll('[data-expense-tab]').forEach(item=>item.classList.toggle('active',item===button)); group.querySelectorAll('[data-expense-panel]').forEach(panel=>panel.hidden=panel.dataset.expensePanel!==tab); }
     function renderConditionFeedback() { document.getElementById('inaccuracySection').innerHTML=`<div class="feedback-section"><label>不准确的条件 <span style="color:#d14b51">*</span></label><p class="feedback-note">请勾选不准确的条件，并分别说明原因。</p><div id="conditionFeedbackList" class="condition-feedback-list"><div class="condition-feedback-item" data-condition="发票信息"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">发票信息</label><div class="condition-reason" hidden><label>发票信息不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明发票信息的 AI 判断为何不准确"></textarea></div></div><div class="condition-feedback-item" data-condition="附件完整性"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">附件完整性</label><div class="condition-reason" hidden><label>附件完整性不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明附件完整性的 AI 判断为何不准确"></textarea></div></div><div class="condition-feedback-item" data-condition="报销标准合规"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">报销标准合规</label><div class="condition-reason" hidden><label>报销标准合规不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明报销标准合规的 AI 判断为何不准确"></textarea></div></div><div class="condition-feedback-item" data-condition="时间与时效"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">时间与时效</label><div class="condition-reason" hidden><label>时间与时效不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明时间与时效的 AI 判断为何不准确"></textarea></div></div><div class="condition-feedback-item" data-condition="业务合理性"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">业务合理性</label><div class="condition-reason" hidden><label>业务合理性不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明业务合理性的 AI 判断为何不准确"></textarea></div></div></div></div>`; }
     function toggleConditionFeedback(checkbox) { checkbox.closest('.condition-feedback-item').querySelector('.condition-reason').hidden=!checkbox.checked; }
     function validateConditionFeedback() { if(selectedAiFeedback!=='inaccurate') return true; const selected=[...document.querySelectorAll('[data-condition-checkbox]:checked')]; if(!selected.length) { showToast('请勾选 AI 判断不准确的条件。'); return false; } const missing=selected.find(item=>!item.closest('.condition-feedback-item').querySelector('textarea').value.trim()); if(missing) { showToast(`请填写“${missing.closest('.condition-feedback-item').dataset.condition}”不准确的原因。`); return false; } return true; }
+    function validateAiFeedbackForApproval() {
+      if(aiReviewUnavailable) return true;
+      if(selectedAiFeedback) return validateConditionFeedback();
+      const drawer=document.getElementById('reviewDrawer');
+      const layout=document.getElementById('approvalLayout');
+      drawer.hidden=false;
+      drawer.classList.add('show');
+      drawer.setAttribute('aria-hidden','false');
+      layout.classList.remove('is-collapsed');
+      document.querySelector('.feedback-card')?.scrollIntoView({ behavior:'smooth', block:'center' });
+      showToast('请先完成 AI 审单结果反馈。');
+      return false;
+    }
     function selectAiFeedback(button) { selectedAiFeedback=button.dataset.feedback; document.querySelectorAll('.feedback-option').forEach(item=>item.classList.toggle('is-selected',item===button)); document.getElementById('inaccuracySection').hidden=selectedAiFeedback!=='inaccurate'; document.getElementById('submitAiFeedback').disabled=false; }
     function saveAiFeedback() { if(!selectedAiFeedback) { showToast('请选择 AI 判断是否准确后再暂存。'); return; } if(!validateConditionFeedback()) return; showToast('AI 审单结果反馈已暂存，不影响单据实际审批。'); }
     function submitAiFeedback() { if(!selectedAiFeedback) { showToast('请选择 AI 判断是否准确。'); return; } if(!validateConditionFeedback()) return; showToast('AI 审单结果反馈已提交，仅用于影子审批评估，不改变单据实际审批结果。'); }
@@ -382,13 +413,13 @@
         ['1','固定资产','—','陈敏','行政部','行政支持组','¥ 260,000.00','¥ 36,000.00','教学中心投影仪采购'],
         ['1','管理费用','—','陈敏','行政部','行政支持组','¥ 120,000.00','¥ 6,500.00','会议室预约系统年度服务']
       ] : [
-        ['1','差旅－交通','目的班级','刘宇鑫','教学运营部','教学运营组','¥ 168,000.00','¥ 960.00','北京客户拜访交通费'],
-        ['1','差旅－住宿','目的班级','刘宇鑫','教学运营部','教学运营组','¥ 168,000.00','¥ 600.00','北京客户拜访住宿费']
+        ['1','差旅－交通','目的班级','刘宇鑫','教学运营部','教学运营组','¥ 960.00','北京客户拜访交通费'],
+        ['1','差旅－住宿','目的班级','刘宇鑫','教学运营部','教学运营组','¥ 600.00','北京客户拜访住宿费']
       ];
-      const headers=['序号','费用类型','项目','分摊人','分摊人部门','费用承担团队','预算余额','分摊金额（人民币）','事由'];
+      const headers=['序号','费用类型','项目','分摊人','分摊人部门','费用承担团队','分摊金额（人民币）','事由'];
       if (isReimbursementApproval && !isNonProjectApproval) {
-        headers.splice(8, 0, '金额（外币，USD）');
-        allocationRows.forEach((row, index) => row.splice(8, 0, index === 0 ? 'USD 133.70' : 'USD 83.60'));
+        headers.splice(7, 0, '金额（外币，USD）');
+        allocationRows.forEach((row, index) => row.splice(7, 0, index === 0 ? 'USD 133.70' : 'USD 83.60'));
       }
       document.querySelectorAll('.expense-panel[data-expense-panel="allocation"] .mini-table').forEach((table,index)=>{
         const values=allocationRows[index]; if(!values) { table.closest('.expense-group').hidden=true; return; }
@@ -471,6 +502,7 @@
     alignInvoiceAndAttachments();
     renderConditionFeedback();
     applyApprovalEntryMode();
+    applyAiReviewVisibility();
     applyTodoApprovalFields();
     applyReimbursementApprovalMode();
     if (isReimbursementApproval && new URLSearchParams(window.location.search).get('from') === 'todo') applyTodoApprovalFields();

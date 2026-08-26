@@ -15,67 +15,47 @@
     .content { padding:22px 27px 55px; } .crumb { color:#7d8aa0; font-size:12px; } .crumb strong { color:#39485e; } .page-head { display:flex; align-items:center; justify-content:space-between; margin:14px 0 18px; } .page-head h1 { margin:0; color:#263752; font-size:21px; } .page-head p { margin:4px 0 0; color:#8794a6; font-size:12px; } .tips { padding:7px 10px; color:#3c73c8; background:#eef5ff; border:1px solid #d9e8ff; border-radius:99px; font-size:11px; }
     .panel { min-height:600px; padding:21px 26px; background:#fff; border:1px solid var(--line); border-radius:6px; box-shadow:0 5px 18px rgba(25,48,85,.04); } .section-title { margin:0 0 20px; color:#2c3a51; font-size:16px; } .apps { display:grid; grid-template-columns:repeat(9, minmax(102px,1fr)); gap:30px 22px; margin-bottom:58px; } .app { display:flex; flex-direction:column; align-items:center; gap:10px; min-height:105px; padding:8px 3px; color:#273750; border:0; background:transparent; border-radius:7px; font:inherit; font-weight:700; text-align:center; } .app:not(.disabled) { cursor:pointer; } .app:not(.disabled):hover { color:var(--blue); background:#f2f7ff; } .app-icon { display:grid; width:42px; height:42px; place-items:center; border-radius:10px; color:#fff; box-shadow:0 4px 10px rgba(38,76,137,.14); font-size:21px; } .red { background:var(--red); } .orange { background:var(--orange); } .cyan { background:var(--cyan); } .purple { background:var(--purple); } .blue { background:#4f8eea; } .green { background:#4dbb96; } .app small { color:#9aa6b7; font-weight:400; } .app.payment .app-icon { background:#f79c20; } .app.payment::after { content:'首期已接入'; margin-top:-6px; padding:2px 6px; color:#c66c00; background:#fff4df; border-radius:99px; font-size:10px; font-weight:400; }
     .line { height:1px; margin:-20px 0 32px; background:#eef2f6; } .prototype-nav-link { cursor:pointer; } .prototype-nav-link:focus-visible { outline:2px solid #8cb2ff; outline-offset:-2px; }
-    .tabs .tab { cursor:pointer; } .tabs button.tab { font:inherit; cursor:pointer; } .tab-close { display:inline-grid; width:16px; height:16px; margin-left:5px; place-items:center; color:#718099; border-radius:3px; font-size:15px; line-height:1; vertical-align:-1px; } .tab-close:hover { color:#fff; background:#7b8ba4; } .workspace-frame { display:block; width:100%; height:calc(100vh - 109px); border:0; background:#f5f7fb; } .content[hidden], .workspace-frame[hidden] { display:none; }
+    .tabs .tab { cursor:pointer; } .tabs button.tab { font:inherit; cursor:pointer; } .tab-close { display:inline-grid; width:16px; height:16px; margin-left:5px; place-items:center; color:#718099; border-radius:3px; font-size:15px; line-height:1; vertical-align:-1px; } .tab-close:hover { color:#fff; background:#7b8ba4; }
   </style>
 </head>
 <body>
   <header class="topbar"><div class="brand"><span class="menu-icon">☰</span><span class="brand-mark"><span>博</span></span>博商管理</div><div class="top-actions"><b>▦ 应用中心⌄</b><span>▣ 帮助手册</span><span>▣ 日程</span><span>✦ 模块</span><span class="user"><i class="avatar">管</i>超级管理员⌄</span></div></header>
   <aside class="sidebar"><div class="side-title"><span>⌂ 办公管理</span><span>⌄</span></div><div class="nav-item active">▣ 申请</div><div class="nav-sub current">申请中心</div><div class="nav-item">▥ 审批</div><div class="nav-sub">我的申请</div><div class="nav-sub">我的待办</div><div class="nav-item">⌘ 流程</div><div class="nav-item">▦ 记录</div><div class="nav-item">● 日程</div><div class="nav-item">◆ 项目计划</div><div class="nav-item">✦ 同学会</div><div class="nav-item">◉ 研企管理</div><div class="nav-item">◈ 智服系统</div><div class="nav-item">▤ 证书管理</div><div class="nav-item">▦ 智能报表</div><div class="nav-item">◌ 统计分析</div></aside>
-  <main class="workspace"><div class="tabs"><button class="tab" type="button" data-workspace-tab="home">首页</button><button class="tab" type="button" data-workspace-tab="role-list">角色列表 ×</button><button class="tab active" type="button" data-workspace-tab="apply-center">申请<span class="tab-close" data-close-workspace-tab="apply-center" role="button" aria-label="关闭申请页签">×</span></button></div><div class="content"><div class="crumb">办公管理　/　<strong>申请</strong></div><div class="page-head"><div><h1>申请中心</h1><p>选择单据类型后发起申请；付款单已接入本次 AI 审单优化流程。</p></div><span class="tips">● 付款单为本期演示入口</span></div><section class="panel"><h2 class="section-title">部门常用类</h2><div class="apps"><button class="app disabled" type="button"><span class="app-icon red">▣</span>出差报销单</button><button class="app disabled" type="button"><span class="app-icon red">▤</span>报销单</button><button class="app disabled" type="button"><span class="app-icon cyan">¥</span>经营分析规则调整单</button><button class="app disabled" type="button"><span class="app-icon orange">¥</span>调整预算单</button><button class="app disabled" type="button"><span class="app-icon orange">▤</span>特批单</button><button class="app payment" type="button" data-application="payment-form" onclick="window.open('报销申请页-AI审单优化原型.html', '_blank')"><span class="app-icon">▤</span>付款单<small>发起付款 / 项目付款</small></button><button class="app disabled" type="button"><span class="app-icon orange">¥</span>借款单</button><button class="app disabled" type="button"><span class="app-icon red">✈</span>出差单</button><button class="app disabled" type="button"><span class="app-icon cyan">▥</span>内部调账单</button><button class="app disabled" type="button"><span class="app-icon purple">♟</span>换人就读单</button><button class="app disabled" type="button"><span class="app-icon red">▤</span>入企报销单</button><button class="app disabled" type="button"><span class="app-icon cyan">▣</span>固定资产付款单</button><button class="app disabled" type="button"><span class="app-icon cyan">▣</span>固定资产报销单</button><button class="app disabled" type="button"><span class="app-icon blue">♟</span>offer审批单</button><button class="app disabled" type="button"><span class="app-icon blue">♟</span>撞单申诉单</button><button class="app disabled" type="button"><span class="app-icon blue">♟</span>付款申请书</button></div><div class="line"></div><h2 class="section-title">教学中心</h2><div class="apps"><button class="app disabled" type="button"><span class="app-icon blue">✦</span>取消签到申请单</button><button class="app disabled" type="button"><span class="app-icon red">✈</span>禁止复训申请单</button><button class="app disabled" type="button"><span class="app-icon red">✈</span>恢复复训申请单</button></div></section></div></main>
+  <main class="workspace"><div class="tabs"><button class="tab" type="button" data-workspace-tab="home">首页</button><button class="tab" type="button" data-workspace-tab="role-list">角色列表 ×</button><button class="tab active" type="button" data-workspace-tab="apply-center">申请<span class="tab-close" data-close-workspace-tab="apply-center" role="button" aria-label="关闭申请页签">×</span></button></div><div class="content"><div class="crumb">办公管理　/　<strong>申请</strong></div><div class="page-head"><div><h1>申请中心</h1><p>选择单据类型后发起申请；付款单已接入本次 AI 审单优化流程。</p></div><span class="tips">● 付款单为本期演示入口</span></div><section class="panel"><h2 class="section-title">部门常用类</h2><div class="apps"><button class="app disabled" type="button"><span class="app-icon red">▣</span>出差报销单</button><button class="app disabled" type="button"><span class="app-icon red">▤</span>报销/项目报销单</button><button class="app disabled" type="button"><span class="app-icon cyan">¥</span>经营分析规则调整单</button><button class="app disabled" type="button"><span class="app-icon orange">¥</span>调整预算单</button><button class="app disabled" type="button"><span class="app-icon orange">▤</span>特批单</button><button class="app payment" type="button" data-application="payment-form"><span class="app-icon">▤</span>付款/项目付款单<small>发起付款 / 项目付款</small></button><button class="app disabled" type="button"><span class="app-icon orange">¥</span>借款单</button><button class="app disabled" type="button"><span class="app-icon red">✈</span>出差单</button><button class="app disabled" type="button"><span class="app-icon cyan">▥</span>内部调账单</button><button class="app disabled" type="button"><span class="app-icon purple">♟</span>换人就读单</button><button class="app disabled" type="button"><span class="app-icon red">▤</span>入企报销单</button><button class="app disabled" type="button"><span class="app-icon cyan">▣</span>固定资产付款单</button><button class="app disabled" type="button"><span class="app-icon cyan">▣</span>固定资产报销单</button><button class="app disabled" type="button"><span class="app-icon blue">♟</span>offer审批单</button><button class="app disabled" type="button"><span class="app-icon blue">♟</span>撞单申诉单</button><button class="app disabled" type="button"><span class="app-icon blue">♟</span>付款申请书</button></div><div class="line"></div><h2 class="section-title">教学中心</h2><div class="apps"><button class="app disabled" type="button"><span class="app-icon blue">✦</span>取消签到申请单</button><button class="app disabled" type="button"><span class="app-icon red">✈</span>禁止复训申请单</button><button class="app disabled" type="button"><span class="app-icon red">✈</span>恢复复训申请单</button></div></section></div></main>
   <script>
     (() => {
       const tabs = document.querySelector('.tabs');
       const content = document.querySelector('.workspace > .content');
       if (!tabs || !content) return;
-      [...document.querySelectorAll('.app.disabled')].find(button => button.textContent.trim() === '报销单')?.remove();
+      [...document.querySelectorAll('.app.disabled')].find(button => /报销\/项目报销单|报销申请/.test(button.textContent.trim()))?.remove();
       tabs.children[1]?.remove();
       document.querySelector('.page-head > div')?.remove();
       const paymentTabId = 'payment-form';
       const paymentPage = '报销申请页-AI审单优化原型.html';
       const reimbursementTabId = 'reimbursement-form';
-      const reimbursementPage = '报销申请页-AI审单优化原型.html?embedded=1&documentType=reimbursement';
-      const homeTab = tabs.querySelector('[data-workspace-tab="home"]');
+      const reimbursementPage = '报销申请页-AI审单优化原型.html?documentType=reimbursement';
       const applicationTab = tabs.lastElementChild;
       tabs.insertAdjacentHTML('beforeend', '<button class="tab" type="button" data-workspace-tab="office-approval" data-workspace-route="审批列表原型.html">审批<span class="tab-close" data-close-workspace-tab="office-approval" role="button" aria-label="关闭审批页签">×</span></button><button class="tab" type="button" data-workspace-tab="finance-todo" data-workspace-route="财务待办页-AI影子审批原型.html">审批确认<span class="tab-close" data-close-workspace-tab="finance-todo" role="button" aria-label="关闭审批确认页签">×</span></button>');
       applicationTab.dataset.workspaceTab = 'apply-center';
-      const frame = document.createElement('iframe');
-      frame.id = 'paymentApplicationFrame';
-      frame.className = 'workspace-frame';
-      frame.title = '付款申请';
-      frame.hidden = true;
-      content.insertAdjacentElement('afterend', frame);
       const reimbursementEntry = document.createElement('button');
       reimbursementEntry.className = 'app reimbursement';
       reimbursementEntry.type = 'button';
       reimbursementEntry.dataset.application = reimbursementTabId;
-      reimbursementEntry.innerHTML = '<span class="app-icon red">▤</span>报销单<small>发起报销 / 项目报销</small>';
+      reimbursementEntry.innerHTML = '<span class="app-icon red">▤</span>报销申请<small>发起报销 / 项目报销</small>';
       document.querySelector('.apps')?.insertBefore(reimbursementEntry, document.querySelector('.apps')?.children[1] || null);
+      const paymentEntry = document.querySelector('[data-application="payment-form"]');
+      if (paymentEntry) paymentEntry.innerHTML = '<span class="app-icon">▤</span>付款申请<small>发起付款 / 项目付款</small>';
 
       function activateWorkspaceTab(tabId) {
-        const isApplicationTab = tabId === paymentTabId || tabId === reimbursementTabId;
-        content.hidden = isApplicationTab;
-        frame.hidden = !isApplicationTab;
         tabs.querySelectorAll('[data-workspace-tab]').forEach(tab => tab.classList.toggle('active', tab.dataset.workspaceTab === tabId));
       }
 
       function openPaymentApplication() {
-        let paymentTab = tabs.querySelector(`[data-workspace-tab="${paymentTabId}"]`);
-        if (!paymentTab) {
-          tabs.insertAdjacentHTML('beforeend', '<button class="tab" type="button" data-workspace-tab="payment-form">付款申请 <span class="tab-close" data-close-workspace-tab="payment-form" aria-label="关闭付款申请页签">×</span></button>');
-          paymentTab = tabs.querySelector(`[data-workspace-tab="${paymentTabId}"]`);
-        }
-        if (frame.dataset.application !== paymentTabId) { frame.src = `${paymentPage}?embedded=1`; frame.dataset.application = paymentTabId; frame.title = '付款申请'; }
-        activateWorkspaceTab(paymentTab.dataset.workspaceTab);
+        window.location.href = paymentPage;
       }
 
       function openReimbursementApplication() {
-        let reimbursementTab = tabs.querySelector(`[data-workspace-tab="${reimbursementTabId}"]`);
-        if (!reimbursementTab) {
-          tabs.insertAdjacentHTML('beforeend', '<button class="tab" type="button" data-workspace-tab="reimbursement-form">报销申请 <span class="tab-close" data-close-workspace-tab="reimbursement-form" aria-label="关闭报销申请页签">×</span></button>');
-          reimbursementTab = tabs.querySelector(`[data-workspace-tab="${reimbursementTabId}"]`);
-        }
-        if (frame.dataset.application !== reimbursementTabId) { frame.src = reimbursementPage; frame.dataset.application = reimbursementTabId; frame.title = '报销申请'; }
-        activateWorkspaceTab(reimbursementTab.dataset.workspaceTab);
+        window.location.href = reimbursementPage;
       }
 
       tabs.addEventListener('click', event => {

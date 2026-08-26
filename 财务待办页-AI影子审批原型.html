@@ -140,12 +140,18 @@
     .log-modal[hidden] { display:none; }
     .log-modal { position:fixed; z-index:100; inset:0; display:grid; place-items:center; }
     .log-modal__backdrop { position:absolute; inset:0; background:rgba(30,39,57,.5); }
-    .log-modal__panel { position:relative; width:520px; max-width:calc(100vw - 40px); background:#fff; box-shadow:0 8px 28px rgba(15,23,42,.22); }
+    .log-modal__panel { position:relative; width:660px; max-width:calc(100vw - 40px); background:#fff; box-shadow:0 8px 28px rgba(15,23,42,.22); }
     .log-modal__header { display:flex; align-items:center; justify-content:space-between; height:46px; padding:0 15px; border-bottom:1px solid var(--line); }
     .log-modal__header strong { font-size:15px; }
     .log-modal__close { border:0; color:#9099a8; background:transparent; font-size:20px; }
-    .log-modal__body { padding:16px; color:#556275; }
-    .log-modal__body p { margin:0 0 10px; }
+    .log-modal__body { padding:14px 16px 16px; color:#556275; }
+    .operation-log-table { width:100%; min-width:0; border-collapse:collapse; table-layout:fixed; }
+    .operation-log-table th { height:auto; padding:9px 10px; color:#46536a; background:#f3f6fa; border:0; font-size:12px; font-weight:700; text-align:left; }
+    .operation-log-table th:nth-child(1) { width:108px; }.operation-log-table th:nth-child(2) { width:92px; }.operation-log-table th:nth-child(3) { width:118px; }
+    .operation-log-table td { padding:10px; color:#536078; border:0; border-bottom:1px solid #edf0f4; font-size:12px; line-height:1.5; vertical-align:top; overflow-wrap:anywhere; }
+    .operation-log-table tr:last-child td { border-bottom:0; }
+    .operation-log-table .log-time { color:#5d6c84; white-space:pre-line; }
+    .operation-log-table .ai-log-node { color:#267662; font-weight:700; }
   </style>
 </head>
 <body>
@@ -164,15 +170,15 @@
       <div class="filter-row"><div class="filter-name">是否有发票：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="invoice" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="invoice" data-value="是" onclick="selectQuickFilter(this)">是</button><button class="quick-option" type="button" data-filter="invoice" data-value="否" onclick="selectQuickFilter(this)">否</button></div></div>
       <div class="filter-row"><div class="filter-name">付款主体：</div><div class="filter-options"><select id="payerFilter" class="filter-select" onchange="applyFilters()"><option value="">全部付款主体</option><option value="博商管理集团有限公司">博商管理集团有限公司</option><option value="深圳市博商管理咨询有限公司">深圳市博商管理咨询有限公司</option><option value="Sands Bosum Business Pte. Ltd">Sands Bosum Business Pte. Ltd</option></select></div></div>
       <div class="filter-row"><div class="filter-name">收款方类型：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="payeeType" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="payeeType" data-value="公司" onclick="selectQuickFilter(this)">公司</button><button class="quick-option" type="button" data-filter="payeeType" data-value="个人" onclick="selectQuickFilter(this)">个人</button></div></div>
-      <div class="filter-row"><div class="filter-name">AI 是否已审批：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="aiAudit" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="aiAudit" data-value="AI已审批" onclick="selectQuickFilter(this)">AI已审批</button><button class="quick-option" type="button" data-filter="aiAudit" data-value="未审批" onclick="selectQuickFilter(this)">未审批</button></div></div>
+      <div class="filter-row"><div class="filter-name">AI审批状态：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="aiAudit" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="aiAudit" data-value="AI已审批" onclick="selectQuickFilter(this)">AI已审批</button><button class="quick-option" type="button" data-filter="aiAudit" data-value="未审批" onclick="selectQuickFilter(this)">未审批</button><button class="quick-option" type="button" data-filter="aiAudit" data-value="未开放" onclick="selectQuickFilter(this)">未开放</button><button class="quick-option" type="button" data-filter="aiAudit" data-value="审单失败" onclick="selectQuickFilter(this)">审单失败</button></div></div>
       <div class="filter-row"><div class="filter-name">AI 审批建议：</div><div class="filter-options"><button class="quick-option active" type="button" data-filter="aiSuggestion" data-value="" onclick="selectQuickFilter(this)">全部</button><button class="quick-option" type="button" data-filter="aiSuggestion" data-value="建议通过" onclick="selectQuickFilter(this)">建议通过</button><button class="quick-option" type="button" data-filter="aiSuggestion" data-value="建议驳回" onclick="selectQuickFilter(this)">建议驳回</button><button class="quick-option" type="button" data-filter="aiSuggestion" data-value="建议复核" onclick="selectQuickFilter(this)">建议复核</button></div></div>
     </section>
-    <section class="list-card"><div class="list-head"><div class="list-title" id="resultCount">共 5 条记录</div></div><select id="sortSelect" hidden><option value="created"></option></select><div class="table-wrap"><table><thead><tr><th>操作</th><th>单号</th><th>标题</th><th>是否有发票</th><th>是否涉海外</th><th>金蝶编码</th><th>CBS交易流水号</th><th>申请时间</th><th>流程审批通过时间</th><th>申请人</th><th>申请部门</th><th>付款主体</th><th>内容</th><th>金额(人民币)</th><th>金额(外币)</th><th>单据类型</th><th>付款类型</th><th>状态</th><th>收款方类型</th><th>回单状态</th><th>金蝶状态</th><th>状态时间</th><th>失败原因</th><th>AI是否已审批</th><th>AI审批建议</th><th>审批人</th></tr></thead><tbody id="todoList">
+<section class="list-card"><div class="list-head"><div class="list-title" id="resultCount">共 5 条记录</div></div><select id="sortSelect" hidden><option value="created"></option></select><div class="table-wrap"><table><thead><tr><th>操作</th><th>单号</th><th>标题</th><th>是否有发票</th><th>是否涉海外</th><th>金蝶编码</th><th>CBS交易流水号</th><th>申请时间</th><th>流程审批通过时间</th><th>申请人</th><th>申请部门</th><th>付款主体</th><th>内容</th><th>金额(人民币)</th><th>金额(外币)</th><th>单据类型</th><th>付款类型</th><th>状态</th><th>收款方类型</th><th>回单状态</th><th>金蝶状态</th><th>状态时间</th><th>失败原因</th><th>AI审批状态</th><th>AI审批建议</th><th>审批人</th></tr></thead><tbody id="todoList">
       <tr data-status="待财务审核" data-type="付款单" data-overseas="否" data-invoice="是" data-payer="博商管理集团有限公司" data-ai-audit="AI已审批" data-ai-suggestion="建议复核" data-created="5" data-amount="1560"><td><div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo">详情</a></div></td><td><span class="code">PAY-20260805-0086</span></td><td><a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo">2026 年 8 月项目差旅费用付款</a></td><td>是</td><td>否</td><td>--</td><td>--</td><td>2026-08-05<span class="subline">14:26:18</span></td><td>刘宇鑫</td><td>教学运营部</td><td><div class="payer">博商管理集团有限公司</div></td><td><div class="content-cell">差旅交通及住宿费用付款</div></td><td class="money">1,560.00</td><td>--</td><td>付款单</td><td>项目付款</td><td><span class="status pending">待财务审核</span></td><td>2026-08-05<span class="subline">14:26:18</span></td><td><span class="tag done">AI已审批</span></td><td><span class="tag review">建议复核</span></td><td>王晓雯</td></tr>
-      <tr data-status="待财务审核" data-type="固定资产付款单" data-overseas="否" data-invoice="是" data-payer="深圳市博商管理咨询有限公司" data-ai-audit="AI已审批" data-ai-suggestion="建议驳回" data-created="4" data-amount="42500"><td><div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo">详情</a></div></td><td><span class="code">PAY-20260805-0081</span></td><td><a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo">教学中心投影仪采购付款</a></td><td>是</td><td>否</td><td>KD-FA-02471</td><td>--</td><td>2026-08-05<span class="subline">09:11:42</span></td><td>陈敏</td><td>教学运营部</td><td><div class="payer">深圳市博商管理咨询有限公司</div></td><td><div class="content-cell">多媒体教学设备采购</div></td><td class="money">42,500.00</td><td>--</td><td>固定资产付款单</td><td>付款</td><td><span class="status pending">待财务审核</span></td><td>2026-08-05<span class="subline">09:11:42</span></td><td><span class="tag done">AI已审批</span></td><td><span class="tag reject">建议驳回</span></td><td>王晓雯</td></tr>
-      <tr data-status="待财务审核" data-type="付款单" data-overseas="是" data-invoice="否" data-payer="Sands Bosum Business Pte. Ltd" data-ai-audit="AI已审批" data-ai-suggestion="建议复核" data-created="3" data-amount="8600"><td><div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo">详情</a></div></td><td><span class="code">PAY-20260804-0074</span></td><td><a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo">华南区域公开课市场推广费</a></td><td>否</td><td>是</td><td>KD-20260804-74</td><td>CBS-98374920</td><td>2026-08-04<span class="subline">17:43:05</span></td><td>周蕾</td><td>市场部</td><td><div class="payer">Sands Bosum Business Pte. Ltd</div></td><td><div class="content-cell">境外公开课场地推广费用</div></td><td class="money">8,600.00</td><td>1,189.00</td><td>付款单</td><td>付款</td><td><span class="status pending">待财务审核</span></td><td>2026-08-04<span class="subline">17:43:05</span></td><td><span class="tag done">AI已审批</span></td><td><span class="tag review">建议复核</span></td><td>王晓雯</td></tr>
+      <tr data-status="待财务审核" data-type="固定资产付款单" data-overseas="否" data-invoice="是" data-payer="深圳市博商管理咨询有限公司" data-ai-audit="未开放" data-ai-suggestion="" data-created="4" data-amount="42500"><td><div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo">详情</a></div></td><td><span class="code">PAY-20260805-0081</span></td><td><a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo">教学中心投影仪采购付款</a></td><td>是</td><td>否</td><td>KD-FA-02471</td><td>--</td><td>2026-08-05<span class="subline">09:11:42</span></td><td>陈敏</td><td>教学运营部</td><td><div class="payer">深圳市博商管理咨询有限公司</div></td><td><div class="content-cell">多媒体教学设备采购</div></td><td class="money">42,500.00</td><td>--</td><td>固定资产付款单</td><td>付款</td><td><span class="status pending">待财务审核</span></td><td>2026-08-05<span class="subline">09:11:42</span></td><td><span class="tag wait">未开放</span></td><td><span class="tag wait">--</span></td><td>王晓雯</td></tr>
+      <tr data-status="待财务审核" data-type="付款单" data-overseas="是" data-invoice="否" data-payer="Sands Bosum Business Pte. Ltd" data-ai-audit="审单失败" data-ai-suggestion="" data-created="3" data-amount="8600"><td><div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo">详情</a></div></td><td><span class="code">PAY-20260804-0074</span></td><td><a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo">华南区域公开课市场推广费</a></td><td>否</td><td>是</td><td>KD-20260804-74</td><td>CBS-98374920</td><td>2026-08-04<span class="subline">17:43:05</span></td><td>周蕾</td><td>市场部</td><td><div class="payer">Sands Bosum Business Pte. Ltd</div></td><td><div class="content-cell">境外公开课场地推广费用</div></td><td class="money">8,600.00</td><td>1,189.00</td><td>付款单</td><td>付款</td><td><span class="status pending">待财务审核</span></td><td>2026-08-04<span class="subline">17:43:05</span></td><td><span class="tag wait">审单失败</span></td><td><span class="tag wait">--</span></td><td>王晓雯</td></tr>
       <tr data-status="待财务审核" data-type="付款单" data-overseas="否" data-invoice="是" data-payer="博商管理集团有限公司" data-ai-audit="AI已审批" data-ai-suggestion="建议通过" data-created="2" data-amount="12600"><td><div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo">详情</a></div></td><td><span class="code">PAY-20260805-0083</span></td><td><a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo">7 月外聘讲师课酬付款</a></td><td>是</td><td>否</td><td>KD-20260805-83</td><td>CBS-98375216</td><td>2026-08-05<span class="subline">12:05:29</span></td><td>赵立</td><td>教学运营部</td><td><div class="payer">博商管理集团有限公司</div></td><td><div class="content-cell">7 月外聘讲师课酬结算</div></td><td class="money">12,600.00</td><td>--</td><td>付款单</td><td>付款</td><td><span class="status pending">待财务审核</span></td><td>2026-08-05<span class="subline">12:05:29</span></td><td><span class="tag done">AI已审批</span></td><td><span class="tag pass">建议通过</span></td><td>王晓雯</td></tr>
-      <tr data-status="待财务审核" data-type="付款单" data-overseas="否" data-invoice="是" data-payer="深圳市博商管理咨询有限公司" data-ai-audit="未审批" data-ai-suggestion="" data-created="1" data-amount="3260"><td><div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo">详情</a></div></td><td><span class="code">PAY-20260805-0088</span></td><td><a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo">北京客户拜访差旅费用付款</a></td><td>是</td><td>否</td><td>--</td><td>--</td><td>2026-08-05<span class="subline">16:17:36</span></td><td>孙晨</td><td>项目管理部</td><td><div class="payer">深圳市博商管理咨询有限公司</div></td><td><div class="content-cell">北京客户拜访交通及住宿</div></td><td class="money">3,260.00</td><td>--</td><td>付款单</td><td>项目付款</td><td><span class="status pending">待财务审核</span></td><td>2026-08-05<span class="subline">16:17:36</span></td><td><span class="tag wait">未审批</span></td><td><span class="tag wait">未审批</span></td><td>王晓雯</td></tr>
+      <tr data-status="待财务审核" data-type="付款单" data-overseas="否" data-invoice="是" data-payer="深圳市博商管理咨询有限公司" data-ai-audit="未开放" data-ai-suggestion="" data-created="1" data-amount="3260"><td><div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo">详情</a></div></td><td><span class="code">PAY-20260805-0088</span></td><td><a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo">北京客户拜访差旅费用付款</a></td><td>是</td><td>否</td><td>--</td><td>--</td><td>2026-08-05<span class="subline">16:17:36</span></td><td>孙晨</td><td>项目管理部</td><td><div class="payer">深圳市博商管理咨询有限公司</div></td><td><div class="content-cell">北京客户拜访交通及住宿</div></td><td class="money">3,260.00</td><td>--</td><td>付款单</td><td>项目付款</td><td><span class="status pending">待财务审核</span></td><td>2026-08-05<span class="subline">16:17:36</span></td><td><span class="tag wait">未开放</span></td><td><span class="tag wait">--</span></td><td>王晓雯</td></tr>
     </tbody></table></div><div id="emptyState" class="empty">未找到符合当前筛选条件的待办。</div><nav class="pagination" aria-label="单据列表分页"><button type="button" disabled>‹</button><button type="button" class="active" aria-current="page">1</button><button type="button" disabled>›</button></nav></section>
   </div></main>
   <div id="operationLog" class="log-modal" hidden><div class="log-modal__backdrop" onclick="closeOperationLog()"></div><section class="log-modal__panel" role="dialog" aria-modal="true" aria-label="操作日志"><header class="log-modal__header"><strong>操作日志</strong><button class="log-modal__close" type="button" aria-label="关闭" onclick="closeOperationLog()">×</button></header><div class="log-modal__body" id="operationLogContent"></div></section></div>
@@ -190,35 +196,53 @@
     function appendReimbursementTodoRows() {
       const source = document.querySelector('#todoList tr');
       if (!source) return;
-      const createRow = ({ number, title, applicant, department, payer, content, amount, kind, suggestion, suggestionClass, created, failureReason }) => {
+      const createRow = ({ number, title, applicant, department, payer, content, amount, kind, suggestion, suggestionClass, created, failureReason, aiStatusOverride }) => {
         const row = source.cloneNode(true);
+        const reference = created === '7'
+          ? { receiptStatus:'已归档', kingdeeStatus:'同步成功', time:'10:10:45' }
+          : { receiptStatus:'待拉取', kingdeeStatus:'待同步', time:'11:30:12' };
         row.dataset.type = '报销单';
         row.dataset.approvalKind = kind === '项目报销' ? 'project' : 'non-project';
         row.dataset.payer = payer;
-        row.dataset.aiAudit = 'AI已审批';
-        row.dataset.aiSuggestion = suggestion;
+        row.dataset.payeeType = '个人';
+        row.dataset.receiptStatus = reference.receiptStatus;
+        row.dataset.kingdeeStatus = reference.kingdeeStatus;
+        row.dataset.approvalPassed = `2026-08-05 ${reference.time}`;
+        row.dataset.failureReason = failureReason || '';
+        const aiUnavailable = payer === '深圳市博商管理咨询有限公司';
+        const aiStatus = aiStatusOverride || (aiUnavailable ? '未开放' : 'AI已审批');
+        const normalizedSuggestion = aiUnavailable ? '' : suggestion;
+        row.dataset.aiAudit = aiStatus;
+        row.dataset.aiSuggestion = normalizedSuggestion;
         row.dataset.created = created;
         row.dataset.amount = amount.replace(',', '');
         row.cells[0].innerHTML = `<div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo&documentType=reimbursement&approvalKind=${kind === '项目报销' ? 'project' : 'non-project'}&documentNo=${number}">详情</a></div>`;
         row.cells[1].innerHTML = `<span class="code">${number}</span>`;
         row.cells[2].innerHTML = `<a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo&documentType=reimbursement&approvalKind=${kind === '项目报销' ? 'project' : 'non-project'}&documentNo=${number}">${title}</a>`;
+        row.cells[3].textContent = '是'; row.cells[4].textContent = '否';
         row.cells[5].textContent = '--'; row.cells[6].textContent = '--';
         row.cells[7].innerHTML = `2026-08-05<span class="subline">${created === '7' ? '10:10:45' : '11:30:12'}</span>`;
-        row.cells[8].textContent = applicant; row.cells[9].textContent = department;
-        row.cells[10].innerHTML = `<div class="payer">${payer}</div>`;
-        row.cells[11].innerHTML = `<div class="content-cell">${content}</div>`;
-        row.cells[12].textContent = amount; row.cells[13].textContent = '--';
-        row.cells[14].textContent = '报销单'; row.cells[15].textContent = kind;
-        row.cells[16].innerHTML = '<span class="status pending">待财务审核</span>';
-        row.cells[17].innerHTML = '<span class="tag done">AI已审批</span>';
-        row.cells[18].innerHTML = `<span class="tag ${suggestionClass}">${suggestion}</span>`;
-        row.cells[19].textContent = '王晓雯';
-        if (failureReason) row.dataset.failureReason = failureReason;
+        row.cells[8].innerHTML = `2026-08-05<span class="subline">${reference.time}</span>`;
+        row.cells[9].textContent = applicant; row.cells[10].textContent = department;
+        row.cells[11].innerHTML = `<div class="payer">${payer}</div>`;
+        row.cells[12].innerHTML = `<div class="content-cell">${content}</div>`;
+        row.cells[13].textContent = amount; row.cells[14].textContent = '--';
+        row.cells[15].textContent = '报销单'; row.cells[16].textContent = kind;
+        row.cells[17].innerHTML = '<span class="status pending">待财务审核</span>';
+        row.cells[18].textContent = '个人'; row.cells[19].textContent = reference.receiptStatus;
+        row.cells[20].textContent = reference.kingdeeStatus;
+        row.cells[21].innerHTML = `2026-08-05<span class="subline">${created === '7' ? '10:10:45' : '11:30:12'}</span>`;
+        row.cells[22].textContent = failureReason || '--';
+        row.cells[23].innerHTML = aiStatus === 'AI已审批' ? '<span class="tag done">AI已审批</span>' : `<span class="tag wait">${aiStatus}</span>`;
+        row.cells[24].innerHTML = normalizedSuggestion ? `<span class="tag ${suggestionClass}">${normalizedSuggestion}</span>` : '<span class="tag wait">--</span>';
+        row.cells[25].textContent = '王晓雯';
         return row;
       };
       document.getElementById('todoList').append(
         createRow({ number:'EXP-20260805-0042', title:'8 月办公用品采购项目报销', applicant:'陈敏', department:'行政部', payer:'博商管理集团有限公司', content:'办公文具及耗材采购', amount:'2,380.00', kind:'项目报销', suggestion:'建议通过', suggestionClass:'pass', created:'7' }),
-        createRow({ number:'EXP-20260805-0048', title:'8 月客户拜访交通费用报销', applicant:'林佳', department:'市场部', payer:'深圳市博商管理咨询有限公司', content:'客户拜访交通及餐费', amount:'1,280.00', kind:'报销', suggestion:'建议复核', suggestionClass:'review', created:'6', failureReason:'行程材料待补充' })
+        createRow({ number:'EXP-20260805-0048', title:'8 月客户拜访交通费用报销', applicant:'林佳', department:'市场部', payer:'深圳市博商管理咨询有限公司', content:'客户拜访交通及餐费', amount:'1,280.00', kind:'报销', suggestion:'建议复核', suggestionClass:'review', created:'6', failureReason:'行程材料待补充' }),
+        createRow({ number:'EXP-20260805-0051', title:'8 月团队活动费用报销', applicant:'张明', department:'项目管理部', payer:'博商管理集团有限公司', content:'团队活动场地及物料费用', amount:'860.00', kind:'报销', created:'8', aiStatusOverride:'未审批' }),
+        createRow({ number:'EXP-20260805-0055', title:'供应商合同异常费用报销', applicant:'周蕾', department:'市场部', payer:'博商管理集团有限公司', content:'市场活动供应商费用结算', amount:'3,200.00', kind:'报销', suggestion:'建议驳回', suggestionClass:'reject', created:'9', failureReason:'合同信息与发票不一致' })
       );
     }
     function referenceCell(value, className='') { const cell=document.createElement('td'); cell.className=className; cell.textContent=value||'--'; return cell; }
@@ -240,7 +264,7 @@
         const documentType = row.dataset.type === '报销单' ? 'reimbursement' : 'payment';
         const paymentType = row.cells[15]?.textContent.trim() || '';
         const approvalKind = row.dataset.approvalKind || (/项目付款|项目报销/.test(paymentType) ? 'project' : 'non-project');
-        const detailUrl = `审批详情页-AI影子审批原型.html?from=todo&documentType=${documentType}&approvalKind=${approvalKind}&documentNo=${encodeURIComponent(documentNo)}`;
+        const detailUrl = `审批详情页-AI影子审批原型.html?from=todo&documentType=${documentType}&approvalKind=${approvalKind}&documentNo=${encodeURIComponent(documentNo)}&aiStatus=${encodeURIComponent(row.dataset.aiAudit || '未审批')}`;
         row.dataset.approvalKind = approvalKind;
         const detailAction = row.querySelector('.actions .action-link:not(.primary-action)');
         const titleLink = row.querySelector('.title-link');
@@ -251,13 +275,45 @@
     function selectQuickFilter(button) { const key=button.dataset.filter; filters[key]=button.dataset.value; document.querySelectorAll(`.quick-option[data-filter="${key}"]`).forEach(item=>item.classList.toggle('active',item===button)); applyFilters(); }
     function applyFilters() { const payer=document.getElementById('payerFilter').value; const keyword=document.getElementById('globalSearch').value.trim().toLowerCase(); const rows=[...document.querySelectorAll('#todoList tr')]; let count=0; rows.forEach(row=>{ const text=row.textContent.toLowerCase(); const match=(!filters.status||row.dataset.status===filters.status)&&(!filters.receiptStatus||row.dataset.receiptStatus===filters.receiptStatus)&&(!filters.kingdeeStatus||row.dataset.kingdeeStatus===filters.kingdeeStatus)&&(!filters.type||row.dataset.type===filters.type)&&(!filters.overseas||row.dataset.overseas===filters.overseas)&&(!filters.invoice||row.dataset.invoice===filters.invoice)&&(!filters.payeeType||row.dataset.payeeType===filters.payeeType)&&(!filters.aiAudit||row.dataset.aiAudit===filters.aiAudit)&&(!filters.aiSuggestion||row.dataset.aiSuggestion===filters.aiSuggestion)&&(!payer||row.dataset.payer===payer)&&(!keyword||text.includes(keyword)); row.hidden=!match; if(match) count+=1; }); const sort=document.getElementById('sortSelect').value; const aiWeight={ '建议复核':3,'建议驳回':2,'建议通过':1,'':0 }; rows.sort((a,b)=>sort==='amount'?Number(b.dataset.amount)-Number(a.dataset.amount):sort==='ai'?(aiWeight[b.dataset.aiSuggestion]-aiWeight[a.dataset.aiSuggestion])||Number(b.dataset.created)-Number(a.dataset.created):Number(b.dataset.created)-Number(a.dataset.created)).forEach(row=>document.getElementById('todoList').appendChild(row)); document.getElementById('resultCount').textContent=`共 ${count} 条记录`; document.getElementById('emptyState').classList.toggle('show',count===0); }
     function resetFilters() { Object.keys(filters).forEach(key=>filters[key]=''); document.querySelectorAll('.quick-option').forEach(item=>item.classList.toggle('active',item.dataset.value==='')); document.getElementById('payerFilter').value=''; document.getElementById('globalSearch').value=''; document.getElementById('sortSelect').value='created'; applyFilters(); }
-    function showOperationLog(button) { const row=button.closest('tr'); const number=row.cells[1].textContent.trim(); const title=row.cells[2].textContent.trim(); document.getElementById('operationLogContent').innerHTML=`<p><strong>${number}</strong>　${title}</p><p>提交申请：2026-08-05 14:26:18　申请人已提交单据</p><p>AI 审单：已完成　${row.dataset.aiSuggestion||'等待 AI 审单'}</p><p>当前节点：待财务审批</p>`; document.getElementById('operationLog').hidden=false; }
+    function showOperationLog(button) {
+      const row=button.closest('tr');
+      const applicant=row.cells[9]?.textContent.trim()||'申请人';
+      const submittedAt=(row.cells[7]?.innerText||'2026-08-05 14:26:18').trim().replace(/\s*\n\s*/, ' ');
+      const approvalTime=row.dataset.approvalPassed||'--';
+      const aiStatus=row.dataset.aiAudit||'未审批';
+      const aiAudited=aiStatus==='AI已审批';
+      const aiUnavailable=aiStatus==='未开放';
+      const aiFailed=aiStatus==='审单失败';
+      const suggestion=row.dataset.aiSuggestion||'暂未形成建议';
+      const aiLogTime=aiUnavailable||aiFailed?'--':approvalTime;
+      const records=[
+        [submittedAt,applicant,'提交申请','申请人已提交单据'],
+        [aiLogTime,'AI 审单','AI 审单',aiAudited?`审单完成，${suggestion}`:aiUnavailable?'该付款主体暂未开放 AI 审批':aiFailed?'AI 审单失败，请转人工处理':'等待 AI 审单'],
+        ['--','财务专员','待财务审核','等待财务审批处理']
+      ];
+      document.getElementById('operationLogContent').innerHTML=`<table class="operation-log-table"><thead><tr><th>操作时间</th><th>操作人</th><th>操作节点</th><th>备注</th></tr></thead><tbody>${records.map(([time,operator,node,note])=>`<tr><td class="log-time">${time}</td><td>${operator}</td><td class="${node==='AI 审单'?'ai-log-node':''}">${node}</td><td>${note}</td></tr>`).join('')}</tbody></table>`;
+      document.getElementById('operationLog').hidden=false;
+    }
     function closeOperationLog() { document.getElementById('operationLog').hidden=true; }
-    function addApprovalActions() { document.querySelectorAll('#todoList .actions').forEach(actions=>{ if(actions.querySelector('.primary-action')) return; const row=actions.closest('tr'); const documentType=row.dataset.type==='报销单'?'reimbursement':'payment'; const documentNo=row.cells[1].textContent.trim(); const approval=document.createElement('a'); approval.className='action-link primary-action'; approval.href=`财务审批页-AI影子审单原型.html?from=todo&documentType=${documentType}&approvalKind=${row.dataset.approvalKind}&documentNo=${encodeURIComponent(documentNo)}`; approval.textContent='审批'; const log=document.createElement('button'); log.className='action-link log-action'; log.type='button'; log.textContent='日志'; log.onclick=()=>showOperationLog(log); actions.append(log); actions.append(approval); }); }
-    appendReimbursementTodoRows();
+    function normalizeDocumentTypeLabels() {
+      const typeFilter=[...document.querySelectorAll('.filter-row .filter-name')].find(node=>node.textContent.includes('报销单类型'));
+      if(typeFilter) typeFilter.textContent='单据类型：';
+      document.querySelectorAll('.filter-row [data-filter="type"]').forEach(button=>{
+        if(button.dataset.value==='付款单') button.textContent='付款申请';
+        if(button.dataset.value==='报销单') button.textContent='报销申请';
+      });
+      document.querySelectorAll('#todoList tr').forEach(row=>{
+        const typeCell=row.cells[15];
+        if(typeCell?.textContent.trim()==='付款单') typeCell.textContent='付款申请';
+        if(typeCell?.textContent.trim()==='报销单') typeCell.textContent='报销申请';
+      });
+    }
+    function addApprovalActions() { document.querySelectorAll('#todoList .actions').forEach(actions=>{ if(actions.querySelector('.primary-action')) return; const row=actions.closest('tr'); const documentType=row.dataset.type==='报销单'?'reimbursement':'payment'; const documentNo=row.cells[1].textContent.trim(); const approval=document.createElement('a'); approval.className='action-link primary-action'; approval.href=`财务审批页-AI影子审单原型.html?from=todo&documentType=${documentType}&approvalKind=${row.dataset.approvalKind}&documentNo=${encodeURIComponent(documentNo)}&aiStatus=${encodeURIComponent(row.dataset.aiAudit || '未审批')}&aiSuggestion=${encodeURIComponent(row.dataset.aiSuggestion || '')}`; approval.textContent='审批'; const log=document.createElement('button'); log.className='action-link log-action'; log.type='button'; log.textContent='日志'; log.onclick=()=>showOperationLog(log); actions.append(log); actions.append(approval); }); }
     hydrateReferenceColumns();
+    appendReimbursementTodoRows();
     wireDocumentRoutes();
     addApprovalActions();
+    normalizeDocumentTypeLabels();
     applyFilters();
   </script>
   <script src="prototype-navigation.js"></script>

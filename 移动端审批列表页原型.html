@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>我审批｜移动端</title>
+  <style>
+    :root { --red:#df3f43; --page:#f5f6fa; --line:#eceff3; --ink:#252c37; --muted:#7e8795; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:#e8edf3; font:14px/1.45 "Microsoft YaHei", "PingFang SC", Arial,sans-serif; }
+    button { font:inherit; cursor:pointer; }
+    .mobile-shell { width:min(100%,430px); min-height:100vh; margin:0 auto; background:#fff; }
+    .mobile-topbar { color:#fff; background:var(--red); }
+    .statusbar { display:flex; align-items:flex-end; justify-content:space-between; height:29px; padding:0 22px 6px; font-size:13px; font-weight:700; }
+    .status-icons { letter-spacing:3px; font-size:12px; }
+    .navrow { display:grid; grid-template-columns:52px 1fr 92px; align-items:center; height:56px; }
+    .navrow a, .navrow button { display:grid; place-items:center; width:52px; height:56px; color:#fff; background:transparent; border:0; text-decoration:none; }
+    .navrow strong { text-align:center; font-size:17px; }
+    .back { font-size:35px; font-weight:200; line-height:1; }
+    .top-tools { display:flex; align-items:center; justify-content:flex-end; }
+    .top-tools button { font-size:24px; font-weight:300; }
+    .approval-tabs { display:grid; grid-template-columns:repeat(3,1fr); height:44px; background:#fff; border-bottom:1px solid var(--line); }
+    .approval-tabs button { position:relative; color:#4a5260; background:#fff; border:0; font-size:14px; }
+    .approval-tabs button.active { color:var(--red); font-weight:700; }
+    .approval-tabs button.active::after { position:absolute; right:16px; bottom:-1px; left:16px; height:2px; background:var(--red); content:''; }
+    .approval-list { min-height:calc(100vh - 129px); background:#fff; }
+    .approval-list[hidden] { display:none; }
+    .approval-item { display:block; padding:17px 16px 15px; color:inherit; background:#fff; border-bottom:1px solid var(--line); text-decoration:none; }
+    .approval-item:active { background:#fff7f7; }
+    .item-head { display:flex; align-items:flex-start; gap:9px; }
+    .item-head strong { flex:1; color:#242b36; font-size:15px; }
+    .item-status { padding:2px 7px; color:#fff; background:var(--red); border-radius:3px; font-size:11px; white-space:nowrap; }
+    .item-status.done { background:#6d819b; }
+    .item-time { color:#9ba3af; font-size:12px; white-space:nowrap; }
+    .item-meta { display:grid; gap:4px; margin-top:9px; color:#555f6e; font-size:13px; }
+    .item-meta span { color:#7f8997; }
+    .item-tag { display:inline-flex; align-items:center; margin-top:14px; padding:3px 8px; color:#d64c54; background:#fff1f2; border-radius:13px; font-size:11px; }
+    .empty { padding:54px 16px; color:#a0a8b3; text-align:center; font-size:13px; }
+    .toast { position:fixed; z-index:8; top:76px; left:50%; display:none; padding:10px 14px; color:#fff; background:rgba(31,38,49,.94); border-radius:6px; box-shadow:0 8px 18px rgba(26,34,48,.18); font-size:13px; transform:translateX(-50%); }
+    .toast.show { display:block; }
+  </style>
+</head>
+<body>
+  <main class="mobile-shell">
+    <header class="mobile-topbar"><div class="statusbar"><span>09:46</span><span class="status-icons">••• ◔ ▱</span></div><div class="navrow"><a class="back" href="移动端申请入口页原型.html" aria-label="返回申请入口">‹</a><strong>我审批</strong><div class="top-tools"><button type="button" data-tool="搜索" aria-label="搜索">⌕</button><button type="button" data-tool="筛选" aria-label="筛选">⌄</button></div></div></header>
+    <nav class="approval-tabs" aria-label="审批分类"><button class="active" type="button" data-list-tab="pending">待审批</button><button type="button" data-list-tab="done">已审批</button><button type="button" data-list-tab="cc">抄送给我</button></nav>
+    <section class="approval-list" data-list-panel="pending"><a class="approval-item" href="移动端报销审批页原型.html"><div class="item-head"><strong>陈敏发起的项目费用报销</strong><span class="item-status">待审批</span><span class="item-time">今天</span></div><div class="item-meta"><div><span>标题：</span>华南区域公开课项目办公费用</div><div><span>申请人：</span>陈敏</div><div><span>申请部门：</span>博商集团 / 行政部</div></div><span class="item-tag">▱ 项目报销 · ¥ 2,380.00</span></a><a class="approval-item" href="移动端报销审批页原型.html"><div class="item-head"><strong>刘宇鑫发起的差旅报销单</strong><span class="item-status">待审批</span><span class="item-time">昨天</span></div><div class="item-meta"><div><span>标题：</span>北京客户拜访交通住宿费用</div><div><span>申请人：</span>刘宇鑫</div><div><span>申请部门：</span>教学运营部</div></div><span class="item-tag">▱ 差旅报销 · ¥ 1,560.00</span></a><a class="approval-item" href="移动端付款审批页原型.html"><div class="item-head"><strong>刘宇鑫发起的项目付款申请</strong><span class="item-status">待审批</span><span class="item-time">昨天</span></div><div class="item-meta"><div><span>标题：</span>2026 年 8 月项目差旅费用付款</div><div><span>申请人：</span>刘宇鑫</div><div><span>申请部门：</span>教学运营部</div></div><span class="item-tag">▱ 付款申请 · ¥ 1,560.00</span></a></section>
+    <section class="approval-list" data-list-panel="done" hidden><a class="approval-item" href="移动端报销审批页原型.html"><div class="item-head"><strong>张明发起的办公费用报销</strong><span class="item-status done">已同意</span><span class="item-time">08-23</span></div><div class="item-meta"><div><span>标题：</span>项目会议物料采购</div><div><span>申请人：</span>张明</div><div><span>申请部门：</span>项目管理部</div></div><span class="item-tag">▱ 报销单 · ¥ 860.00</span></a></section>
+    <section class="approval-list" data-list-panel="cc" hidden><div class="empty">暂无抄送给您的审批单据</div></section>
+  </main>
+  <div class="toast" id="listToast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      const toast = document.getElementById('listToast'); let timer = null;
+      const showToast = message => { clearTimeout(timer); toast.textContent = message; toast.classList.add('show'); timer = setTimeout(() => toast.classList.remove('show'), 1800); };
+      document.querySelectorAll('[data-list-tab]').forEach(tab => tab.addEventListener('click', () => { document.querySelectorAll('[data-list-tab]').forEach(item => item.classList.toggle('active', item === tab)); document.querySelectorAll('[data-list-panel]').forEach(panel => panel.hidden = panel.dataset.listPanel !== tab.dataset.listTab); }));
+      document.querySelectorAll('.item-tag').forEach(tag => { tag.textContent = tag.textContent.replace('项目报销', '报销申请').replace('差旅报销', '报销申请').replace('报销单', '报销申请'); });
+      document.querySelectorAll('[data-tool]').forEach(button => button.addEventListener('click', () => showToast(`${button.dataset.tool}功能暂未接入原型。`)));
+    })();
+  </script>
+</body>
+</html>

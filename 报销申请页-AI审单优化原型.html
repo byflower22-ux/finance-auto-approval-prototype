@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>付款单｜AI 审单优化原型</title>
+<title>报销申请｜AI 审单优化原型</title>
   <style>
     :root {
       --nav: #1f3156;
@@ -31,6 +31,7 @@
     body.embedded .workspace { min-height: 100vh; margin: 0; }
     button, input, select, textarea { font: inherit; }
     button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .52; }
 
     .topbar { position: fixed; z-index: 10; top: 0; right: 0; left: 0; height: 62px; display: flex; align-items: center; justify-content: space-between; padding: 0 25px 0 22px; background: #fff; border-bottom: 1px solid var(--line); }
     .brand { display: flex; gap: 11px; align-items: center; font-size: 18px; font-weight: 700; color: #273959; }
@@ -70,6 +71,10 @@
     .card-title .num { width: 23px; height: 23px; display: grid; place-items: center; color: var(--blue); background: var(--blue-soft); border-radius: 50%; font-size: 12px; }
     .card-header-note { color: var(--muted); font-size: 12px; }
     .card-body { padding: 18px; }
+    .basic-info-completion-hint { display: flex; gap: 8px; align-items: center; margin: 0 0 14px; padding: 9px 11px; color: #8a620c; background: #fff7e7; border: 0; border-left: 3px solid #e7a528; border-radius: 0 5px 5px 0; font-size: 12px; font-weight: 600; }
+    .basic-info-completion-icon { display: grid; width: 16px; height: 16px; flex: 0 0 16px; place-items: center; color: #fff; background: #d99a18; border-radius: 50%; font-size: 11px; font-style: normal; line-height: 1; }
+    .basic-info-next-action { display: flex; justify-content: flex-end; padding-top: 4px; }
+    .basic-info-next-action .btn { min-width: 116px; }
 
     .form-grid { display: grid; grid-template-columns: 1.1fr 1fr 1.1fr; gap: 17px 34px; }
     .field { min-width: 0; }
@@ -92,8 +97,9 @@
     .input, select { height: 34px; padding: 0 10px; }
     textarea { min-height: 72px; padding: 9px 10px; resize: vertical; }
     .input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(40, 100, 238, .1); }
-    .input[readonly] { color: #738198; background: #f5f7fb; border-color: #e7ebf1; cursor: not-allowed; }
-    .input[readonly]:focus { border-color: #e7ebf1; box-shadow: none; }
+    .input[readonly], .cell-input[readonly], .cell-input:disabled { color: #738198; background: #f5f7fb; border-color: #e7ebf1; cursor: not-allowed; }
+    .input[readonly]:focus, .cell-input[readonly]:focus, .cell-input:disabled:focus { border-color: #e7ebf1; box-shadow: none; }
+    select.cell-input:disabled { color: #738198; background: #f5f7fb; border-color: #e7ebf1; cursor: not-allowed; opacity: 1; -webkit-text-fill-color: #738198; -webkit-appearance: none; appearance: none; }
     .readonly { display: flex; align-items: center; min-height: 34px; color: #4c5e79; background: #f7f9fc; border: 1px solid #edf0f5; border-radius: 5px; padding: 0 10px; }
     .inline-picker { display: flex; gap: 8px; align-items: center; }
     .inline-picker .readonly { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -108,9 +114,6 @@
     .choice-row label { display: inline-flex; gap: 5px; align-items: center; margin: 0; font-size: 13px; font-weight: 400; }
     input[type="radio"] { accent-color: var(--blue); }
     .field-hint { margin-top: 5px; color: #91a0b7; font-size: 11px; }
-    .cell-input:disabled { color: #9aa6b8; background: #f7f9fc; cursor: not-allowed; }
-    .cell-input[readonly] { color: #738198; background: #f5f7fb; border-color: #e7ebf1; cursor: not-allowed; }
-    .cell-input[readonly]:focus { border-color: #e7ebf1; box-shadow: none; }
 
     .integrity { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.2fr; gap: 10px; padding: 13px 17px; background: #f8fbff; border: 1px solid #dce9ff; border-radius: 8px; }
     .integrity-label { display: flex; align-items: center; color: #394968; font-weight: 700; }
@@ -212,8 +215,11 @@
     .type-attachment-status { padding: 2px 5px; color: #7f8da3; background: #f1f4f8; border-radius: 3px; font-size: 10px; font-weight: 400; }
     .type-attachment-category.is-required .type-attachment-status { color: var(--blue); background: var(--blue-soft); font-weight: 600; }
     .type-attachment-description { min-height: 32px; margin: -4px 0 9px; color: #7d8ba1; font-size: 11px; line-height: 1.45; }
-    .type-attachment-file { display: flex; gap: 7px; align-items: center; color: #53627a; font-size: 12px; }
+    .type-attachment-file { display: grid; gap: 6px; color: #53627a; font-size: 12px; }
+    .type-attachment-file-row { display: flex; gap: 7px; align-items: center; min-width: 0; }
     .type-attachment-file a { overflow: hidden; color: #3269dc; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+    .type-attachment-preview { overflow: hidden; max-width: 100%; padding: 0; color: #3269dc; text-align: left; text-overflow: ellipsis; white-space: nowrap; background: transparent; border: 0; font-size: 12px; }
+    .type-attachment-preview:hover { text-decoration: underline; }
     .type-attachment-upload { display: inline-flex; gap: 4px; align-items: center; margin-top: 12px; padding: 0; color: var(--blue); background: none; border: 0; font-size: 12px; }
 
     .section-topline { display: flex; align-items: center; justify-content: flex-start; margin-bottom: 13px; }
@@ -280,7 +286,7 @@
     .project-picker-invert { padding: 3px 7px; color: #5c759c; background: #fff; border: 1px solid #d7e0ed; border-radius: 3px; font-size: 12px; }
     .project-picker-table-wrap { overflow: hidden; border: 1px solid #e5eaf2; } .project-picker-table { width: 100%; min-width: 0; border-collapse: collapse; } .project-picker-table th { height: 42px; color: #5d6b80; background: #f5f7fa; } .project-picker-table td { height: 41px; color: #586579; } .project-picker-table th:first-child, .project-picker-table td:first-child { width: 52px; text-align: center; } .project-picker-table input[type="checkbox"] { accent-color: #4093f5; }
     .project-picker-pagination { display: flex; gap: 7px; align-items: center; min-height: 61px; color: #596980; font-size: 12px; } .project-picker-pages { display: flex; gap: 7px; margin-left: 8px; } .project-picker-pages button { min-width: 32px; height: 32px; padding: 0 8px; color: #596980; background: #f2f4f7; border: 0; border-radius: 2px; } .project-picker-pages button.active { color: #fff; background: #4093f5; } .project-picker-pages button:disabled { color: #b9c3d2; cursor: not-allowed; }
-    .toast { position: fixed; z-index: 30; right: 32px; bottom: 28px; display: none; gap: 9px; align-items: center; padding: 12px 15px; color: #206c57; background: #fff; border: 1px solid #cceee2; border-radius: 8px; box-shadow: 0 8px 20px rgba(20, 83, 64, .12); }
+    .toast { position: fixed; z-index: 30; top: 86px; left: 50%; display: none; gap: 9px; align-items: center; max-width: min(560px, calc(100vw - 48px)); padding: 12px 15px; color: #206c57; background: #fff; border: 1px solid #cceee2; border-radius: 8px; box-shadow: 0 8px 20px rgba(20, 83, 64, .12); transform: translateX(-50%); }
     .toast.show { display: flex; }
     .toast i { width: 20px; height: 20px; display: grid; place-items: center; color: #fff; background: var(--green); border-radius: 50%; font-style: normal; }
   </style>
@@ -324,7 +330,7 @@
   </aside>
 
   <main class="workspace">
-    <div class="crumb">首页 <span>›</span> 申请 <span>›</span> <strong>修改付款单</strong></div>
+<div class="crumb">首页 <span>›</span> 申请 <span>›</span> <strong>修改报销申请</strong></div>
     <div class="content">
       <div class="toolbar">
         <div class="toolbar-left">
@@ -338,26 +344,28 @@
       <section class="card">
         <div class="card-header"><div class="card-title"><span class="num">1</span>申请基础信息</div><span class="card-header-note">标注 * 的字段为必填项</span></div>
         <div class="card-body">
+          <div class="basic-info-completion-hint" id="basicInfoCompletionHint"><i class="basic-info-completion-icon" aria-hidden="true">!</i><span>请先录入必填字段。</span></div>
           <div class="basic-context-summary"><span>申请人：<strong>超级管理员</strong></span><span>申请部门：<strong>博商集团 / 博商集团</strong></span></div>
           <section class="basic-info-section" data-basic-section="payment">
             <div class="basic-section-title">付款信息</div>
             <div class="form-grid">
               <div class="field"><label class="req">标题</label><input class="input" value="HQ测试" aria-label="标题"></div>
               <div class="field"><label class="req">费用时间</label><input class="input" type="date" value="2026-05-25" aria-label="费用时间"></div>
-              <div class="field"><label class="req">付款类型</label><select id="paymentKind" aria-label="付款类型"><option value="ordinary">付款</option><option value="project" selected>项目付款</option></select></div>
+              <div class="field"><label class="req">付款类型</label><select id="paymentKind" aria-label="付款类型" required><option value="" selected>请选择付款类型</option><option value="ordinary">付款</option><option value="project">项目付款</option></select></div>
               <div class="field"><label class="req">主体公司</label><select aria-label="主体公司"><option selected>深圳市博商管理科学研究院股份有限公司</option><option>博商管理咨询（深圳）有限公司</option></select></div>
-               <div class="field"><label class="req">是否有发票</label><div class="choice-row"><label><input type="radio" name="hasInvoice" value="no">否</label><label><input type="radio" name="hasInvoice" value="yes" checked>是</label></div></div>
-               <div class="field service-fee-field"><label class="req">是否付劳务费</label><div class="choice-row"><label><input type="radio" name="serviceFee" value="no" checked>否</label><label><input type="radio" name="serviceFee" value="yes">是</label></div></div>
+              <!-- reimbursement mode sets name="hasInvoice" value="yes" checked disabled -->
+              <div class="field invoice-fixed"><label class="req">是否有发票</label><div class="choice-row"><label><input type="radio" name="hasInvoice" value="no">否</label><label><input type="radio" name="hasInvoice" value="yes">是</label></div></div>
+               <div class="field service-fee-field"><label class="req">是否付劳务费</label><div class="choice-row"><label><input type="radio" name="serviceFee" value="no">否</label><label><input type="radio" name="serviceFee" value="yes">是</label></div></div>
               <div class="field project-payment-field full"><label class="req">本单关联项目</label><div class="inline-picker"><div class="readonly document-project-list" id="documentProjects">未选择项目</div><button class="btn" type="button" id="selectDocumentProjects">选择项目</button></div></div>
             </div>
           </section>
           <section class="basic-info-section" data-basic-section="payee">
             <div class="basic-section-title">收款信息</div>
             <div class="form-grid">
-              <div class="field"><label class="req">收款方类型</label><div class="choice-row"><label><input type="radio" name="payee" value="linked" checked>链接付款</label><label><input type="radio" name="payee" value="company">公司</label><label><input type="radio" name="payee" value="person">个人</label></div></div>
+              <div class="field"><label class="req">收款方类型</label><div class="choice-row"><label><input type="radio" name="payee" value="linked">链接付款</label><label><input type="radio" name="payee" value="company">公司</label><label><input type="radio" name="payee" value="person">个人</label></div></div>
               <div class="field"><label class="req">收款单位</label><input class="input" value="6666" aria-label="收款单位"></div>
               <div class="field"><label class="req">银行账号</label><input class="input" id="bankAccount" value="45345435" aria-label="银行账号"></div>
-              <div class="field"><label class="req">是否海外付款</label><div class="choice-row"><label><input type="radio" name="overseas" value="no" checked>否</label><label><input type="radio" name="overseas" value="yes">是</label></div></div>
+              <div class="field"><label class="req">是否海外付款</label><div class="choice-row"><label><input type="radio" name="overseas" value="no">否</label><label><input type="radio" name="overseas" value="yes">是</label></div></div>
               <div class="field bank-name-search-wrap" id="bankNameSearchField"><label class="req">开户行</label><input class="input" id="bankNameSearch" autocomplete="off" placeholder="输入开户行关键词搜索" aria-label="开户行关键词搜索"><div class="bank-name-search" id="bankNameResults" hidden></div><div class="field-hint" id="bankNameSearchHint">输入关键词后，从匹配结果中选择标准开户行。</div></div>
               <div class="field" id="bankNameManualField" hidden><label class="req">开户行</label><input class="input" id="bankNameManual" placeholder="请输入开户行名称" aria-label="开户行"></div>
               <div class="field overseas-payment-field" hidden><label class="req">币种</label><select id="currency"><option value="">请选择</option><option>JPY</option><option>SGD</option><option>MYR</option><option>VND</option><option>IDR</option><option>CNY</option><option>HKD</option><option>USD</option></select></div>
@@ -371,7 +379,7 @@
               <div class="field"><label class="req">领款人</label><div class="inline-picker"><div class="readonly" id="reimbursementRecipient">超级管理员</div><button class="btn" type="button" id="selectReimbursementRecipient">选择领款人</button></div></div>
               <div class="field"><label>领款人开户行</label><input class="input" id="recipientBankName" value="招商银行深圳分行" readonly aria-label="领款人开户行"></div>
               <div class="field"><label>领款人银行卡账号</label><input class="input" id="recipientBankAccount" value="6225 8888 0462 9551" readonly aria-label="领款人银行卡账号"></div>
-              <div class="field"><label class="req">是否海外付款</label><div class="choice-row"><label><input type="radio" name="reimbursementOverseas" value="no" checked>否</label><label><input type="radio" name="reimbursementOverseas" value="yes">是</label></div></div>
+              <div class="field"><label class="req">是否海外付款</label><div class="choice-row"><label><input type="radio" name="reimbursementOverseas" value="no">否</label><label><input type="radio" name="reimbursementOverseas" value="yes">是</label></div></div>
               <div class="field reimbursement-overseas-field" hidden><label class="req">币种</label><select id="reimbursementCurrency" aria-label="报销币种"><option value="">请选择</option><option>JPY</option><option>SGD</option><option>MYR</option><option>VND</option><option>IDR</option><option>CNY</option><option>HKD</option><option>USD</option></select></div>
               <div class="field reimbursement-overseas-field" hidden><label class="req">SWIFT Code</label><input class="input" id="reimbursementSwiftCode" placeholder="请输入 SWIFT Code" aria-label="SWIFT Code"></div>
             </div>
@@ -379,7 +387,7 @@
           <section class="basic-info-section" data-basic-section="loan-offset" hidden>
             <div class="basic-section-title">借款单冲抵</div>
             <div class="form-grid">
-              <div class="field full"><label>是否使用借款单冲抵</label><div class="choice-row"><label><input type="radio" name="loanOffset" value="no" checked>否</label><label><input type="radio" name="loanOffset" value="yes">是</label></div></div>
+              <div class="field full"><label class="req">是否使用借款单冲抵</label><div class="choice-row"><label><input type="radio" name="loanOffset" value="no">否</label><label><input type="radio" name="loanOffset" value="yes">是</label></div></div>
             </div>
             <div id="loanOffsetDetails" hidden>
               <div class="reimbursement-loan-note">报销付款将优先冲抵申请人未还借款，请选择本次需要冲抵的借款单。</div>
@@ -393,10 +401,11 @@
             <div class="basic-section-title">补充说明</div>
             <div class="field"><label class="req">备注</label><textarea aria-label="备注" placeholder="请填写业务背景、使用说明或特殊事项。">用于项目班级固定人工费用报销。</textarea><div class="field-hint">请在备注中描述具体费用说明，包括日期-费用类型-金额-用途说明。例如：2026-07-09，餐费：100 元，用途：授课老师工作餐</div></div>
           </section>
+          <div class="basic-info-next-action"><button class="btn primary" id="showExpenseDetails" type="button" disabled>填写费用明细</button></div>
         </div>
       </section>
 
-      <section class="card">
+      <section class="card" id="expenseDetailsCard">
         <div class="card-header"><div class="card-title"><span class="num">2</span>费用明细</div></div>
         <div class="card-body">
           <div class="section-topline"><span></span><button class="btn" id="addExpense">＋ 添加费用类型</button></div>
@@ -423,7 +432,7 @@
                   </div>
                 </section>
                 <section class="type-invoices" data-type-panel="invoices" hidden>
-                  <div class="type-panel-toolbar"><span class="association-label">当前费用类型的发票信息</span><div class="type-invoice-actions"><button class="btn" data-invoice-action="ocr" type="button">OCR 识别</button><button class="btn" data-invoice-action="existing" type="button">选择已有发票</button><button class="btn" data-invoice-action="manual" type="button">＋ 手工录入</button></div></div>
+                  <div class="type-panel-toolbar"><span class="association-label">当前费用类型的发票信息</span><div class="type-invoice-actions"><button class="btn" data-invoice-action="ocr" type="button">OCR 识别</button><button class="btn" data-invoice-action="manual" type="button">＋ 手工录入</button></div></div>
                   <div class="table-wrap">
                     <table class="type-invoice-table">
                       <thead><tr><th style="width:50px">序号</th><th>发票号码</th><th>发票类型</th><th>价税合计（元）</th><th>税率</th><th>税额</th><th>开票公司</th><th>购买方主体</th><th>购买方税号</th><th>开票日期</th><th>核验结果</th><th style="width:96px">操作</th></tr></thead>
@@ -433,8 +442,8 @@
                 </section>
                 <section class="type-associations" data-type-panel="attachments" hidden>
                   <div class="type-attachment-categories">
-                    <article class="type-attachment-category" data-attachment-category="contract"><div class="type-attachment-head">合同 <span class="type-attachment-status">选填</span></div><div class="type-attachment-description">用于关联本费用类型对应的合同文件。</div><div class="type-attachment-file">尚未上传</div><button class="type-attachment-upload">＋ 上传材料</button></article>
-                    <article class="type-attachment-category" data-attachment-category="other"><div class="type-attachment-head">其他说明材料 <span class="type-attachment-status">选填</span></div><div class="type-attachment-description">用于补充当前费用类型的特殊业务背景或例外说明。</div><div class="type-attachment-file">尚未上传</div><button class="type-attachment-upload">＋ 上传材料</button></article>
+                    <article class="type-attachment-category" data-attachment-category="contract"><div class="type-attachment-head">合同 <span class="type-attachment-status">选填</span></div><div class="type-attachment-description">用于关联本费用类型对应的合同文件。</div><div class="type-attachment-file">尚未上传</div><input class="type-attachment-file-input" type="file" hidden multiple><button class="type-attachment-upload" type="button">＋ 上传材料</button></article>
+                    <article class="type-attachment-category" data-attachment-category="other"><div class="type-attachment-head">其他说明材料 <span class="type-attachment-status">选填</span></div><div class="type-attachment-description">用于补充当前费用类型的特殊业务背景或例外说明。</div><div class="type-attachment-file">尚未上传</div><input class="type-attachment-file-input" type="file" hidden multiple><button class="type-attachment-upload" type="button">＋ 上传材料</button></article>
                   </div>
                 </section>
               </div>
@@ -500,25 +509,36 @@
         <div class="modal-body" id="typeInvoicePreviewBody"></div>
       </div>
     </div>
+    <div class="modal-mask" id="typeAttachmentPreview" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="typeAttachmentPreviewTitle">
+        <div class="modal-header"><span id="typeAttachmentPreviewTitle">附件预览</span><button class="close" type="button" data-close-attachment-preview aria-label="关闭">×</button></div>
+        <div class="modal-body" id="typeAttachmentPreviewBody"></div>
+      </div>
+    </div>
     <div class="toast" id="toast"><i>✓</i><span>已新增一条费用明细，请补充发票和业务材料关联。</span></div>
 
   <script>
     if (new URLSearchParams(window.location.search).has('embedded')) document.body.classList.add('embedded');
     const isReimbursementApplication = new URLSearchParams(window.location.search).get('documentType') === 'reimbursement';
+    if (!isReimbursementApplication) {
+      document.querySelectorAll('input[name="hasInvoice"]').forEach(input => { input.disabled = false; input.checked = false; });
+    }
     function applyReimbursementApplicationMode() {
       if (!isReimbursementApplication) return;
       document.querySelector('.service-fee-field').hidden = true;
-      document.title = '报销单｜AI 审单优化原型';
-      document.querySelector('.crumb strong').textContent = '修改报销单';
+document.title = '报销申请｜AI 审单优化原型';
+document.querySelector('.crumb strong').textContent = '修改报销申请';
       document.querySelector('[data-basic-section="payment"] .basic-section-title').textContent = '报销信息';
       document.querySelector('[data-basic-section="payee"]').hidden = true;
       document.querySelector('[data-basic-section="reimbursement-recipient"]').hidden = false;
       document.querySelector('[data-basic-section="loan-offset"]').hidden = false;
+      document.querySelectorAll('input[name="hasInvoice"]').forEach(input => { input.disabled = true; input.checked = input.value === 'yes'; });
       const kindLabel = [...document.querySelectorAll('.field > label')].find(label => label.textContent.includes('付款类型'));
       if (kindLabel) kindLabel.textContent = '报销类型';
       const kind = document.getElementById('paymentKind');
-      kind.options[0].textContent = '报销';
-      kind.options[1].textContent = '项目报销';
+      kind.options[0].textContent = '请选择报销类型';
+      kind.options[1].textContent = '报销';
+      kind.options[2].textContent = '项目报销';
       document.querySelector('input[aria-label="标题"]').value = '2026 年 8 月项目客户拜访费用报销';
       document.querySelector('textarea[aria-label="备注"]').value = '用于项目客户拜访发生的交通、住宿及业务招待费用报销。';
       document.querySelector('.summary-row .hint').textContent = '项目报销时，在费用类型下新增分摊行并选择项目和费用承担团队；多项目报销即为多个分摊行。';
@@ -625,6 +645,13 @@
     }
     const validateModal = document.getElementById('validateModal');
     const showValidation = () => {
+      const missingFields = getSubmissionMissingFields();
+      if (missingFields.length) {
+        showToast(`请先完善必填项：${formatMissingFields(missingFields)}`);
+        const target = getBasicInfoMissingFields().length ? document.querySelector('.card') : expenseDetailsCard;
+        target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
       if (!validateLaborPersonalTax()) {
         const invalidTax = document.querySelector('.labor-tax-input:invalid');
         invalidTax?.closest('tr')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -672,6 +699,49 @@
     document.getElementById('selectDocumentProjects').addEventListener('click', () => openDocumentProjectPicker());
 
     const paymentKind = document.getElementById('paymentKind');
+    const expenseDetailsCard = document.getElementById('expenseDetailsCard');
+    const basicInfoCompletionHint = document.getElementById('basicInfoCompletionHint');
+    const showExpenseDetailsButton = document.getElementById('showExpenseDetails');
+    let hasOpenedExpenseDetails = false;
+    function getBasicInfoMissingFields() {
+      return [...document.querySelectorAll('.basic-info-section:not([hidden]) .field')].flatMap(field => {
+        const label = field.querySelector('label.req');
+        if (!label || field.closest('[hidden]')) return [];
+        const fieldName = label.textContent.trim();
+        if (field.querySelector('#documentProjects')) return documentProjects.size ? [] : [fieldName];
+
+        const radioNames = [...new Set([...field.querySelectorAll('input[type="radio"]')].map(input => input.name))];
+        if (radioNames.length) return radioNames.every(name => document.querySelector(`input[name="${name}"]:checked`)) ? [] : [fieldName];
+
+        const controls = [...field.querySelectorAll('input:not([type="hidden"]), select, textarea')]
+          .filter(control => !control.disabled && !control.closest('[hidden]'));
+        if (controls.length) return controls.every(control => control.value.trim()) ? [] : [fieldName];
+
+        const readonlyValue = field.querySelector('.readonly')?.textContent.trim();
+        return readonlyValue && readonlyValue !== '未选择项目' ? [] : [fieldName];
+      });
+    }
+    function isBasicInfoComplete() {
+      return getBasicInfoMissingFields().length === 0;
+    }
+    function updateExpenseDetailsVisibility() {
+      const isComplete = isBasicInfoComplete();
+      if (!isComplete) hasOpenedExpenseDetails = false;
+      expenseDetailsCard.hidden = !hasOpenedExpenseDetails;
+      basicInfoCompletionHint.hidden = isComplete;
+      showExpenseDetailsButton.disabled = !isComplete;
+      showExpenseDetailsButton.hidden = hasOpenedExpenseDetails;
+    }
+    showExpenseDetailsButton.addEventListener('click', () => {
+      if (!isBasicInfoComplete()) return;
+      hasOpenedExpenseDetails = true;
+      updateExpenseDetailsVisibility();
+      expenseDetailsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    document.querySelectorAll('.basic-info-section input, .basic-info-section select, .basic-info-section textarea').forEach(control => {
+      control.addEventListener('input', updateExpenseDetailsVisibility);
+      control.addEventListener('change', updateExpenseDetailsVisibility);
+    });
     const domesticBanks = [
       '中国农业银行深圳宝安路支行',
       '平安银行深圳宝安支行',
@@ -696,7 +766,7 @@
     };
     const activeCurrencyControl = () => isReimbursementApplication ? document.getElementById('reimbursementCurrency') : currency;
     const activeSwiftControl = () => isReimbursementApplication ? document.getElementById('reimbursementSwiftCode') : document.getElementById('swiftCode');
-    const isOverseasPayment = () => document.querySelector(`input[name="${isReimbursementApplication ? 'reimbursementOverseas' : 'overseas'}"]:checked`).value === 'yes';
+    const isOverseasPayment = () => document.querySelector(`input[name="${isReimbursementApplication ? 'reimbursementOverseas' : 'overseas'}"]:checked`)?.value === 'yes';
     function renderBankResults(keyword) {
       const normalizedKeyword = keyword.trim();
       const matchedBanks = normalizedKeyword ? domesticBanks.filter(name => name.includes(normalizedKeyword)) : [];
@@ -725,7 +795,7 @@
     function updateBankInputMode() {
       if (isReimbursementApplication) return;
       const isOverseas = isOverseasPayment();
-      const isLinkedPayee = document.querySelector('input[name="payee"]:checked').value === 'linked';
+      const isLinkedPayee = document.querySelector('input[name="payee"]:checked')?.value === 'linked';
       const showBankName = !isLinkedPayee;
       const useDomesticSearch = showBankName && !isOverseas;
       document.getElementById('bankNameSearchField').hidden = !useDomesticSearch;
@@ -779,6 +849,7 @@
       activeSwiftControl().required = isOverseas;
       if (!isReimbursementApplication) updateBankInputMode();
       updateForeignCurrencyAllocationState();
+      updateExpenseDetailsVisibility();
     }
     document.querySelectorAll('input[name="overseas"]').forEach(input => input.addEventListener('change', () => {
       clearLinkedPaymentFields();
@@ -839,7 +910,7 @@
       status: ['未开始', '进行中', '已完成'][index % 3]
     }));
     const ordinaryTeamOptions = ['教学运营组', '班级服务组', '项目支持组', '财务共享组'];
-    const applicantAllocation = { name: '超级管理员', department: '博商集团 / 博商集团' };
+    const applicantAllocation = { name: '超级管理员', department: '博商集团 / 博商集团', team: '教学运营组' };
     const teamBudgetBalances = {
       教学运营组: 168000,
       班级服务组: 94600,
@@ -860,13 +931,15 @@
       const teams = paymentKind.value === 'project'
         ? (projectTeamOptions[row.querySelector('.allocation-project').value] || [])
         : ordinaryTeamOptions;
-      team.innerHTML = teams.map(name => `<option>${name}</option>`).join('');
+      team.innerHTML = `<option value="">请选择费用承担团队</option>${teams.map(name => `<option>${name}</option>`).join('')}`;
       if (teams.includes(selectedTeam)) team.value = selectedTeam;
+      if (!team.value) row.querySelector('.allocation-team-balance').value = '';
       updateAllocationTeamBalance(row);
     }
     function updatePaymentType() {
       const isProjectPayment = paymentKind.value === 'project';
       document.querySelectorAll('.project-payment-field').forEach(element => { element.hidden = !isProjectPayment; });
+      updateExpenseDetailsVisibility();
       document.querySelectorAll('.project-allocation-entry').forEach(entry => {
         const button = entry.querySelector('.add-allocation-row');
         const hasAllocationRows = entry.closest('.expense-type-group').querySelector('.expense-allocation-table tbody tr') !== null;
@@ -879,13 +952,38 @@
         const project = row.querySelector('.allocation-project');
         project.disabled = true;
         project.required = false;
-        updateAllocationTeam(row);
+        if (isProjectPayment) {
+          row.querySelector('.allocation-team').disabled = false;
+          updateAllocationTeam(row);
+        } else {
+          updateAllocationOwner(row);
+        }
+        updateAutomaticAllocationRowState(row);
       });
       document.querySelectorAll('.expense-type-group').forEach(refreshTypeSummary);
     }
     function updateAllocationOwner(row) {
       const ownerDepartments = { 刘宇鑫: '教学运营部', 张明: '项目管理部', 李静: '财务部', [applicantAllocation.name]: applicantAllocation.department };
-      row.querySelector('.allocation-owner-department').value = ownerDepartments[row.querySelector('.allocation-owner').value] || '';
+      const ownerTeams = { 刘宇鑫: '教学运营组', 张明: '项目支持组', 李静: '财务共享组', [applicantAllocation.name]: applicantAllocation.team };
+      const ownerName = row.querySelector('.allocation-owner').value;
+      const team = row.querySelector('.allocation-team');
+      row.querySelector('.allocation-owner-department').value = ownerDepartments[ownerName] || '';
+      if (paymentKind.value === 'project') {
+        team.disabled = false;
+        return;
+      }
+      updateAllocationTeam(row);
+      team.value = ownerTeams[ownerName] || '';
+      team.disabled = true;
+      updateAllocationTeamBalance(row);
+    }
+    function updateAutomaticAllocationRowState(row) {
+      const isLocked = paymentKind.value !== 'project' && row.dataset.autoApplicantAllocation === 'true';
+      const owner = row.querySelector('.allocation-owner');
+      const deleteButton = row.querySelector('.delete-allocation-row');
+      owner.disabled = isLocked;
+      row.classList.toggle('auto-applicant-allocation', isLocked);
+      if (deleteButton) deleteButton.hidden = isLocked;
     }
     function hasSelectedExpenseType(group) {
       return Boolean(group.querySelector('.expense-category-select').value && group.querySelector('.expense-subcategory-select').value);
@@ -894,13 +992,20 @@
       const body = group.querySelector('.expense-allocation-table tbody');
       if (paymentKind.value === 'project' || !hasSelectedExpenseType(group) || body.rows.length) return;
       const row = appendAllocationRow(group);
+      row.dataset.autoApplicantAllocation = 'true';
       const owner = row.querySelector('.allocation-owner');
       owner.value = applicantAllocation.name;
       updateAllocationOwner(row);
+      updatePaymentType();
+      const team = row.querySelector('.allocation-team');
+      team.value = applicantAllocation.team;
+      updateAllocationTeamBalance(row);
+      updateAutomaticAllocationRowState(row);
       refreshTypeSummary(group);
     }
     document.querySelectorAll('.expense-allocation-table tbody tr').forEach(updateAllocationOwner);
     paymentKind.addEventListener('change', () => {
+      resetExpenseDetails();
       updatePaymentType();
     });
 
@@ -908,6 +1013,30 @@
     const showToast = (message = '已新增一条费用明细，请补充发票和业务材料关联。') => { toast.querySelector('span').textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3600); };
     const expenseTypeGroups = document.getElementById('expenseTypeGroups');
     const invoicesByTypeGroup = new WeakMap();
+    function resetExpenseDetails() {
+      const group = expenseTypeGroups.querySelector('.expense-type-group');
+      if (!group) return;
+      expenseTypeGroups.replaceChildren(group);
+      group.classList.add('is-open');
+      group.querySelector('.type-summary-toggle').setAttribute('aria-expanded', 'true');
+      group.querySelector('.type-group-body').hidden = false;
+      group.querySelector('.expense-category-select').value = '';
+      group.querySelectorAll('.expense-allocation-table tbody tr, .type-invoice-table tbody tr').forEach(row => row.remove());
+      invoicesByTypeGroup.set(group, []);
+      group.querySelectorAll('[data-attachment-category]').forEach(category => {
+        category.classList.remove('has-file');
+        category._attachments = [];
+        category.querySelectorAll('.type-attachment-file').forEach(file => { file.textContent = '尚未上传'; });
+        category.querySelector('.type-attachment-status').textContent = '选填';
+      });
+      updateExpenseSubcategoryOptions(group);
+      updateExpenseTypeDetails(group);
+      updateTypeAttachmentGuidance(group);
+      refreshTypeSummary(group);
+      updateExpenseToggleLabel(group, true);
+      hasOpenedExpenseDetails = false;
+      updateExpenseDetailsVisibility();
+    }
     const existingInvoicePool = [
       { id: 'pool-001', number: '031002600111', type: '增值税专用发票', code: '044032600111', seller: '华东设备供应商有限公司', buyerName: '深圳市博商管理科学研究院股份有限公司', buyerTaxNo: '91440300EXAMPLE01', issueDate: '2026-07-03', amount: 70000, taxRate: 0.13, tax: 8053.10, verificationResult: '合规性校验成功', imageName: '031002600111.pdf', imageUrl: '' },
       { id: 'pool-002', number: '031002600112', type: '电子普通发票', code: '044032600112', seller: '华东设备供应商有限公司', buyerName: '深圳市博商管理科学研究院股份有限公司', buyerTaxNo: '91440300EXAMPLE01', issueDate: '2026-07-08', amount: 30000, taxRate: 0.06, tax: 1698.11, verificationResult: '合规性校验成功', imageName: '031002600112.pdf', imageUrl: '' }
@@ -923,6 +1052,9 @@
     const typeInvoicePreview = document.getElementById('typeInvoicePreview');
     const typeInvoicePreviewBody = document.getElementById('typeInvoicePreviewBody');
     const typeInvoicePreviewTitle = document.getElementById('typeInvoicePreviewTitle');
+    const typeAttachmentPreview = document.getElementById('typeAttachmentPreview');
+    const typeAttachmentPreviewBody = document.getElementById('typeAttachmentPreviewBody');
+    const typeAttachmentPreviewTitle = document.getElementById('typeAttachmentPreviewTitle');
     const escapeTypeInvoiceHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
     const createTypeInvoiceId = () => globalThis.crypto?.randomUUID?.() || `invoice-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     function getTypeInvoices(group) {
@@ -1055,6 +1187,7 @@
     document.querySelectorAll('[data-close-invoice-modal]').forEach(button => button.addEventListener('click', closeTypeInvoiceEditor));
     document.querySelectorAll('[data-close-existing-invoice]').forEach(button => button.addEventListener('click', closeExistingTypeInvoices));
     document.querySelectorAll('[data-close-invoice-preview]').forEach(button => button.addEventListener('click', closeTypeInvoicePreview));
+    document.querySelectorAll('[data-close-attachment-preview]').forEach(button => button.addEventListener('click', closeTypeAttachmentPreview));
     typeInvoiceEditorFields.addEventListener('change', event => {
       if (event.target.dataset.invoiceField !== 'file') return;
       const fileName = typeInvoiceEditorFields.querySelector('[data-invoice-file-name]');
@@ -1062,7 +1195,7 @@
     });
     document.getElementById('saveTypeInvoice').addEventListener('click', saveTypeInvoice);
     document.getElementById('confirmExistingTypeInvoices').addEventListener('click', confirmExistingTypeInvoices);
-    [typeInvoiceEditor, typeInvoiceExistingSelector, typeInvoicePreview].forEach(modal => modal.addEventListener('click', event => { if (event.target !== modal) return; if (modal === typeInvoiceEditor) closeTypeInvoiceEditor(); if (modal === typeInvoiceExistingSelector) closeExistingTypeInvoices(); if (modal === typeInvoicePreview) closeTypeInvoicePreview(); }));
+    [typeInvoiceEditor, typeInvoiceExistingSelector, typeInvoicePreview, typeAttachmentPreview].forEach(modal => modal.addEventListener('click', event => { if (event.target !== modal) return; if (modal === typeInvoiceEditor) closeTypeInvoiceEditor(); if (modal === typeInvoiceExistingSelector) closeExistingTypeInvoices(); if (modal === typeInvoicePreview) closeTypeInvoicePreview(); if (modal === typeAttachmentPreview) closeTypeAttachmentPreview(); }));
     const expenseTypeOptions = {
       固定人工: ['员工培训费', '工资', '部门团建', '职工服装费', '社保公积金', '员工福利费', '招聘费'],
       开课成本: ['会务费', '老师差旅费', '合作咨询费', '游学', '场地租赁费', '学员差旅费', '课程拍摄费', '拓展', '开课物资', '教务差旅费', '其他支出', '老师课酬', '参观交流'],
@@ -1098,7 +1231,7 @@
       group.querySelector('[data-type-tab="attachments"]').textContent = `附件（${attachmentCount}）`;
     }
     function hasInvoices() {
-      return document.querySelector('input[name="hasInvoice"]:checked').value === 'yes';
+      return document.querySelector('input[name="hasInvoice"]:checked')?.value === 'yes';
     }
     function updateInvoiceRequirement() {
       const shouldShowInvoices = hasInvoices();
@@ -1112,7 +1245,78 @@
       });
       document.querySelectorAll('.invoice-validation-item').forEach(item => { item.hidden = !shouldShowInvoices; });
     }
+    function formatMissingFields(missingFields) {
+      const visibleFields = [...new Set(missingFields)];
+      return `${visibleFields.slice(0, 3).join('、')}${visibleFields.length > 3 ? '等' : ''}`;
+    }
+    function getSubmissionMissingFields() {
+      const basicInfoMissingFields = getBasicInfoMissingFields();
+      if (basicInfoMissingFields.length) return basicInfoMissingFields;
+      if (!hasOpenedExpenseDetails) return ['费用明细'];
+
+      const missingFields = [];
+      expenseTypeGroups.querySelectorAll('.expense-type-group').forEach((group, groupIndex) => {
+        const prefix = `费用类型${groupIndex + 1}`;
+        if (!hasSelectedExpenseType(group)) missingFields.push(`${prefix}的类型`);
+        const rows = [...group.querySelectorAll('.expense-allocation-table tbody tr')];
+        if (!rows.length) missingFields.push(`${prefix}的费用分摊`);
+        rows.forEach((row, rowIndex) => {
+          const rowPrefix = `${prefix}第${rowIndex + 1}行`;
+          if (paymentKind.value === 'project' && !row.querySelector('.allocation-project')?.value) missingFields.push(`${rowPrefix}项目`);
+          if (!row.querySelector('.allocation-owner')?.value) missingFields.push(`${rowPrefix}分摊人`);
+          if (!row.querySelector('.allocation-owner-department')?.value) missingFields.push(`${rowPrefix}分摊人部门`);
+          if (!row.querySelector('.allocation-team')?.value) missingFields.push(`${rowPrefix}费用承担团队`);
+          if (!row.querySelector('.amount-input')?.value.trim()) missingFields.push(`${rowPrefix}分摊金额`);
+          if (isOverseasPayment() && !row.querySelector('.foreign-amount-input')?.value.trim()) missingFields.push(`${rowPrefix}外币金额`);
+          if (!row.querySelector('input[placeholder="填写费用事由"]')?.value.trim()) missingFields.push(`${rowPrefix}事由`);
+        });
+        if (hasInvoices() && !getTypeInvoices(group).length) missingFields.push(`${prefix}的发票`);
+      });
+      return missingFields;
+    }
     document.querySelectorAll('input[name="hasInvoice"]').forEach(input => input.addEventListener('change', updateInvoiceRequirement));
+    const isImageAttachment = file => file?.type.startsWith('image/') || /\.(avif|bmp|gif|heic|heif|jpe?g|png|svg|webp)$/i.test(file?.name || '');
+    function selectTypeAttachmentFile(category) {
+      category.querySelector('.type-attachment-file-input').click();
+    }
+    function getTypeAttachments(category) {
+      if (!category._attachments) category._attachments = [];
+      return category._attachments;
+    }
+    function renderTypeAttachmentFiles(category) {
+      const attachments = getTypeAttachments(category);
+      category.classList.toggle('has-file', attachments.length > 0);
+      category.querySelector('.type-attachment-status').textContent = attachments.length ? `已上传 ${attachments.length}` : '选填';
+      category.querySelector('.type-attachment-file').innerHTML = attachments.length
+        ? attachments.map((attachment, index) => {
+          const fileName = escapeTypeInvoiceHtml(attachment.name);
+          return attachment.isImage
+            ? `<div class="type-attachment-file-row"><span class="file-icon">IMG</span><button class="type-attachment-preview" type="button" data-attachment-preview="${index}">${fileName}</button></div>`
+            : `<div class="type-attachment-file-row"><span class="file-icon">FILE</span><a href="${attachment.url}" download="${fileName}">${fileName}</a></div>`;
+        }).join('')
+        : '尚未上传';
+    }
+    function setTypeAttachmentFile(category, files) {
+      const selectedFiles = [...files].filter(Boolean);
+      if (!selectedFiles.length) return;
+      const attachments = getTypeAttachments(category);
+      attachments.push(...selectedFiles.map(file => ({ name: file.name, url: URL.createObjectURL(file), isImage: isImageAttachment(file) })));
+      renderTypeAttachmentFiles(category);
+      refreshTypeSummary(category.closest('.expense-type-group'));
+      showToast(`已添加 ${selectedFiles.length} 个附件。`);
+    }
+    function openTypeAttachmentPreview(category, attachmentIndex) {
+      const attachment = getTypeAttachments(category)[Number(attachmentIndex)];
+      if (!attachment?.isImage) return;
+      typeAttachmentPreviewTitle.textContent = `附件预览 · ${attachment.name}`;
+      typeAttachmentPreviewBody.innerHTML = `<img class="invoice-preview-image" src="${attachment.url}" alt="${escapeTypeInvoiceHtml(attachment.name)}">`;
+      typeAttachmentPreview.classList.add('show');
+      typeAttachmentPreview.setAttribute('aria-hidden', 'false');
+    }
+    function closeTypeAttachmentPreview() {
+      typeAttachmentPreview.classList.remove('show');
+      typeAttachmentPreview.setAttribute('aria-hidden', 'true');
+    }
     function updateTypeAttachmentGuidance() {}
     function isServiceFeePayment() {
       return !isReimbursementApplication && document.querySelector('input[name="serviceFee"]:checked')?.value === 'yes';
@@ -1172,9 +1376,6 @@
       group.querySelectorAll('[data-type-panel]').forEach(panel => { panel.hidden = panel.dataset.typePanel !== panelName; });
     }
     const projectOptionsMarkup = selectedProject => Object.keys(projectTeamOptions).map(project => `<option${project === selectedProject ? ' selected' : ''}>${project}</option>`).join('');
-    function getAddedProjects(group) {
-      return new Set([...group.querySelectorAll('.allocation-project')].map(select => select.value).filter(Boolean));
-    }
     function getUsedDocumentProjects() {
       return new Set([...document.querySelectorAll('.expense-allocation-table .allocation-project')].map(select => select.value).filter(Boolean));
     }
@@ -1204,6 +1405,7 @@
     function removeDocumentProject(project) {
       documentProjects.delete(project);
       updateDocumentProjectDisplay();
+      updateExpenseDetailsVisibility();
       showToast(`已移除项目“${project}”。费用类型中已维护的分摊行将保留。`);
     }
     documentProjectDisplay.addEventListener('click', event => {
@@ -1212,12 +1414,12 @@
     });
     function getProjectPickerResults() {
       const keyword = projectPickerSearch.value.trim().toLowerCase();
-      return projectDirectory.filter(project => (!projectPickerStatus.value || project.status === projectPickerStatus.value) && (!projectPickerStartDate.value || project.start >= projectPickerStartDate.value) && (!projectPickerEndDate.value || project.end <= projectPickerEndDate.value) && (!keyword || `${project.name}${project.code}`.toLowerCase().includes(keyword)));
+      const availableProjects = projectPickerMode === 'expense' ? projectDirectory.filter(project => documentProjects.has(project.name)) : projectDirectory;
+      return availableProjects.filter(project => (!projectPickerStatus.value || project.status === projectPickerStatus.value) && (!projectPickerStartDate.value || project.start >= projectPickerStartDate.value) && (!projectPickerEndDate.value || project.end <= projectPickerEndDate.value) && (!keyword || `${project.name}${project.code}`.toLowerCase().includes(keyword)));
     }
     function getProjectPickerBlockedNames() {
       if (projectPickerMode === 'document') return getUsedDocumentProjects();
-      const addedProjects = getAddedProjects(projectPickerGroup);
-      return new Set(projectDirectory.filter(project => !documentProjects.has(project.name) || addedProjects.has(project.name)).map(project => project.name));
+      return new Set();
     }
     function toggleProjectPickerSelection(projectName, selected) {
       if (getProjectPickerBlockedNames().has(projectName)) return;
@@ -1312,6 +1514,7 @@
         documentProjects.clear();
         [...new Set([...selectedProjects, ...usedProjects])].forEach(project => documentProjects.add(project));
         updateDocumentProjectDisplay();
+        updateExpenseDetailsVisibility();
         closeProjectPicker();
         showToast(`已设置本单 ${documentProjects.size} 个关联项目。`);
         return;
@@ -1338,7 +1541,9 @@
       group.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
       group.querySelectorAll('[data-attachment-category]').forEach(category => {
         category.classList.remove('has-file');
+        category._attachments = [];
         category.querySelectorAll('.type-attachment-file').forEach(file => { file.textContent = '尚未上传'; });
+        category.querySelector('.type-attachment-status').textContent = '选填';
       });
       updateTypeAttachmentGuidance(group);
       refreshTypeSummary(group);
@@ -1362,7 +1567,12 @@
         }
       }
       if (event.target.classList.contains('delete-allocation-row')) {
-        event.target.closest('tr').remove();
+        const row = event.target.closest('tr');
+        if (row.dataset.autoApplicantAllocation === 'true' && paymentKind.value !== 'project') {
+          showToast('非项目类报销付款的自动分摊行不可删除。');
+          return;
+        }
+        row.remove();
         renumberTypeAllocationRows(group);
         updatePaymentType();
         refreshTypeSummary(group);
@@ -1375,7 +1585,10 @@
       if (invoiceRowAction?.dataset.invoiceRowAction === 'preview') openTypeInvoicePreview(group, invoiceRowAction.dataset.invoiceId);
       if (invoiceRowAction?.dataset.invoiceRowAction === 'edit' && getTypeInvoices(group).find(item => item.id === invoiceRowAction.dataset.invoiceId)?.source !== 'ocr') openTypeInvoiceEditor(group, invoiceRowAction.dataset.invoiceId);
       if (invoiceRowAction?.dataset.invoiceRowAction === 'delete') deleteTypeInvoice(group, invoiceRowAction.dataset.invoiceId);
-      if (event.target.classList.contains('type-attachment-upload')) showToast('原型演示：附件将上传并仅关联当前费用类型。');
+      const attachmentUpload = event.target.closest('.type-attachment-upload');
+      if (attachmentUpload) selectTypeAttachmentFile(attachmentUpload.closest('[data-attachment-category]'));
+      const attachmentPreview = event.target.closest('[data-attachment-preview]');
+      if (attachmentPreview) openTypeAttachmentPreview(attachmentPreview.closest('[data-attachment-category]'), attachmentPreview.dataset.attachmentPreview);
     });
     expenseTypeGroups.addEventListener('change', event => {
       const group = event.target.closest('.expense-type-group');
@@ -1392,6 +1605,10 @@
       if (event.target.classList.contains('allocation-team')) updateAllocationTeamBalance(event.target.closest('tr'));
       if (event.target.classList.contains('allocation-owner')) updateAllocationOwner(event.target.closest('tr'));
       if (event.target.classList.contains('amount-input')) updateLaborPersonalTax(event.target.closest('tr'));
+      if (event.target.matches('.type-attachment-file-input')) {
+        setTypeAttachmentFile(event.target.closest('[data-attachment-category]'), event.target.files);
+        event.target.value = '';
+      }
     });
     expenseTypeGroups.querySelectorAll('.expense-type-group').forEach((group, index) => {
       const seedInvoices = index === 0 ? [

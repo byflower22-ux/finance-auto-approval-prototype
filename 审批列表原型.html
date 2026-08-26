@@ -50,7 +50,9 @@
     }
     function openApprovalDocument(trigger) { const row=trigger.closest('tr'); if(row.dataset.type==='付款单' || row.dataset.type==='固定资产付款单' || row.dataset.type==='报销单') { const documentType=row.dataset.type==='报销单'?'reimbursement':'payment'; const paymentType=row.cells[10].textContent.trim(); const approvalKind=row.dataset.approvalKind || (/项目付款|项目报销/.test(paymentType)?'project':'non-project'); row.dataset.approvalKind=approvalKind; window.location.href=`财务审批页-AI影子审单原型.html?from=office-approval&documentType=${documentType}&approvalKind=${row.dataset.approvalKind}&documentNo=${encodeURIComponent(row.cells[1].textContent.trim())}`; return; } showToast(`${row.dataset.type}暂未接入本期财务审批页。`); }
     function showToast(message) { const toast=document.getElementById('toast'); toast.textContent=message; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),2200); }
+    function normalizeDocumentTypeLabels() { document.querySelectorAll('#approvalList tr').forEach(row=>{ const typeCell=row.cells[12]; if(typeCell?.textContent.trim()==='付款单') typeCell.textContent='付款申请'; if(typeCell?.textContent.trim()==='报销单') typeCell.textContent='报销申请'; }); }
     prepareReimbursementRows();
+    normalizeDocumentTypeLabels();
     filterApprovals();
   </script>
   <script src="prototype-navigation.js"></script>

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>申请｜移动端</title>
+  <style>
+    :root { --red:#df3f43; --page:#f3f5f8; --ink:#262d38; --muted:#7c8491; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:#e8edf3; font:14px/1.45 "Microsoft YaHei", "PingFang SC", Arial, sans-serif; }
+    button, a { font:inherit; }
+    .mobile-shell { width:min(100%,430px); min-height:100vh; margin:0 auto; padding-bottom:68px; background:var(--page); }
+    .mobile-topbar { color:#fff; background:var(--red); }
+    .statusbar { display:flex; align-items:flex-end; justify-content:space-between; height:29px; padding:0 22px 6px; font-size:13px; font-weight:700; }
+    .status-icons { letter-spacing:3px; font-size:12px; }
+    .navrow { display:grid; grid-template-columns:52px 1fr 52px; align-items:center; height:56px; }
+    .navrow a, .navrow button { display:grid; place-items:center; width:52px; height:56px; color:#fff; background:transparent; border:0; text-decoration:none; }
+    .navrow strong { text-align:center; font-size:17px; }
+    .back { font-size:35px; font-weight:200; line-height:1; }
+    .draft { font-size:14px; font-weight:600; }
+    .entry-card { margin:10px 12px 0; padding:19px 15px 28px; background:#fff; border-radius:8px; }
+    .entry-card + .entry-card { margin-top:12px; }
+    .entry-card h2 { margin:0 0 18px; color:#2b3039; font-size:16px; }
+    .entry-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px 4px; }
+    .entry-item { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:9px; min-height:104px; padding:4px 2px; color:#2c3440; background:transparent; border:0; border-radius:6px; text-align:center; text-decoration:none; }
+    .entry-item:focus-visible { outline:2px solid #f59a9d; outline-offset:2px; }
+    .entry-item:not(.disabled):active { background:#fff4f4; }
+    .entry-item.disabled { color:#596271; opacity:.72; }
+    .entry-icon { display:grid; place-items:center; width:48px; height:48px; color:#fff; border-radius:13px; box-shadow:0 4px 9px rgba(40,55,77,.12); font-size:24px; font-weight:700; }
+    .entry-name { min-height:39px; display:flex; align-items:flex-start; justify-content:center; font-size:14px; line-height:1.45; }
+    .entry-icon.red { background:#f04b4e; }
+    .entry-icon.orange { background:#ffb400; }
+    .entry-icon.blue { background:#58acef; }
+    .entry-icon.purple { background:#8c78ee; }
+    .entry-icon.coral { background:#f06564; }
+    .entry-icon.gold { background:#f6a310; }
+    .entry-icon.sky { background:#58abe9; }
+    .toast { position:fixed; z-index:5; top:76px; left:50%; display:none; max-width:min(350px,calc(100vw - 40px)); padding:10px 14px; color:#fff; background:rgba(31,38,49,.94); border-radius:6px; box-shadow:0 8px 18px rgba(26,34,48,.18); font-size:13px; transform:translateX(-50%); }
+    .toast.show { display:block; }
+    .mobile-bottom-nav { position:fixed; z-index:4; bottom:0; left:50%; display:grid; grid-template-columns:1fr 1fr; width:min(100%,430px); height:64px; background:#fff; border-top:1px solid #e8ecf1; transform:translateX(-50%); }
+    .mobile-bottom-nav a { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; color:#9199a5; text-decoration:none; font-size:11px; }
+    .mobile-bottom-nav b { font-size:20px; line-height:1; font-weight:500; }
+    .mobile-bottom-nav a.active { color:var(--red); font-weight:700; }
+  </style>
+</head>
+<body>
+  <main class="mobile-shell">
+    <header class="mobile-topbar"><div class="statusbar"><span>09:46</span><span class="status-icons">••• ◔ ▱</span></div><div class="navrow"><a class="back" href="申请中心原型.html" aria-label="返回">‹</a><strong>申请</strong><button class="draft" id="openDrafts" type="button">草稿</button></div></header>
+    <section class="entry-card"><h2>部门常用类</h2><div class="entry-grid"><a class="entry-item" href="移动端报销申请页原型.html"><span class="entry-icon red">✎</span><span class="entry-name">报销/项目报销单</span></a><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon orange">▤</span><span class="entry-name">特批单</span></button><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon gold">▰</span><span class="entry-name">付款/项目付款单</span></button><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon orange">¥</span><span class="entry-name">借款单</span></button><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon coral">✈</span><span class="entry-name">出差单</span></button><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon coral">▣</span><span class="entry-name">出差报销单</span></button><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon red">¥±</span><span class="entry-name">调整预算单</span></button><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon orange">▤</span><span class="entry-name">综合申请单</span></button><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon sky">▥</span><span class="entry-name">内部调账单</span></button><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon blue">♟</span><span class="entry-name">换人就读单</span></button><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon coral">▣</span><span class="entry-name">固定资产报销单</span></button><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon coral">▰</span><span class="entry-name">固定资产付款单</span></button><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon purple">▤</span><span class="entry-name">预付款核销单</span></button></div></section>
+    <section class="entry-card"><h2>项目通用类</h2><div class="entry-grid"><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon sky">▥</span><span class="entry-name">项目预算单</span></button><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon blue">▰</span><span class="entry-name">项目付款单</span></button><button class="entry-item disabled" type="button" data-unavailable><span class="entry-icon sky">¥</span><span class="entry-name">项目借款单</span></button></div></section>
+  </main>
+  <script>
+    document.querySelectorAll('.entry-item').forEach(item => {
+      if (item.textContent.includes('付款/项目付款单') || item.textContent.includes('付款申请')) {
+        const link = document.createElement('a');
+        link.className = item.className.replace('disabled', '').trim();
+        link.href = '移动端付款申请页原型.html';
+        link.innerHTML = item.innerHTML;
+        item.replaceWith(link);
+      }
+    });
+    document.querySelectorAll('.entry-name').forEach(name => {
+      name.textContent = name.textContent.replace('报销/项目报销单', '报销申请').replace('付款/项目付款单', '付款申请').replace('项目付款单', '付款申请');
+    });
+  </script>
+  <nav class="mobile-bottom-nav" aria-label="主导航"><a class="active" href="移动端申请入口页原型.html"><b>⌂</b><span>申请</span></a><a href="移动端审批列表页原型.html"><b>✓</b><span>审批</span></a></nav>
+  <div class="toast" id="entryToast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      const toast = document.getElementById('entryToast'); let timer = null;
+      const showToast = message => { clearTimeout(timer); toast.textContent = message; toast.classList.add('show'); timer = setTimeout(() => toast.classList.remove('show'), 2200); };
+      document.getElementById('openDrafts').addEventListener('click', () => showToast('草稿箱暂无其他申请。'));
+      document.querySelectorAll('[data-unavailable]').forEach(button => button.addEventListener('click', () => showToast('该申请类型暂未接入原型。')));
+    })();
+  </script>
+</body>
+</html>

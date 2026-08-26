@@ -191,7 +191,7 @@
       const reimbursementAmount = isNonProjectReimbursementDetail ? '¥ 1,280.00' : '¥ 2,380.00';
       document.querySelector('.crumb strong').textContent = '报销审批详情';
       const overviewCard = document.querySelector('.document-column > .card');
-      overviewCard.querySelector('.card-title').innerHTML = '<span class="num">1</span>报销单概要';
+overviewCard.querySelector('.card-title').innerHTML = '<span class="num">1</span>报销申请概要';
       const overviewGrid = overviewCard.querySelector('.overview-grid');
       const updateOverviewField = (label, value) => {
         const field = [...overviewGrid.children].find(item => item.querySelector('.field-label')?.textContent === label);

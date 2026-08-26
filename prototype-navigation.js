@@ -90,7 +90,7 @@
       { label: '审批确认', route: 'todo', closable: true }
     ];
     const pageTabs = {
-      applyForm: { label: '付款申请', closeRoute: '申请中心原型.html' },
+      applyForm: { label: isReimbursementDocument ? '报销申请' : '付款申请', closeRoute: '申请中心原型.html' },
       financeApproval: { label: isReimbursementDocument ? '报销审批' : '付款审批', closeRoute: '财务待办页-AI影子审批原型.html' },
       approvalDetail: { label: isReimbursementDocument ? '报销详情' : '单据详情', closeRoute: '财务待办页-AI影子审批原型.html' },
       paymentTask: { label: '付款申请', closeRoute: '申请中心原型.html' },
