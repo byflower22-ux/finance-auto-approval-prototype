@@ -101,17 +101,23 @@
     const tabs = [...coreTabs];
     const currentTab = pageTabs[currentRoute];
     if (currentTab) tabs.push({ ...currentTab, route: currentRoute, closable: true });
+    if (currentRoute === 'financeApproval') tabs.push({ label: '文件预览', route: 'filePreview', preview: true, closable: true, closeRoute: routes.todo });
 
     tabBar.innerHTML = tabs.map(tab => {
       const active = tab.route === currentRoute ? ' active' : '';
+      const preview = tab.preview ? ' data-preview-tab="true"' : '';
       const close = tab.closable ? `<span class="system-tab-close" role="button" aria-label="关闭${tab.label}页签" data-close-workspace-route="${tab.closeRoute || routes.applyCenter}">×</span>` : '';
-      return `<button class="system-workspace-tab${active}" type="button" data-workspace-route="${tab.route}">${tab.label}${close}</button>`;
+      return `<button class="system-workspace-tab${active}" type="button" data-workspace-route="${tab.route}"${preview}>${tab.label}${close}</button>`;
     }).join('');
     workspace.insertBefore(tabBar, workspace.firstChild);
 
     tabBar.addEventListener('click', event => {
       const close = event.target.closest('[data-close-workspace-route]');
       if (close) {
+        if (close.closest('[data-preview-tab="true"]')) {
+          window.closeFilePreviewTab?.(close.closest('[data-preview-tab="true"]'), event);
+          return;
+        }
         closeWorkspaceTab(close.closest('[data-workspace-route]'), event);
         return;
       }
@@ -122,6 +128,10 @@
 
   function openWorkspaceTab(tab) {
     const route = tab.dataset.workspaceRoute;
+    if (tab.dataset.previewTab === 'true') {
+      window.openFilePreviewTab?.();
+      return;
+    }
     if (route && route !== currentRoute) window.location.href = routes[route];
   }
 

@@ -274,6 +274,24 @@
     .loan-picker-table { min-width: 960px; }
     .loan-picker-table td { height: 48px; }
     .project-picker-modal { width: min(980px, calc(100vw - 48px)); border-radius: 6px; }
+    .company-picker-trigger { display:flex; align-items:center; gap:7px; min-height:34px; padding:0 10px; background:#fff; border:1px solid #d8e0ec; border-radius:5px; cursor:pointer; transition:.15s ease; }
+    .company-picker-trigger .company-picker-value { flex:1; min-width:0; min-height:32px; padding:0; border:0; background:transparent; color:#23324a; text-align:left; cursor:pointer; }
+    .company-picker-trigger > span { color:#70809a; font-size:13px; }
+    .company-picker-trigger:hover { border-color:#9fb8e5; background:#fff; }
+    .company-picker-trigger:focus-within { border-color:var(--blue); box-shadow:0 0 0 3px rgba(40,100,238,.1); }
+    .company-picker-trigger .company-picker-value:focus { outline:none; }
+    .company-picker-modal { width:min(980px,calc(100vw - 48px)); border-radius:6px; }
+    .company-picker-search { display:flex; justify-content:flex-end; gap:0; margin:4px 0 18px; }
+    .company-picker-search input { width:400px; height:32px; padding:0 10px; border:1px solid #d8e0ec; border-right:0; border-radius:4px 0 0 4px; }
+    .company-picker-search button { width:34px; height:32px; color:#fff; background:#ef625e; border:0; border-radius:0 4px 4px 0; cursor:pointer; }
+    .company-picker-table-wrap { overflow:auto; border:1px solid #d9dee8; }
+    .company-picker-table { width:100%; border-collapse:collapse; }
+    .company-picker-table th,.company-picker-table td { height:38px; padding:0 10px; border-bottom:1px solid #d9dee8; color:#23324a; font-size:13px; text-align:left; }
+    .company-picker-table th:first-child,.company-picker-table td:first-child { width:150px; text-align:center; }
+    .company-picker-table tbody tr:hover { background:#f7f9fc; }
+    .company-picker-pagination { display:flex; justify-content:center; align-items:center; gap:12px; margin-top:18px; color:#6f7e95; font-size:12px; }
+    .company-picker-pagination button { min-width:30px; height:28px; color:#52627a; background:#fff; border:1px solid #d8e0ec; border-radius:3px; cursor:pointer; }
+    .company-picker-pagination button:disabled { color:#b5bfcd; cursor:not-allowed; }
     .project-picker-modal .modal-header { padding: 15px 20px; font-size: 17px; font-weight: 500; }
     .project-picker-modal .modal-body { padding: 12px 20px 0; }
     .project-picker-filters { display: grid; grid-template-columns: 170px 360px minmax(260px, 1fr); gap: 12px; padding: 10px 0; background: #fafbfd; }
@@ -352,7 +370,7 @@
               <div class="field"><label class="req">标题</label><input class="input" value="HQ测试" aria-label="标题"></div>
               <div class="field"><label class="req">费用时间</label><input class="input" type="date" value="2026-05-25" aria-label="费用时间"></div>
               <div class="field"><label class="req">付款类型</label><select id="paymentKind" aria-label="付款类型" required><option value="" selected>请选择付款类型</option><option value="ordinary">付款</option><option value="project">项目付款</option></select></div>
-              <div class="field"><label class="req">主体公司</label><select aria-label="主体公司"><option selected>深圳市博商管理科学研究院股份有限公司</option><option>博商管理咨询（深圳）有限公司</option></select></div>
+              <div class="field"><label class="req">主体公司</label><div class="company-picker-trigger"><button class="readonly company-picker-value" id="companyEntity" type="button" aria-haspopup="dialog" aria-label="选择主体公司">深圳市博商管理科学研究院股份有限公司</button><span aria-hidden="true">⌄</span></div></div>
               <!-- reimbursement mode sets name="hasInvoice" value="yes" checked disabled -->
               <div class="field invoice-fixed"><label class="req">是否有发票</label><div class="choice-row"><label><input type="radio" name="hasInvoice" value="no">否</label><label><input type="radio" name="hasInvoice" value="yes">是</label></div></div>
                <div class="field service-fee-field"><label class="req">是否付劳务费</label><div class="choice-row"><label><input type="radio" name="serviceFee" value="no">否</label><label><input type="radio" name="serviceFee" value="yes">是</label></div></div>
@@ -376,7 +394,7 @@
           <section class="basic-info-section" data-basic-section="reimbursement-recipient" hidden>
             <div class="basic-section-title">领款信息</div>
             <div class="form-grid">
-              <div class="field"><label class="req">领款人</label><div class="inline-picker"><div class="readonly" id="reimbursementRecipient">超级管理员</div><button class="btn" type="button" id="selectReimbursementRecipient">选择领款人</button></div></div>
+              <div class="field"><label class="req">领款人</label><div class="company-picker-trigger recipient-picker-trigger"><button class="readonly company-picker-value recipient-picker-value" id="reimbursementRecipient" type="button" aria-haspopup="dialog" aria-label="选择领款人">超级管理员</button><span aria-hidden="true">⌄</span></div></div>
               <div class="field"><label>领款人开户行</label><input class="input" id="recipientBankName" value="招商银行深圳分行" readonly aria-label="领款人开户行"></div>
               <div class="field"><label>领款人银行卡账号</label><input class="input" id="recipientBankAccount" value="6225 8888 0462 9551" readonly aria-label="领款人银行卡账号"></div>
               <div class="field"><label class="req">是否海外付款</label><div class="choice-row"><label><input type="radio" name="reimbursementOverseas" value="no">否</label><label><input type="radio" name="reimbursementOverseas" value="yes">是</label></div></div>
@@ -474,6 +492,13 @@
       <div class="modal-footer"><button class="btn" id="cancelProjectPicker">取消</button><button class="btn primary" id="confirmProjectPicker">确定选择</button></div>
       </div>
     </div>
+    <div class="modal-mask" id="companyPickerModal" aria-hidden="true">
+      <div class="modal company-picker-modal" role="dialog" aria-modal="true" aria-labelledby="companyPickerTitle">
+        <div class="modal-header"><span id="companyPickerTitle">公司信息列表</span><button class="close" type="button" id="closeCompanyPicker" aria-label="关闭">×</button></div>
+        <div class="modal-body"><div class="company-picker-search"><input id="companyPickerSearch" type="search" placeholder="搜索公司名称..." aria-label="搜索公司名称"><button id="companyPickerSearchButton" type="button" aria-label="搜索">⌕</button></div><div class="company-picker-table-wrap"><table class="company-picker-table"><thead><tr><th>操作</th><th>公司名称</th></tr></thead><tbody id="companyPickerList"></tbody></table></div><div class="company-picker-pagination"><button type="button" id="companyPickerPrev">‹</button><span id="companyPickerPage">1</span><button type="button" id="companyPickerNext">›</button><span id="companyPickerCount"></span></div></div>
+        <div class="modal-footer"><button class="btn primary" type="button" id="confirmCompanyPicker">保存</button><button class="btn" type="button" id="cancelCompanyPicker">关闭</button></div>
+      </div>
+    </div>
     <div class="modal-mask" id="recipientPickerModal" aria-hidden="true">
       <div class="modal recipient-picker-modal" role="dialog" aria-modal="true" aria-labelledby="recipientPickerTitle">
         <div class="modal-header"><span id="recipientPickerTitle">选择领款人</span><button class="close" type="button" id="closeRecipientPicker" aria-label="关闭">×</button></div>
@@ -520,6 +545,45 @@
   <script>
     if (new URLSearchParams(window.location.search).has('embedded')) document.body.classList.add('embedded');
     const isReimbursementApplication = new URLSearchParams(window.location.search).get('documentType') === 'reimbursement';
+    const companyDirectory = [
+      '北京博商汇智管理咨询有限公司', '深圳市起点网络有限公司', '123123', '开票测试有限公司PT', 'xyc的业务公司',
+      '新加坡', 'Sands Bosum Business Pte. Ltd', '北京市博商职业技能培训朝阳学校有限责任4',
+      '北京市博商职业技能培训朝阳学校有限责任2', '北京市博商职业技能培训朝阳学校有限责任'
+    ];
+    const companyPickerModal = document.getElementById('companyPickerModal');
+    const companyPickerList = document.getElementById('companyPickerList');
+    const companyPickerSearch = document.getElementById('companyPickerSearch');
+    const companyPickerPage = document.getElementById('companyPickerPage');
+    const companyPickerCount = document.getElementById('companyPickerCount');
+    const companyPickerValue = document.getElementById('companyEntity');
+    let companyPickerSelected = companyPickerValue?.textContent.trim() || '';
+    let companyPickerPageIndex = 1;
+    function renderCompanyPicker() {
+      const query = companyPickerSearch.value.trim().toLowerCase();
+      const rows = companyDirectory.filter(company => !query || company.toLowerCase().includes(query));
+      const pageSize = 10;
+      const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+      companyPickerPageIndex = Math.min(companyPickerPageIndex, totalPages);
+      const pageRows = rows.slice((companyPickerPageIndex - 1) * pageSize, companyPickerPageIndex * pageSize);
+      companyPickerList.innerHTML = pageRows.map(company => `<tr><td><input type="radio" name="companyPicker" value="${company.replace(/"/g, '&quot;')}"${company === companyPickerSelected ? ' checked' : ''}></td><td>${company}</td></tr>`).join('') || '<tr><td colspan="2" class="invoice-empty">未找到匹配公司</td></tr>';
+      companyPickerPage.textContent = String(companyPickerPageIndex);
+      companyPickerCount.textContent = `共 ${rows.length} 条`;
+      document.getElementById('companyPickerPrev').disabled = companyPickerPageIndex <= 1;
+      document.getElementById('companyPickerNext').disabled = companyPickerPageIndex >= totalPages;
+    }
+    function openCompanyPicker() { companyPickerSelected = companyPickerValue.textContent.trim(); companyPickerSearch.value = ''; companyPickerPageIndex = 1; renderCompanyPicker(); companyPickerModal.classList.add('show'); companyPickerModal.setAttribute('aria-hidden', 'false'); }
+    function closeCompanyPicker() { companyPickerModal.classList.remove('show'); companyPickerModal.setAttribute('aria-hidden', 'true'); }
+    companyPickerValue?.addEventListener('click', openCompanyPicker);
+    companyPickerValue?.parentElement?.addEventListener('click', event => { if (event.target !== companyPickerValue) openCompanyPicker(); });
+    document.getElementById('closeCompanyPicker')?.addEventListener('click', closeCompanyPicker);
+    document.getElementById('cancelCompanyPicker')?.addEventListener('click', closeCompanyPicker);
+    companyPickerModal?.addEventListener('click', event => { if (event.target === companyPickerModal) closeCompanyPicker(); });
+    companyPickerList?.addEventListener('change', event => { if (event.target.name === 'companyPicker') companyPickerSelected = event.target.value; });
+    companyPickerSearch?.addEventListener('input', () => { companyPickerPageIndex = 1; renderCompanyPicker(); });
+    document.getElementById('companyPickerSearchButton')?.addEventListener('click', () => { companyPickerPageIndex = 1; renderCompanyPicker(); });
+    document.getElementById('companyPickerPrev')?.addEventListener('click', () => { companyPickerPageIndex -= 1; renderCompanyPicker(); });
+    document.getElementById('companyPickerNext')?.addEventListener('click', () => { companyPickerPageIndex += 1; renderCompanyPicker(); });
+    document.getElementById('confirmCompanyPicker')?.addEventListener('click', () => { const selected = companyPickerList.querySelector('input[name="companyPicker"]:checked'); if (!selected) return; companyPickerValue.textContent = selected.value; companyPickerSelected = selected.value; closeCompanyPicker(); });
     if (!isReimbursementApplication) {
       document.querySelectorAll('input[name="hasInvoice"]').forEach(input => { input.disabled = false; input.checked = false; });
     }
@@ -622,7 +686,9 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
         updateLoanOffsetTotal();
       }
 
-      document.getElementById('selectReimbursementRecipient').addEventListener('click', () => { recipientPickerValue = selectedRecipientName; recipientOrganization = ''; recipientPickerPage = 1; recipientPickerSearch.value = ''; document.querySelectorAll('[data-recipient-organization]').forEach(node => node.classList.toggle('active', !node.dataset.recipientOrganization)); renderRecipientPicker(); showReimbursementModal(recipientPickerModal); });
+      function openRecipientPicker() { recipientPickerValue = selectedRecipientName; recipientOrganization = ''; recipientPickerPage = 1; recipientPickerSearch.value = ''; document.querySelectorAll('[data-recipient-organization]').forEach(node => node.classList.toggle('active', !node.dataset.recipientOrganization)); renderRecipientPicker(); showReimbursementModal(recipientPickerModal); }
+      reimbursementRecipient.addEventListener('click', openRecipientPicker);
+      reimbursementRecipient.parentElement.addEventListener('click', event => { if (event.target !== reimbursementRecipient) openRecipientPicker(); });
       document.getElementById('closeRecipientPicker').addEventListener('click', () => closeReimbursementModal(recipientPickerModal));
       document.getElementById('cancelRecipientPicker').addEventListener('click', () => closeReimbursementModal(recipientPickerModal));
       recipientPickerModal.addEventListener('click', event => { if (event.target === recipientPickerModal) closeReimbursementModal(recipientPickerModal); });

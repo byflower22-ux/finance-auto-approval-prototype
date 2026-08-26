@@ -174,6 +174,14 @@
     .workspace-tab { position:relative; height:32px; padding:0 14px; color:#4e6583; background:#fff; border:0; border-right:1px solid #dde3eb; border-left:1px solid #dde3eb; font-size:13px; }
     .workspace-tab + .workspace-tab { margin-left:4px; }
     .workspace-tab.active { color:#34445e; border-top:3px solid #f26b6b; }
+    .workspace-tab.preview-tab { display:none; }
+    body.file-preview-active .workspace-tab.preview-tab { display:inline-block; }
+    .system-workspace-tab[data-preview-tab="true"] { display:none !important; }
+    body.file-preview-active .system-workspace-tab[data-preview-tab="true"] { display:inline-flex !important; }
+    #filePreviewView { display:none; height:calc(100vh - 106px); min-height:680px; margin:0; background:#eef1f5; }
+    body.file-preview-active #filePreviewView { display:block; }
+    body.file-preview-active #approvalDetailView, body.file-preview-active #approvalHistoryView, body.file-preview-active .approval-toolbar, body.file-preview-active .approval-view-tabs { display:none !important; }
+    #filePreviewFrame { display:block; width:100%; height:100%; border:0; }
     .workspace-tab .tab-close { margin-left:4px; color:#5779a3; font-weight:700; }
     .approval-toolbar { display:flex; align-items:center; gap:12px; min-height:56px; padding:10px 16px; background:#fff; border-bottom:8px solid #f2f4f8; }
     .approval-action { min-width:72px; height:32px; padding:0 14px; color:#fff; background:#ee625e; border:0; border-radius:4px; font-size:13px; }
@@ -193,7 +201,7 @@
   <header class="topbar"><div class="brand"><span class="brand-mark"><span>博</span></span>博商管理</div><div class="top-actions"><span>▦ 应用中心</span><span>● 帮助手册</span><span>▣ 日程</span><span>◆ 模块</span><span class="avatar">财</span><span>财务专员⌄</span></div></header>
   <aside class="sidebar"><div class="side-title"><span>⌂ 办公管理</span><span>⌄</span></div><div class="nav-item">▣ 申请</div><div class="nav-item active">▥ 审批</div><div class="nav-sub">我的申请</div><div class="nav-sub current">我的待办</div><div class="nav-item">⌘ 流程</div><div class="nav-item">▦ 记录</div><div class="nav-item">● 日程</div><div class="nav-item">◆ 项目计划</div><div class="nav-item">✦ 同学会</div><div class="nav-item">◉ 研企管理</div><div class="nav-item">◈ 智服系统</div><div class="nav-item">▤ 证书管理</div><div class="nav-item">▦ 智能报表</div><div class="nav-item">◌ 统计分析</div></aside>
   <main class="workspace">
-    <div class="workspace-tabs" aria-label="已打开页签"><button class="workspace-tab" type="button" data-tab-route="申请中心原型.html" onclick="handleWorkspaceTabClick(this)">首页</button><button class="workspace-tab" type="button" data-tab-route="申请中心原型.html" onclick="handleWorkspaceTabClick(this)">申请<span class="tab-close" role="button" aria-label="关闭申请页签" onclick="closeWorkspaceTab(this.closest('.workspace-tab'), event)">×</span></button><button class="workspace-tab" type="button" data-tab-route="审批列表原型.html" onclick="handleWorkspaceTabClick(this)">审批<span class="tab-close" role="button" aria-label="关闭审批页签" onclick="closeWorkspaceTab(this.closest('.workspace-tab'), event)">×</span></button><button class="workspace-tab" type="button" data-tab-route="财务待办页-AI影子审批原型.html" onclick="handleWorkspaceTabClick(this)">审批确认<span class="tab-close" role="button" aria-label="关闭审批确认页签" onclick="closeWorkspaceTab(this.closest('.workspace-tab'), event)">×</span></button><button class="workspace-tab active" type="button" data-close-route="财务待办页-AI影子审批原型.html" onclick="handleWorkspaceTabClick(this)">付款审批<span class="tab-close" role="button" aria-label="关闭付款审批页签" onclick="closeWorkspaceTab(this.closest('.workspace-tab'), event)">×</span></button></div>
+    <div class="workspace-tabs" aria-label="已打开页签"><button class="workspace-tab" type="button" data-tab-route="申请中心原型.html" onclick="handleWorkspaceTabClick(this)">首页</button><button class="workspace-tab" type="button" data-tab-route="申请中心原型.html" onclick="handleWorkspaceTabClick(this)">申请<span class="tab-close" role="button" aria-label="关闭申请页签" onclick="closeWorkspaceTab(this.closest('.workspace-tab'), event)">×</span></button><button class="workspace-tab" type="button" data-tab-route="审批列表原型.html" onclick="handleWorkspaceTabClick(this)">审批<span class="tab-close" role="button" aria-label="关闭审批页签" onclick="closeWorkspaceTab(this.closest('.workspace-tab'), event)">×</span></button><button class="workspace-tab" type="button" data-tab-route="财务待办页-AI影子审批原型.html" onclick="handleWorkspaceTabClick(this)">审批确认<span class="tab-close" role="button" aria-label="关闭审批确认页签" onclick="closeWorkspaceTab(this.closest('.workspace-tab'), event)">×</span></button><button class="workspace-tab active" type="button" data-close-route="财务待办页-AI影子审批原型.html" onclick="handleWorkspaceTabClick(this)">付款审批<span class="tab-close" role="button" aria-label="关闭付款审批页签" onclick="closeWorkspaceTab(this.closest('.workspace-tab'), event)">×</span></button><button id="filePreviewTab" class="workspace-tab preview-tab" type="button" data-preview-tab="true" onclick="handleWorkspaceTabClick(this)">文件预览<span class="tab-close" role="button" aria-label="关闭文件预览页签" onclick="closeWorkspaceTab(this.closest('.workspace-tab'), event)">×</span></button></div>
     <div class="approval-toolbar" aria-label="审批操作"><button class="approval-action" type="button" onclick="submitApprovalAction('approve')">审批</button><button class="approval-action" type="button" onclick="submitApprovalAction('reject')">驳回</button><button class="approval-action" type="button" onclick="submitApprovalAction('cancel')">取消</button><button class="approval-action" type="button" onclick="previewApprovalFiles()">文件预览</button><button id="openReviewDrawer" type="button" hidden onclick="toggleReviewDrawer()">展开审单面板</button></div>
     <div class="approval-view-tabs" role="tablist"><button class="approval-view-tab active" type="button" data-approval-tab="detail" onclick="switchApprovalPageTab('detail')">表单详情</button><button class="approval-view-tab" type="button" data-approval-tab="history" onclick="switchApprovalPageTab('history')">审批记录</button></div>
     <div id="approvalDetailView" class="approval-view content">
@@ -212,6 +220,7 @@
       </div>
     </div>
     <section id="approvalHistoryView" class="approval-view approval-history" hidden><h2>审批记录</h2><table><thead><tr><th>审批节点</th><th>审批人</th><th>审批结果</th><th>审批意见</th><th>审批时间</th></tr></thead><tbody><tr><td>业务审批</td><td>李晓明</td><td>通过</td><td>同意项目差旅费用付款。</td><td>2026-08-04 18:32:15</td></tr><tr><td>财务审批</td><td>财务专员</td><td>待处理</td><td>等待财务审批操作。</td><td>--</td></tr></tbody></table></section>
+    <section id="filePreviewView" aria-label="文件预览"><iframe id="filePreviewFrame" title="文件预览"></iframe></section>
   </main>
   <div id="toast" class="toast">操作已记录</div>
   <script>
@@ -239,8 +248,59 @@
     };
     let activePaymentDocument = null;
     function showToast(message) { const toast=document.getElementById('toast'); toast.textContent=message; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),2800); }
-    function handleWorkspaceTabClick(tab) { const route=tab.dataset.tabRoute; if(route) window.location.href=route; }
-    function closeWorkspaceTab(tab,event) { event.stopPropagation(); const fallback=tab.dataset.closeRoute; if(tab.classList.contains('active') && fallback) { window.location.href=fallback; return; } tab.remove(); }
+     function handleWorkspaceTabClick(tab) {
+       if (tab.dataset.previewTab === 'true') {
+         openFilePreviewTab();
+         return;
+       }
+       document.body.classList.remove('file-preview-active');
+       const previewTab = document.getElementById('filePreviewTab');
+       if (previewTab) previewTab.classList.remove('active');
+       document.querySelectorAll('.workspace-tab, .system-workspace-tab').forEach(item => item.classList.toggle('active', item === tab));
+       const route=tab.dataset.tabRoute;
+       if(route) window.location.href=route;
+     }
+     function closeWorkspaceTab(tab,event) {
+       event.stopPropagation();
+       if (tab.dataset.previewTab === 'true') {
+         closeFilePreviewTab(tab, event);
+         return;
+       }
+       const fallback=tab.dataset.closeRoute;
+       if(tab.classList.contains('active') && fallback) { window.location.href=fallback; return; }
+       tab.remove();
+     }
+     function openFilePreviewTab() {
+       const tab = document.getElementById('filePreviewTab') || document.querySelector('[data-preview-tab="true"]');
+       const frame = document.getElementById('filePreviewFrame');
+       if (!tab || !frame) return;
+       const activeApprovalTab = document.querySelector('[data-approval-tab].active');
+       tab.dataset.previousApprovalTab = activeApprovalTab?.dataset.approvalTab || 'detail';
+       const params = new URLSearchParams(window.location.search);
+       const preview = new URL('../../../附件预览/报销单文件预览-演示.html', window.location.href);
+       preview.hash = 'preview';
+       preview.search = new URLSearchParams({
+         from: 'approval',
+         documentType: params.get('documentType') || 'payment',
+         approvalKind: params.get('approvalKind') || 'project',
+         documentNo: params.get('documentNo') || '',
+         aiStatus: params.get('aiStatus') || '',
+         aiSuggestion: params.get('aiSuggestion') || '',
+         embedded: '1'
+       });
+       if (frame.src !== preview.href) frame.src = preview.href;
+       document.body.classList.add('file-preview-active');
+       document.querySelectorAll('.workspace-tab, .system-workspace-tab').forEach(item => item.classList.remove('active'));
+       tab.classList.add('active');
+     }
+     function closeFilePreviewTab(tab, event) {
+       event?.stopPropagation();
+       const previousTab = tab?.dataset.previousApprovalTab || 'detail';
+       document.body.classList.remove('file-preview-active');
+       tab?.classList.remove('active');
+       document.querySelector('.workspace-tab[data-close-route], .system-workspace-tab[data-workspace-route="financeApproval"]')?.classList.add('active');
+       switchApprovalPageTab(previousTab);
+     }
     function toggleReviewDrawer() { if(document.body.classList.contains('office-approval-entry')) return; const drawer=document.getElementById('reviewDrawer'); const layout=document.getElementById('approvalLayout'); const button=document.getElementById('openReviewDrawer'); const willOpen=!drawer.classList.contains('show'); drawer.classList.toggle('show',willOpen); layout.classList.toggle('is-collapsed',!willOpen); drawer.setAttribute('aria-hidden',String(!willOpen)); if(button) button.textContent=willOpen?'← 收起审单面板':'✦ 展开审单面板'; }
     function applyApprovalEntryMode() { if(new URLSearchParams(window.location.search).get('from') === 'office-approval') { document.body.classList.add('office-approval-entry'); const drawer=document.getElementById('reviewDrawer'); const layout=document.getElementById('approvalLayout'); drawer.hidden=true; drawer.classList.remove('show'); drawer.setAttribute('aria-hidden','true'); layout.classList.add('is-collapsed'); } }
     function applyAiReviewVisibility() { if(!aiReviewUnavailable) return; document.body.classList.add('ai-review-unavailable'); const drawer=document.getElementById('reviewDrawer'); const layout=document.getElementById('approvalLayout'); document.querySelector('.ai-card')?.setAttribute('hidden',''); document.querySelector('.feedback-card')?.setAttribute('hidden',''); if(drawer) { drawer.hidden=true; drawer.classList.remove('show'); drawer.setAttribute('aria-hidden','true'); } layout?.classList.add('is-collapsed'); }
@@ -385,7 +445,7 @@ document.title = '报销申请审批｜AI 审批意见原型';
     }
     function switchApprovalPageTab(tab) { const detail=tab==='detail'; document.getElementById('approvalDetailView').hidden=!detail; document.getElementById('approvalHistoryView').hidden=detail; document.querySelectorAll('[data-approval-tab]').forEach(button=>button.classList.toggle('active',button.dataset.approvalTab===tab)); }
     function submitApprovalAction(action) { if(action==='approve' && !validateAiFeedbackForApproval()) return; if(action==='approve' && !validateTodoApprovalFields()) return; const messages={ approve:'审批已提交，等待流程处理。', reject:'已发起驳回操作，请填写驳回意见。', cancel:'已取消本次审批操作。' }; showToast(messages[action]); }
-    function previewApprovalFiles() { showToast('原型演示：已打开当前单据关联的文件预览。'); }
+    function previewApprovalFiles() { openFilePreviewTab(); }
     function switchExpensePanel(button) { const group=button.closest('.expense-group'); const tab=button.dataset.expenseTab; group.querySelectorAll('[data-expense-tab]').forEach(item=>item.classList.toggle('active',item===button)); group.querySelectorAll('[data-expense-panel]').forEach(panel=>panel.hidden=panel.dataset.expensePanel!==tab); }
     function renderConditionFeedback() { document.getElementById('inaccuracySection').innerHTML=`<div class="feedback-section"><label>不准确的条件 <span style="color:#d14b51">*</span></label><p class="feedback-note">请勾选不准确的条件，并分别说明原因。</p><div id="conditionFeedbackList" class="condition-feedback-list"><div class="condition-feedback-item" data-condition="发票信息"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">发票信息</label><div class="condition-reason" hidden><label>发票信息不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明发票信息的 AI 判断为何不准确"></textarea></div></div><div class="condition-feedback-item" data-condition="附件完整性"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">附件完整性</label><div class="condition-reason" hidden><label>附件完整性不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明附件完整性的 AI 判断为何不准确"></textarea></div></div><div class="condition-feedback-item" data-condition="报销标准合规"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">报销标准合规</label><div class="condition-reason" hidden><label>报销标准合规不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明报销标准合规的 AI 判断为何不准确"></textarea></div></div><div class="condition-feedback-item" data-condition="时间与时效"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">时间与时效</label><div class="condition-reason" hidden><label>时间与时效不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明时间与时效的 AI 判断为何不准确"></textarea></div></div><div class="condition-feedback-item" data-condition="业务合理性"><label class="condition-choice"><input type="checkbox" data-condition-checkbox onchange="toggleConditionFeedback(this)">业务合理性</label><div class="condition-reason" hidden><label>业务合理性不准确原因 <span style="color:#d14b51">*</span></label><textarea placeholder="请说明业务合理性的 AI 判断为何不准确"></textarea></div></div></div></div>`; }
     function toggleConditionFeedback(checkbox) { checkbox.closest('.condition-feedback-item').querySelector('.condition-reason').hidden=!checkbox.checked; }
