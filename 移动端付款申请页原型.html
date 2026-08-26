@@ -380,7 +380,7 @@
       <div class="form-row"><span class="form-label req">是否有发票</span><div class="pick-row"><label><input type="radio" name="hasInvoice" value="no">否</label><label><input type="radio" name="hasInvoice" value="yes">是</label></div></div>
       <div class="form-row"><span class="form-label req">是否付劳务费</span><div class="pick-row"><label><input type="radio" name="serviceFee" value="no" checked>否</label><label><input type="radio" name="serviceFee" value="yes">是</label></div></div>
       <div class="form-row project-row" id="projectField"><span class="form-label req">本单关联项目</span><select id="projectName" class="form-control" aria-label="本单关联项目"><option value="">请选择项目</option><option>2026 春季总裁班项目</option><option>华南区域公开课项目</option><option>年度客户服务提升项目</option><option>管理培训数字化项目</option></select></div>
-      <div class="form-row"><span class="form-label">申请人</span><span class="form-value readonly-field">陈敏</span></div>
+      <div class="form-row"><span class="form-label">申请人</span><span class="form-value readonly-field" id="applicantName">陈敏</span></div>
       <div class="form-row"><span class="form-label">申请部门</span><span class="form-value readonly-field">博商集团 / 行政部</span></div>
       <div class="subsection-title">收款信息</div>
       <div class="form-row"><span class="form-label req">收款方类型</span><div class="pick-row"><label><input type="radio" name="payeeType" value="linked" checked>链接付款</label><label><input type="radio" name="payeeType" value="company">公司</label><label><input type="radio" name="payeeType" value="person">个人</label></div></div>
@@ -464,6 +464,7 @@
       const documentTitle = document.getElementById('documentTitle');
       const expenseDate = document.getElementById('expenseDate');
       const companyEntity = document.getElementById('companyEntity');
+      const applicantName = document.getElementById('applicantName');
       const remark = document.getElementById('remark');
       const recipientName = document.getElementById('recipientName');
       const recipientBank = document.getElementById('recipientBank');
@@ -494,6 +495,7 @@
       let expenseTypeCategory = '';
       let pendingRecipient = selectedRecipient;
       let selectedCompany = companyEntity.value || '';
+      const applicantCompanyMap = { '陈敏': '深圳市博商管理科学研究院股份有限公司', '刘宇鑫': '博商管理咨询（深圳）有限公司', '张明': '深圳市商小满餐饮管理有限公司' };
       let allocationOwnerTarget = null;
       let pendingAllocationOwner = '';
       let allocationTeamTarget = null;
@@ -1040,6 +1042,11 @@
         document.getElementById('companyPickerModal').hidden = true;
         refreshBasicCompletion();
       }
+      function syncCompanyFromApplicant() {
+        const applicant = applicantName?.textContent.trim();
+        const company = applicantCompanyMap[applicant];
+        if (company) applyCompanySelection(company);
+      }
       function openCompanyPicker() {
         document.getElementById('companyPickerSearch').value = '';
         renderCompanyOptions();
@@ -1218,6 +1225,7 @@
       enhanceDateInput(expenseDate);
       enhanceDateInput(document.getElementById('invoiceDate'));
       enhanceAllChoices();
+      syncCompanyFromApplicant();
       openExpenses.addEventListener('click', () => setStep(2));
       document.getElementById('addExpense').addEventListener('click', () => { const card = addExpenseRow(); openExpenseEditor(card); });
       stepBack.addEventListener('click', () => setStep(document.querySelector('.application-step.active') ? Number(document.querySelector('.application-step.active').dataset.step) - 1 : 1));
