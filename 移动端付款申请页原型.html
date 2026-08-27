@@ -603,6 +603,11 @@
         activeInvoiceCard = null;
         expenseProjectTarget = null;
       }
+      function resetExpenseDetailsForBasicChange(message) {
+        resetExpenseDetails();
+        if (message) showToast(message);
+        refreshBasicCompletion();
+      }
       function updateAutomaticAllocationRowState(row) {
         const owner = row?.querySelector('.allocation-owner');
         const team = row?.querySelector('.allocation-team');
@@ -1172,7 +1177,7 @@
       kind.addEventListener('change', () => { resetExpenseDetails(); updatePaymentKind(); });
       projectName.addEventListener('change', refreshBasicCompletion);
       documentTitle.addEventListener('input', refreshBasicCompletion);
-      expenseDate.addEventListener('change', refreshBasicCompletion);
+      expenseDate.addEventListener('change', () => resetExpenseDetailsForBasicChange('费用时间已变更，请重新选择费用类型。'));
       companyEntity.addEventListener('change', refreshBasicCompletion);
       document.querySelectorAll('input[name="hasInvoice"]').forEach(input => input.addEventListener('change', () => { updateInvoiceVisibility(); refreshBasicCompletion(); }));
       document.querySelectorAll('input[name="serviceFee"]').forEach(input => input.addEventListener('change', () => { updateServiceFeeState(); refreshBasicCompletion(); }));
@@ -1182,7 +1187,7 @@
       remark.addEventListener('input', refreshBasicCompletion);
       document.querySelectorAll('input[name="overseas"]').forEach(input => input.addEventListener('change', updateOverseasFields));
       document.querySelectorAll('input[name="loanOffset"]').forEach(input => input.addEventListener('change', updateLoanDetails));
-      document.getElementById('currency').addEventListener('change', refreshBasicCompletion);
+      document.getElementById('currency').addEventListener('change', () => resetExpenseDetailsForBasicChange('币种已变更，请重新选择费用类型。'));
       document.getElementById('swiftCode').addEventListener('input', refreshBasicCompletion);
       recipientName.addEventListener('click', openRecipientPicker);
       recipientBankPickerTrigger.addEventListener('click', openRecipientBankPicker);

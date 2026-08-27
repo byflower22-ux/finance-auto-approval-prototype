@@ -368,7 +368,7 @@
             <div class="basic-section-title">付款信息</div>
             <div class="form-grid">
               <div class="field"><label class="req">标题</label><input class="input" value="HQ测试" aria-label="标题"></div>
-              <div class="field"><label class="req">费用时间</label><input class="input" type="date" value="2026-05-25" aria-label="费用时间"></div>
+              <div class="field"><label class="req">费用时间</label><input class="input" id="expenseDate" type="date" value="2026-05-25" aria-label="费用时间"></div>
               <div class="field"><label class="req">付款类型</label><select id="paymentKind" aria-label="付款类型" required><option value="" selected>请选择付款类型</option><option value="ordinary">付款</option><option value="project">项目付款</option></select></div>
               <div class="field"><label class="req">主体公司</label><div class="company-picker-trigger"><button class="readonly company-picker-value" id="companyEntity" type="button" aria-haspopup="dialog" aria-label="选择主体公司">深圳市博商管理科学研究院股份有限公司</button><span aria-hidden="true">⌄</span></div></div>
               <!-- reimbursement mode sets name="hasInvoice" value="yes" checked disabled -->
@@ -1103,6 +1103,14 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
       hasOpenedExpenseDetails = false;
       updateExpenseDetailsVisibility();
     }
+    function resetExpenseDetailsForBasicChange(message) {
+      resetExpenseDetails();
+      if (message) showToast(message);
+    }
+    document.getElementById('expenseDate')?.addEventListener('change', () => resetExpenseDetailsForBasicChange('费用时间已变更，请重新选择费用类型。'));
+    const reimbursementCurrency = document.getElementById('reimbursementCurrency');
+    reimbursementCurrency?.addEventListener('change', () => resetExpenseDetailsForBasicChange('币种已变更，请重新选择费用类型。'));
+    currency?.addEventListener('change', () => resetExpenseDetailsForBasicChange('币种已变更，请重新选择费用类型。'));
     const existingInvoicePool = [
       { id: 'pool-001', number: '031002600111', type: '增值税专用发票', code: '044032600111', seller: '华东设备供应商有限公司', buyerName: '深圳市博商管理科学研究院股份有限公司', buyerTaxNo: '91440300EXAMPLE01', issueDate: '2026-07-03', amount: 70000, taxRate: 0.13, tax: 8053.10, verificationResult: '合规性校验成功', imageName: '031002600111.pdf', imageUrl: '' },
       { id: 'pool-002', number: '031002600112', type: '电子普通发票', code: '044032600112', seller: '华东设备供应商有限公司', buyerName: '深圳市博商管理科学研究院股份有限公司', buyerTaxNo: '91440300EXAMPLE01', issueDate: '2026-07-08', amount: 30000, taxRate: 0.06, tax: 1698.11, verificationResult: '合规性校验成功', imageName: '031002600112.pdf', imageUrl: '' }
