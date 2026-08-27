@@ -384,6 +384,7 @@
       <div class="form-row"><span class="form-label">申请部门</span><span class="form-value readonly-field">博商集团 / 行政部</span></div>
       <div class="subsection-title">收款信息</div>
       <div class="form-row"><span class="form-label req">收款方类型</span><div class="pick-row"><label><input type="radio" name="payeeType" value="linked" checked>链接付款</label><label><input type="radio" name="payeeType" value="company">公司</label><label><input type="radio" name="payeeType" value="person">个人</label></div></div>
+      <div class="form-row" id="paymentLinkField" hidden><span class="form-label req">付款链接</span><input id="paymentLink" class="form-control" type="text" placeholder="请输入付款链接" aria-label="付款链接"></div>
       <div class="form-row"><span class="form-label req">收款单位</span><button class="form-control picker-value" type="button" id="recipientName" aria-label="选择收款单位">陈敏</button></div>
       <div class="form-row" id="recipientBankRow"><span class="form-label req">开户行</span><button type="button" id="recipientBankPickerTrigger" class="form-control picker-value" aria-label="选择开户行">招商银行深圳分行</button><input id="recipientBankManual" class="form-control" value="招商银行深圳分行" aria-label="开户行" placeholder="请输入开户行" hidden></div>
       <input id="recipientBank" type="hidden" value="招商银行深圳分行">
@@ -647,6 +648,7 @@
         check(recipientName, '收款单位', Boolean(recipientName.textContent.trim()));
         check(document.querySelector('input[name="payeeType"]'), '收款方类型', Boolean(checkedValue('payeeType')));
         const linkedPayee = checkedValue('payeeType') === 'linked';
+        if (linkedPayee) check(document.getElementById('paymentLink'), '付款链接', Boolean(document.getElementById('paymentLink')?.value.trim()));
         if (!linkedPayee) {
           check(recipientAccount, '银行账号', Boolean(recipientAccount.value.trim()));
           const bankValue = recipientBank.value.trim();
@@ -707,6 +709,13 @@
       }
       function updatePayeeTypeState() {
         const linked = checkedValue('payeeType') === 'linked';
+        const paymentLinkField = document.getElementById('paymentLinkField');
+        const paymentLink = document.getElementById('paymentLink');
+        if (paymentLinkField && paymentLink) {
+          paymentLinkField.hidden = !linked;
+          paymentLink.required = linked;
+          if (!linked) paymentLink.value = '';
+        }
         const overseas = checkedValue('overseas') === 'yes';
         const nextMode = linked ? 'linked' : overseas ? 'overseas' : 'domestic';
         if (bankMode && bankMode !== nextMode) {
@@ -1184,6 +1193,7 @@
       document.querySelectorAll('input[name="payeeType"]').forEach(input => input.addEventListener('change', () => { updatePayeeTypeState(); refreshBasicCompletion(); }));
       recipientBankManual.addEventListener('input', event => { recipientBank.value = event.target.value; refreshBasicCompletion(); });
       recipientAccount.addEventListener('input', refreshBasicCompletion);
+      document.getElementById('paymentLink').addEventListener('input', refreshBasicCompletion);
       remark.addEventListener('input', refreshBasicCompletion);
       document.querySelectorAll('input[name="overseas"]').forEach(input => input.addEventListener('change', updateOverseasFields));
       document.querySelectorAll('input[name="loanOffset"]').forEach(input => input.addEventListener('change', updateLoanDetails));

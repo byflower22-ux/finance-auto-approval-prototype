@@ -381,6 +381,7 @@
             <div class="basic-section-title">收款信息</div>
             <div class="form-grid">
               <div class="field"><label class="req">收款方类型</label><div class="choice-row"><label><input type="radio" name="payee" value="linked">链接付款</label><label><input type="radio" name="payee" value="company">公司</label><label><input type="radio" name="payee" value="person">个人</label></div></div>
+              <div class="field" id="paymentLinkField" hidden><label class="req">付款链接</label><input class="input" id="paymentLink" type="text" placeholder="请输入付款链接" aria-label="付款链接"></div>
               <div class="field"><label class="req">收款单位</label><input class="input" value="6666" aria-label="收款单位"></div>
               <div class="field"><label class="req">银行账号</label><input class="input" id="bankAccount" value="45345435" aria-label="银行账号"></div>
               <div class="field"><label class="req">是否海外付款</label><div class="choice-row"><label><input type="radio" name="overseas" value="no">否</label><label><input type="radio" name="overseas" value="yes">是</label></div></div>
@@ -858,6 +859,15 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
       document.getElementById('currency').value = '';
       document.getElementById('swiftCode').value = '';
     }
+    function updatePaymentLinkField() {
+      const linkedPayee = document.querySelector('input[name="payee"]:checked')?.value === 'linked';
+      const field = document.getElementById('paymentLinkField');
+      const input = document.getElementById('paymentLink');
+      if (!field || !input) return;
+      field.hidden = !linkedPayee;
+      input.required = linkedPayee;
+      if (!linkedPayee) input.value = '';
+    }
     function updateBankInputMode() {
       if (isReimbursementApplication) return;
       const isOverseas = isOverseasPayment();
@@ -923,9 +933,11 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
     }));
     document.querySelectorAll('input[name="payee"]').forEach(input => input.addEventListener('change', () => {
       clearLinkedPaymentFields();
+      updatePaymentLinkField();
       updateBankInputMode();
       updateForeignCurrencyAllocationState();
     }));
+    updatePaymentLinkField();
     currency.addEventListener('change', updateForeignCurrencyAllocationState);
     if (isReimbursementApplication) {
       document.querySelectorAll('input[name="reimbursementOverseas"]').forEach(input => input.addEventListener('change', updateOverseasPayment));
