@@ -562,17 +562,24 @@
       function renderMobileDate() {
         const year = mobileDateCursor.getFullYear();
         const month = mobileDateCursor.getMonth();
+        const restrictToCurrentMonth = mobileDateTarget === expenseDate;
+        const today = new Date();
         document.getElementById('dateMonthLabel').textContent = `${year}年${month + 1}月`;
         const grid = document.getElementById('mobileDateGrid');
         const first = new Date(year, month, 1);
         const start = new Date(year, month, 1 - first.getDay());
         const selectedValue = mobileDateTarget?.value || '';
         const todayValue = toDateValue(new Date());
+        const prevButton = document.getElementById('datePrev');
+        const nextButton = document.getElementById('dateNext');
+        if (prevButton) prevButton.disabled = mobileDateTarget === expenseDate;
+        if (nextButton) nextButton.disabled = mobileDateTarget === expenseDate;
         grid.innerHTML = Array.from({ length:42 }, (_, index) => {
           const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index);
           const value = toDateValue(date);
           const muted = date.getMonth() !== month;
-          return `<button type="button" class="date-cell${muted ? ' muted' : ''}${value === selectedValue ? ' selected' : ''}${value === todayValue ? ' today' : ''}" data-date="${value}">${date.getDate()}</button>`;
+          const disabled = restrictToCurrentMonth && (date.getFullYear() !== today.getFullYear() || date.getMonth() !== today.getMonth());
+          return `<button type="button" class="date-cell${muted ? ' muted' : ''}${value === selectedValue ? ' selected' : ''}${value === todayValue ? ' today' : ''}" data-date="${value}"${disabled ? ' disabled' : ''}>${date.getDate()}</button>`;
         }).join('');
         grid.querySelectorAll('.date-cell').forEach(cell => cell.addEventListener('click', () => {
           if (!mobileDateTarget) return;
@@ -584,7 +591,8 @@
       }
       function openMobileDatePicker(input = expenseDate) {
         mobileDateTarget = input;
-        mobileDateCursor = parseDateValue(input.value);
+        const now = new Date();
+        mobileDateCursor = input === expenseDate ? new Date(now.getFullYear(), now.getMonth(), 1) : parseDateValue(input.value);
         document.getElementById('mobileDateTitle').textContent = input.id === 'invoiceDate' ? '选择开票日期' : '选择费用时间';
         renderMobileDate();
         document.getElementById('mobileDateModal').hidden = false;
@@ -608,6 +616,11 @@
         resetExpenseDetails();
         if (message) showToast(message);
         refreshBasicCompletion();
+      }
+      function isCurrentMonthDate(value) {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
+        const now = new Date();
+        return Boolean(match && Number(match[1]) === now.getFullYear() && Number(match[2]) === now.getMonth() + 1);
       }
       function updateAutomaticAllocationRowState(row) {
         const owner = row?.querySelector('.allocation-owner');
@@ -640,7 +653,7 @@
         if (mark) clearBasicFieldErrors();
         const check = (field, label, valid) => { if (valid) return; missing.push(label); if (mark) { const row = field?.closest('.form-row, .loan-details'); row?.classList.add('field-error'); row?.setAttribute('aria-invalid', 'true'); } };
         check(documentTitle, '标题', Boolean(documentTitle.value.trim()));
-        check(expenseDate, '费用时间', Boolean(expenseDate.value));
+        check(expenseDate, '费用时间', isCurrentMonthDate(expenseDate.value));
         check(kind, '付款类型', Boolean(kind.value));
         check(companyEntity, '主体公司', Boolean(companyEntity.value));
         check(document.querySelector('input[name="hasInvoice"]'), '是否有发票', Boolean(checkedValue('hasInvoice')));
@@ -1186,7 +1199,15 @@
       kind.addEventListener('change', () => { resetExpenseDetails(); updatePaymentKind(); });
       projectName.addEventListener('change', refreshBasicCompletion);
       documentTitle.addEventListener('input', refreshBasicCompletion);
-      expenseDate.addEventListener('change', () => resetExpenseDetailsForBasicChange('费用时间已变更，请重新选择费用类型。'));
+      expenseDate.addEventListener('change', () => {
+        if (!isCurrentMonthDate(expenseDate.value)) {
+          expenseDate.value = '';
+          showToast('费用时间只能选择当前月。');
+          refreshBasicCompletion();
+          return;
+        }
+        resetExpenseDetailsForBasicChange('费用时间已变更，请重新选择费用类型。');
+      });
       companyEntity.addEventListener('change', refreshBasicCompletion);
       document.querySelectorAll('input[name="hasInvoice"]').forEach(input => input.addEventListener('change', () => { updateInvoiceVisibility(); refreshBasicCompletion(); }));
       document.querySelectorAll('input[name="serviceFee"]').forEach(input => input.addEventListener('change', () => { updateServiceFeeState(); refreshBasicCompletion(); }));
@@ -1235,8 +1256,8 @@
       document.getElementById('selectLoanDocument').addEventListener('click', openLoanPicker);
       document.getElementById('confirmLoanDocument').addEventListener('click', confirmLoanDocument);
       document.getElementById('loanPickerSearch').addEventListener('input', event => renderLoanOptions(event.target.value));
-      document.getElementById('datePrev').addEventListener('click', () => { mobileDateCursor = new Date(mobileDateCursor.getFullYear(), mobileDateCursor.getMonth() - 1, 1); renderMobileDate(); });
-      document.getElementById('dateNext').addEventListener('click', () => { mobileDateCursor = new Date(mobileDateCursor.getFullYear(), mobileDateCursor.getMonth() + 1, 1); renderMobileDate(); });
+      document.getElementById('datePrev').addEventListener('click', () => { if (mobileDateTarget === expenseDate) return; mobileDateCursor = new Date(mobileDateCursor.getFullYear(), mobileDateCursor.getMonth() - 1, 1); renderMobileDate(); });
+      document.getElementById('dateNext').addEventListener('click', () => { if (mobileDateTarget === expenseDate) return; mobileDateCursor = new Date(mobileDateCursor.getFullYear(), mobileDateCursor.getMonth() + 1, 1); renderMobileDate(); });
       enhanceDateInput(expenseDate);
       enhanceDateInput(document.getElementById('invoiceDate'));
       enhanceAllChoices();

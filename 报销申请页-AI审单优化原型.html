@@ -782,7 +782,7 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
 
         const controls = [...field.querySelectorAll('input:not([type="hidden"]), select, textarea')]
           .filter(control => !control.disabled && !control.closest('[hidden]'));
-        if (controls.length) return controls.every(control => control.value.trim()) ? [] : [fieldName];
+        if (controls.length) return controls.every(control => control.value.trim() && (control.id !== 'expenseDate' || isCurrentMonthDate(control.value))) ? [] : [fieldName];
 
         const readonlyValue = field.querySelector('.readonly')?.textContent.trim();
         return readonlyValue && readonlyValue !== '未选择项目' ? [] : [fieldName];
@@ -1119,7 +1119,34 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
       resetExpenseDetails();
       if (message) showToast(message);
     }
-    document.getElementById('expenseDate')?.addEventListener('change', () => resetExpenseDetailsForBasicChange('费用时间已变更，请重新选择费用类型。'));
+    function getCurrentMonthDateBounds() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+      return { min: `${year}-${month}-01`, max: `${year}-${month}-${String(lastDay).padStart(2, '0')}` };
+    }
+    function isCurrentMonthDate(value) {
+      const bounds = getCurrentMonthDateBounds();
+      return Boolean(value && value >= bounds.min && value <= bounds.max);
+    }
+    function configureExpenseDateLimit() {
+      const control = document.getElementById('expenseDate');
+      if (!control) return;
+      const bounds = getCurrentMonthDateBounds();
+      control.min = bounds.min;
+      control.max = bounds.max;
+      if (control.value && !isCurrentMonthDate(control.value)) control.value = '';
+      control.addEventListener('change', () => {
+        if (!isCurrentMonthDate(control.value)) {
+          control.value = '';
+          showToast('费用时间只能选择当前月。');
+          return;
+        }
+        resetExpenseDetailsForBasicChange('费用时间已变更，请重新选择费用类型。');
+      });
+    }
+    configureExpenseDateLimit();
     const reimbursementCurrency = document.getElementById('reimbursementCurrency');
     reimbursementCurrency?.addEventListener('change', () => resetExpenseDetailsForBasicChange('币种已变更，请重新选择费用类型。'));
     currency?.addEventListener('change', () => resetExpenseDetailsForBasicChange('币种已变更，请重新选择费用类型。'));
