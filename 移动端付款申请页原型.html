@@ -36,6 +36,7 @@
     .section-title { display:flex; align-items:center; justify-content:space-between; min-height:46px; margin:0; padding:0 16px; color:#202632; background:#fff; border-bottom:1px solid #e6eaf0; font-size:16px; font-weight:700; }
     .section-title small { color:var(--muted); font-size:12px; font-weight:400; }
     .form-row { min-height:51px; display:flex; align-items:center; gap:12px; padding:0 16px; background:#fff; border-bottom:1px solid var(--line); }
+    .form-row[hidden] { display:none !important; }
     .form-row:last-child { border-bottom:0; }
     .form-row.field-error { background:#fff8f8; }
     .form-row.field-error .form-label { color:var(--red); font-weight:700; }
@@ -45,6 +46,7 @@
     .form-label.req::after { margin-left:3px; color:var(--red); content:'*'; }
     .form-control, .form-value { flex:1; min-width:0; min-height:42px; display:flex; align-items:center; padding:0 12px; color:#2b303a; text-align:left; background:#f8fafc; border:1px solid #dfe4ec; border-radius:8px; outline:0; }
     .form-control { height:42px; min-height:42px; border:1px solid #dfe4ec; border-radius:8px; }
+    .form-control[hidden] { display:none !important; }
     select.form-control { appearance:none; padding-right:31px; background-color:#f8fafc; background-image:linear-gradient(45deg, transparent 50%, #8c96a5 50%), linear-gradient(135deg, #8c96a5 50%, transparent 50%); background-position:calc(100% - 14px) 17px, calc(100% - 8px) 17px; background-size:6px 6px; background-repeat:no-repeat; }
     input.form-control::placeholder, textarea.form-control::placeholder { color:#b2b8c2; }
     .form-value { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
@@ -383,13 +385,13 @@
       <div class="form-row"><span class="form-label">申请人</span><span class="form-value readonly-field" id="applicantName">陈敏</span></div>
       <div class="form-row"><span class="form-label">申请部门</span><span class="form-value readonly-field">博商集团 / 行政部</span></div>
       <div class="subsection-title">收款信息</div>
+      <div class="form-row"><span class="form-label req">是否海外付款</span><div class="pick-row"><label><input type="radio" name="overseas" value="no" checked>否</label><label><input type="radio" name="overseas" value="yes">是</label></div></div>
       <div class="form-row"><span class="form-label req">收款方类型</span><div class="pick-row"><label><input type="radio" name="payeeType" value="linked" checked>链接付款</label><label><input type="radio" name="payeeType" value="company">公司</label><label><input type="radio" name="payeeType" value="person">个人</label></div></div>
       <div class="form-row" id="paymentLinkField" hidden><span class="form-label req">付款链接</span><input id="paymentLink" class="form-control" type="text" placeholder="请输入付款链接" aria-label="付款链接"></div>
       <div class="form-row"><span class="form-label req">收款单位</span><button class="form-control picker-value" type="button" id="recipientName" aria-label="选择收款单位">陈敏</button></div>
       <div class="form-row" id="recipientBankRow"><span class="form-label req">开户行</span><button type="button" id="recipientBankPickerTrigger" class="form-control picker-value" aria-label="选择开户行">招商银行深圳分行</button><input id="recipientBankManual" class="form-control" value="招商银行深圳分行" aria-label="开户行" placeholder="请输入开户行" hidden></div>
       <input id="recipientBank" type="hidden" value="招商银行深圳分行">
       <div class="form-row"><span class="form-label req">银行账号</span><input id="recipientAccount" class="form-control" value="6225 8888 0462 9551" aria-label="银行账号" placeholder="请输入银行账号"></div>
-      <div class="form-row"><span class="form-label req">是否海外付款</span><div class="pick-row"><label><input type="radio" name="overseas" value="no" checked>否</label><label><input type="radio" name="overseas" value="yes">是</label></div></div>
       <div class="form-row overseas-field" id="currencyField"><span class="form-label req">币种</span><select id="currency" class="form-control" aria-label="币种"><option value="">请选择</option><option>CNY</option><option>USD</option><option>HKD</option><option>SGD</option></select></div>
       <div class="form-row overseas-field" id="swiftField"><span class="form-label req">SWIFT Code</span><input id="swiftCode" class="form-control" placeholder="请输入 SWIFT Code" aria-label="SWIFT Code"></div>
       <div hidden>
@@ -736,12 +738,15 @@
           recipientBankPickerTrigger.textContent = '请选择开户行';
         }
         bankMode = nextMode;
-        document.getElementById('recipientBankRow').hidden = linked;
+        const recipientBankRow = document.getElementById('recipientBankRow');
+        recipientBankRow.hidden = linked;
         document.getElementById('recipientAccount')?.closest('.form-row')?.removeAttribute('hidden');
         recipientBankManual.hidden = nextMode !== 'overseas';
         recipientBankPickerTrigger.hidden = nextMode !== 'domestic';
         recipientBankManual.required = nextMode === 'overseas';
-        recipientBank.value = nextMode === 'overseas' ? recipientBankManual.value : recipientBankPickerTrigger.textContent.trim();
+        recipientBankPickerTrigger.disabled = linked || nextMode !== 'domestic';
+        recipientBankManual.disabled = linked || nextMode !== 'overseas';
+        recipientBank.value = linked ? '' : nextMode === 'overseas' ? recipientBankManual.value : recipientBankPickerTrigger.textContent.trim();
       }
       function renderProjectOptions(keyword = '') {
         const normalized = keyword.trim().toLowerCase();
