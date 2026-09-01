@@ -140,9 +140,12 @@
     .expense-type-group:first-child { margin-top: 0; }
     .expense-type-group.is-open { border-color: #9cbcf4; box-shadow: 0 5px 16px rgba(39, 91, 183, .09); }
     .expense-type-group.is-open::before { position: absolute; z-index: 1; top: 0; right: 0; left: 0; height: 3px; background: var(--blue); content: ""; }
-    .type-summary-toggle { display: flex; gap: 12px; align-items: center; width: 100%; min-height: 54px; padding: 0 14px; color: #2f405e; text-align: left; background: #fff; border: 0; cursor: pointer; }
+    .type-summary-row { display: flex; align-items: center; min-height: 54px; }
+    .type-summary-toggle { display: flex; flex: 1; gap: 12px; align-items: center; min-height: 54px; padding: 0 14px; color: #2f405e; text-align: left; background: #fff; border: 0; cursor: pointer; }
     .type-summary-toggle:hover { background: #f8fbff; }
     .expense-type-group.is-open .type-summary-toggle { background: #f8fbff; border-bottom: 1px solid #e3eaf4; }
+    .delete-expense-type { flex: 0 0 auto; margin-right: 14px; padding: 5px 8px; color: var(--red); background: transparent; border: 1px solid transparent; border-radius: 4px; font-size: 12px; }
+    .delete-expense-type:hover { border-color: #f0c5c9; background: var(--red-bg); }
     .type-toggle-control { display: inline-flex; gap: 5px; flex: 0 0 auto; align-items: center; justify-content: center; min-width: 60px; height: 27px; color: #60738f; background: #f4f7fb; border: 1px solid #dce5f1; border-radius: 4px; font-size: 11px; }
     .type-chevron-symbol { display: inline-block; font-size: 14px; line-height: 1; transition: transform .16s ease; }
     .expense-type-group.is-open .type-chevron-symbol { transform: rotate(180deg); }
@@ -430,11 +433,13 @@
           <div class="section-topline"><span></span><button class="btn" id="addExpense">＋ 添加费用类型</button></div>
           <div id="expenseTypeGroups">
             <section class="expense-type-group is-open">
+              <div class="type-summary-row">
               <button class="type-summary-toggle" type="button" aria-expanded="true" onclick="toggleExpenseType(this)">
                 <span class="type-toggle-control" aria-hidden="true"><span class="type-chevron-symbol">⌄</span><span class="type-toggle-label">收起</span></span>
                 <span class="type-title"><span class="tag">费用类型</span><strong class="type-name">固定人工－工资</strong></span>
-                <span class="type-total">类型金额<strong>¥ 33.00</strong></span>
-              </button>
+                <span class="type-total"><span class="type-total-label">类型金额（人民币）</span><strong>¥ 33.00</strong></span>
+              </button><button class="delete-expense-type" type="button" data-delete-expense-type>删除</button>
+              </div>
               <div class="type-group-body">
                 <div class="type-tabs" role="tablist" aria-label="费用类型明细">
                   <button class="active" type="button" role="tab" aria-selected="true" data-type-tab="allocations" onclick="switchTypePanel(this)">项目/团队分摊（1）</button>
@@ -468,7 +473,7 @@
               </div>
             </section>
           </div>
-          <div class="summary-row"><span class="hint">项目付款时，在费用类型下新增分摊行并选择项目和费用承担团队；多项目付款即为多个分摊行。</span><span>合计（人民币）：<strong id="totalAmount">33.00</strong></span></div>
+          <div class="summary-row"><span class="hint">项目付款时，在费用类型下新增分摊行并选择项目和费用承担团队；多项目付款即为多个分摊行。</span><span><span id="totalAmountLabel">合计（人民币）：</span><strong id="totalAmount">33.00</strong></span></div>
         </div>
       </section>
     </div>
@@ -831,6 +836,9 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
       HKD: 0.92,
       USD: 7.18,
     };
+    function formatSummaryAmount(value) {
+      return Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
     const activeCurrencyControl = () => isReimbursementApplication ? document.getElementById('reimbursementCurrency') : currency;
     const activeSwiftControl = () => isReimbursementApplication ? document.getElementById('reimbursementSwiftCode') : document.getElementById('swiftCode');
     const isOverseasPayment = () => document.querySelector(`input[name="${isReimbursementApplication ? 'reimbursementOverseas' : 'overseas'}"]:checked`)?.value === 'yes';
@@ -916,6 +924,7 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
         cnyAmount.readOnly = isOverseas;
         if (isOverseas) updateCnyAmount(row);
       });
+      refreshAllAmountSummaries();
     }
     function updateOverseasPayment() {
       const isOverseas = isOverseasPayment();
@@ -1039,6 +1048,8 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
         updateAutomaticAllocationRowState(row);
       });
       document.querySelectorAll('.expense-type-group').forEach(refreshTypeSummary);
+      document.querySelectorAll('.expense-type-group').forEach(updateExpenseTypeActionState);
+      refreshOverallAmountSummary();
     }
     function updateAllocationOwner(row) {
       const ownerDepartments = { 刘宇鑫: '教学运营部', 张明: '项目管理部', 李静: '财务部', [applicantAllocation.name]: applicantAllocation.department };
@@ -1065,6 +1076,10 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
     }
     function hasSelectedExpenseType(group) {
       return Boolean(group.querySelector('.expense-category-select').value && group.querySelector('.expense-subcategory-select').value);
+    }
+    function updateExpenseTypeActionState(group) {
+      const addButton = group.querySelector('.add-allocation-row');
+      if (addButton) addButton.disabled = !hasSelectedExpenseType(group);
     }
     function ensureApplicantAllocation(group) {
       const body = group.querySelector('.expense-allocation-table tbody');
@@ -1342,6 +1357,30 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
       group.querySelector('[data-type-tab="allocations"]').textContent = `${paymentKind.value === 'project' ? '项目分摊' : '费用分摊'}（${allocationCount}）`;
       group.querySelector('[data-type-tab="invoices"]').textContent = `发票（${invoiceCount}）`;
       group.querySelector('[data-type-tab="attachments"]').textContent = `附件（${attachmentCount}）`;
+      const overseas = isOverseasPayment();
+      const currencyCode = overseas ? activeCurrencyControl().value : '人民币';
+      const total = [...group.querySelectorAll('.expense-allocation-table tbody tr')].reduce((sum, row) => {
+        const selector = overseas ? '.foreign-amount-input' : '.amount-input';
+        return sum + (Number(row.querySelector(selector)?.value) || 0);
+      }, 0);
+      const label = group.querySelector('.type-total-label');
+      const amount = group.querySelector('.type-total strong');
+      if (label) label.textContent = overseas ? `类型金额（外币，${currencyCode || '未选币种'}）` : '类型金额（人民币）';
+      if (amount) amount.textContent = `${overseas ? (currencyCode || '外币') : '¥'} ${formatSummaryAmount(total)}`;
+    }
+    function refreshOverallAmountSummary() {
+      const overseas = isOverseasPayment();
+      const currencyCode = overseas ? activeCurrencyControl().value : '人民币';
+      const selector = overseas ? '.foreign-amount-input' : '.amount-input';
+      const total = [...document.querySelectorAll(`.expense-allocation-table tbody ${selector}`)].reduce((sum, input) => sum + (Number(input.value) || 0), 0);
+      const label = document.getElementById('totalAmountLabel');
+      const amount = document.getElementById('totalAmount');
+      if (label) label.textContent = overseas ? `合计（外币，${currencyCode || '未选币种'}）：` : '合计（人民币）：';
+      if (amount) amount.textContent = `${formatSummaryAmount(total)}`;
+    }
+    function refreshAllAmountSummaries() {
+      document.querySelectorAll('.expense-type-group').forEach(refreshTypeSummary);
+      refreshOverallAmountSummary();
     }
     function hasInvoices() {
       return document.querySelector('input[name="hasInvoice"]:checked')?.value === 'yes';
@@ -1605,7 +1644,8 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
       updateAllocationOwner(row);
       const foreignAmount = row.querySelector('.foreign-amount-input');
       foreignAmount.addEventListener('input', () => updateCnyAmount(row));
-      row.querySelector('.amount-input').addEventListener('input', () => updateLaborPersonalTax(row));
+      foreignAmount.addEventListener('input', refreshAllAmountSummaries);
+      row.querySelector('.amount-input').addEventListener('input', () => { updateLaborPersonalTax(row); refreshAllAmountSummaries(); });
       updateForeignCurrencyAllocationState();
       updateLaborPersonalTaxState();
       return row;
@@ -1673,11 +1713,25 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
       const group = event.target.closest('.expense-type-group');
       if (!group) return;
       if (event.target.classList.contains('add-allocation-row')) {
+        if (!hasSelectedExpenseType(group)) {
+          showToast('请先选择费用类型和子类型。');
+          return;
+        }
         if (paymentKind.value === 'project') openProjectPicker(group);
         else {
           addAllocationRow(group);
           showToast('已增加一条费用分摊，请完善费用承担信息。');
         }
+      }
+      if (event.target.closest('[data-delete-expense-type]')) {
+        if (expenseTypeGroups.querySelectorAll('.expense-type-group').length === 1) {
+          showToast('至少保留一个费用类型');
+          return;
+        }
+        group.remove();
+        updatePaymentType();
+        refreshAllAmountSummaries();
+        return;
       }
       if (event.target.classList.contains('delete-allocation-row')) {
         const row = event.target.closest('tr');
@@ -1709,10 +1763,12 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
         updateExpenseSubcategoryOptions(group);
         updateExpenseTypeDetails(group);
         ensureApplicantAllocation(group);
+        updateExpenseTypeActionState(group);
       }
       if (event.target.classList.contains('expense-subcategory-select')) {
         updateExpenseTypeDetails(group);
         ensureApplicantAllocation(group);
+        updateExpenseTypeActionState(group);
       }
       if (event.target.classList.contains('allocation-project')) updateAllocationTeam(event.target.closest('tr'));
       if (event.target.classList.contains('allocation-team')) updateAllocationTeamBalance(event.target.closest('tr'));
@@ -1722,6 +1778,9 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
         setTypeAttachmentFile(event.target.closest('[data-attachment-category]'), event.target.files);
         event.target.value = '';
       }
+    });
+    expenseTypeGroups.addEventListener('input', event => {
+      if (event.target.classList.contains('amount-input') || event.target.classList.contains('foreign-amount-input')) refreshAllAmountSummaries();
     });
     expenseTypeGroups.querySelectorAll('.expense-type-group').forEach((group, index) => {
       const seedInvoices = index === 0 ? [
@@ -1734,6 +1793,7 @@ document.querySelector('.crumb strong').textContent = '修改报销申请';
       updateExpenseTypeDetails(group);
       renderTypeInvoices(group);
       updateExpenseToggleLabel(group);
+      updateExpenseTypeActionState(group);
     });
     updatePaymentType();
     updateOverseasPayment();
