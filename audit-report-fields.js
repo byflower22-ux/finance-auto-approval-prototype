@@ -59,5 +59,6 @@
   createHeaderFilter([...header.children].find((cell) => headerText(cell) === 'AI 审批建议'), 'suggestion', headerFilterOptions.AI审批建议.suggestion || suggestionOptions);
   createHeaderFilter([...header.children].find((cell) => headerText(cell) === 'AI 反馈结果'), 'feedback', headerFilterOptions.AI反馈结果.feedback || feedbackOptions);
   const fieldCount = document.querySelector('.footer span:last-child');
-  if (fieldCount) fieldCount.textContent = '共 26 个审计字段';
+  if (fieldCount) fieldCount.textContent = '共 24 个审计字段';
 }());
+
