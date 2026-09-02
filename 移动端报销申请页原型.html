@@ -217,6 +217,7 @@
     .allocation-row:last-child { border-bottom:1px solid #e8ebef; }
     .allocation-grid { display:block; }
     .allocation-field { position:relative; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.45fr); align-items:center; gap:8px; min-height:48px; padding:0; color:#8b929d; border-bottom:1px solid #f0f1f3; font-size:13px; }
+    .allocation-field[hidden] { display:none !important; }
     .allocation-field span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .allocation-field span em { color:var(--red); font-style:normal; }
     .allocation-field:not(:first-child) { border-bottom:0; }
@@ -238,8 +239,7 @@
     .allocation-project-field { display:none; }
     .project-expense .allocation-project-field { display:grid; }
     .allocation-row .allocation-reason { display:block; width:100%; min-height:57px; height:auto; padding:0 0 3px; color:#303845; text-align:left !important; line-height:1.55; }
-    .allocation-amount-field::after { position:absolute; right:0; bottom:10px; color:#aeb5be; content:'✎'; font-size:16px; pointer-events:none; }
-    .allocation-amount-field .allocation-amount { padding-right:22px; }
+    .allocation-amount-field .allocation-amount { padding-right:0; }
     .allocation-remove { position:absolute; top:-14px; right:-7px; width:22px; height:22px; padding:0; color:#fff; background:var(--red); border:0; border-radius:50%; font-size:0; line-height:22px; }
     .allocation-remove::after { content:'−'; font-size:16px; font-weight:700; }
     .add-allocation { width:calc(100% - 32px); height:40px; margin:0 16px 16px; color:#5874a6; background:#f5f8ff; border:1px dashed #b9c9e8; border-radius:6px; font-size:13px; }
@@ -623,7 +623,28 @@
         refreshChoiceTrigger(team);
       }
       function updateReimbursementKind() { const isProject = kind.value === 'project'; projectField.classList.toggle('show', isProject); projectName.required = isProject; if (!isProject) { selectedProjects = []; projectName.value = ''; refreshChoiceTrigger(projectName); } document.querySelectorAll('.allocation-row').forEach(row => { updateAllocationOwner(row); updateAutomaticAllocationRowState(row); }); document.querySelectorAll('.expense-card').forEach(card => card.classList.toggle('project-expense', isProject)); refreshBasicCompletion(); }
-      function updateOverseasFields() { const overseas = checkedValue('overseas') === 'yes'; document.getElementById('currencyField').classList.toggle('show', overseas); document.getElementById('swiftField').classList.toggle('show', overseas); document.getElementById('currency').required = overseas; document.getElementById('swiftCode').required = overseas; refreshBasicCompletion(); }
+      const mobileExchangeRates = { USD: 7.18, HKD: 0.92, SGD: 5.43, CNY: 1 };
+      function calculateMobileCnyAmount(value, currencyCode) { const amount = Number(value); const rate = mobileExchangeRates[currencyCode]; return String(value).trim() && Number.isFinite(amount) && Number.isFinite(rate) ? (amount * rate).toFixed(2) : ''; }
+      function updateMobileAllocationAmountMode(card = document) {
+        const overseas = checkedValue('overseas') === 'yes';
+        const currencyCode = document.getElementById('currency').value;
+        card.querySelectorAll('.allocation-row').forEach(row => {
+          const foreignField = row.querySelector('.allocation-foreign-amount-field');
+          const foreignInput = row.querySelector('.allocation-foreign-amount');
+          const allocationAmount = row.querySelector('.allocation-amount');
+          if (!foreignField || !foreignInput || !allocationAmount) return;
+          foreignField.hidden = !overseas;
+          foreignInput.required = overseas;
+          foreignInput.disabled = overseas && !currencyCode;
+          allocationAmount.readOnly = overseas;
+          allocationAmount.placeholder = overseas ? '自动换算' : '请输入金额';
+          if (overseas) allocationAmount.value = currencyCode ? calculateMobileCnyAmount(foreignInput.value, currencyCode) : '';
+        });
+        updateExpenseTotal();
+        card.querySelectorAll('.expense-card').forEach(updateExpenseSummary);
+        if (card.classList?.contains('expense-card')) updateExpenseSummary(card);
+      }
+      function updateOverseasFields() { const overseas = checkedValue('overseas') === 'yes'; document.getElementById('currencyField').classList.toggle('show', overseas); document.getElementById('swiftField').classList.toggle('show', overseas); document.getElementById('currency').required = overseas; document.getElementById('swiftCode').required = overseas; updateMobileAllocationAmountMode(); refreshBasicCompletion(); }
       function updateLoanDetails() {
         const usingLoan = checkedValue('loanOffset') === 'yes';
         loanDetails.classList.toggle('show', usingLoan);
@@ -776,16 +797,18 @@
         const list = card.querySelector('.allocation-list');
         const row = document.createElement('div'); row.className = 'allocation-row allocation-card';
         if (automatic) row.dataset.autoApplicantAllocation = 'true';
-        row.innerHTML = `<div class="allocation-grid"><label class="allocation-field allocation-project-field"><span>项目</span><input class="allocation-project-name" readonly value="${project?.name || ''}" aria-label="项目"></label><label class="allocation-field"><span>分摊人 <em>*</em></span><select class="allocation-owner" aria-label="分摊人"><option${owner === '陈敏' ? ' selected' : ''}>陈敏</option><option${owner === '刘宇鑫' ? ' selected' : ''}>刘宇鑫</option><option${owner === '张明' ? ' selected' : ''}>张明</option></select></label><label class="allocation-field"><span>分摊人部门</span><input class="allocation-owner-department" readonly value="" aria-label="分摊人部门"></label><label class="allocation-field"><span>费用承担团队</span><select class="allocation-team" aria-label="费用承担团队">${teams.map(item => `<option>${item}</option>`).join('')}</select></label><label class="allocation-field"><span>预算余额</span><input class="allocation-team-balance" readonly value="" aria-label="预算余额"></label><label class="allocation-field allocation-amount-field"><span>分摊金额 <em>*</em></span><input class="allocation-amount" type="number" min="0" step="0.01" required placeholder="请输入金额" aria-label="分摊金额"></label><label class="allocation-field wide"><span>事由 <em>*</em></span><input class="allocation-reason" type="text" required placeholder="请填写本笔费用事由" aria-label="事由"></label></div><button class="allocation-remove" type="button" aria-label="删除分摊">×</button>`;
+        row.innerHTML = `<div class="allocation-grid"><label class="allocation-field allocation-project-field"><span>项目</span><input class="allocation-project-name" readonly value="${project?.name || ''}" aria-label="项目"></label><label class="allocation-field"><span>分摊人 <em>*</em></span><select class="allocation-owner" aria-label="分摊人"><option${owner === '陈敏' ? ' selected' : ''}>陈敏</option><option${owner === '刘宇鑫' ? ' selected' : ''}>刘宇鑫</option><option${owner === '张明' ? ' selected' : ''}>张明</option></select></label><label class="allocation-field"><span>分摊人部门</span><input class="allocation-owner-department" readonly value="" aria-label="分摊人部门"></label><label class="allocation-field"><span>费用承担团队</span><select class="allocation-team" aria-label="费用承担团队">${teams.map(item => `<option>${item}</option>`).join('')}</select></label><label class="allocation-field"><span>预算余额</span><input class="allocation-team-balance" readonly value="" aria-label="预算余额"></label><label class="allocation-field allocation-foreign-amount-field" hidden><span>外币金额 <em>*</em></span><input class="allocation-foreign-amount" type="number" min="0" step="0.01" placeholder="先选择币种" aria-label="外币金额"></label><label class="allocation-field allocation-amount-field"><span>分摊金额（人民币） <em>*</em></span><input class="allocation-amount" type="number" min="0" step="0.01" required placeholder="请输入金额" aria-label="分摊金额（人民币）"></label><label class="allocation-field wide"><span>事由 <em>*</em></span><input class="allocation-reason" type="text" required placeholder="请填写本笔费用事由" aria-label="事由"></label></div><button class="allocation-remove" type="button" aria-label="删除分摊">×</button>`;
         row.querySelector('.allocation-owner').addEventListener('change', () => { updateAllocationOwner(row); });
         row.querySelector('.allocation-team').addEventListener('change', () => updateAllocationTeam(row));
         row.querySelector('.allocation-amount').addEventListener('input', () => { updateExpenseTotal(); updateExpenseSummary(card); });
+        row.querySelector('.allocation-foreign-amount').addEventListener('input', () => { updateMobileAllocationAmountMode(card); updateExpenseSummary(card); });
         row.querySelector('.allocation-reason').addEventListener('input', () => updateExpenseSummary(card));
         row.querySelector('.allocation-remove').addEventListener('click', () => { if (list.children.length > 1) { row.remove(); updateExpenseTotal(); updateExpenseSummary(card); } else showToast('至少保留一条分摊'); });
         list.appendChild(row);
         enhanceAllChoices(row);
         updateAllocationOwner(row);
         updateAutomaticAllocationRowState(row);
+        updateMobileAllocationAmountMode(card);
         refreshChoiceTrigger(row.querySelector('.allocation-team'));
         updateExpenseSummary(card);
       }
@@ -798,8 +821,8 @@
         card.querySelector('[data-invoice-action="add"]').addEventListener('click', () => openInvoiceActionModal(card));
         invoiceInput.addEventListener('change', () => {
           if (invoiceInput.files.length) {
-            [...invoiceInput.files].forEach(file => appendInvoiceRecord(card, { number:file.name, type:'OCR 识别发票', seller:'识别结果待回填', total:'0.00', tax:'0.00', linked:'0.00', imageName:file.name }));
-            if (invoiceInput.dataset.mode === 'ocr') showToast('已提交 OCR 识别，识别结果将回填发票信息。');
+            [...invoiceInput.files].forEach(file => appendInvoiceRecord(card, { number:'123213213', type:'增值税专用发票', seller:'深圳市博商管理科学研究院股份有限公司', date:'2026-08-21', buyer:'深圳市博商管理科学研究院股份有限公司', total:'100.00', tax:'0.00', taxRate:'0%', imageName:file.name, source:'ocr' }));
+            if (invoiceInput.dataset.mode === 'ocr') showToast('OCR 识别完成，已展示发票信息。');
           }
           invoiceInput.dataset.mode = ''; invoiceInput.value = ''; updateExpenseSummary(card);
         });
@@ -835,13 +858,15 @@
       function updateExpenseSummary(card) {
         const category = card.querySelector('.expense-category')?.value || '未选择费用类型';
         const subcategory = card.querySelector('.expense-subcategory')?.value || '待选择子类';
-        const amount = [...card.querySelectorAll('.allocation-amount')].reduce((sum, input) => sum + (Number(input.value) || 0), 0);
+        const overseas = checkedValue('overseas') === 'yes';
+        const amount = [...card.querySelectorAll(overseas ? '.allocation-foreign-amount' : '.allocation-amount')].reduce((sum, input) => sum + (Number(input.value) || 0), 0);
+        const currencyCode = overseas ? (document.getElementById('currency').value || '外币') : '¥';
         const allocationCount = card.querySelectorAll('.allocation-row').length;
         const invoiceCount = card.querySelectorAll('.invoice-files > *').length;
         const attachmentCount = card.querySelectorAll('.contract-files > *, .other-files > *').length;
         card.querySelector('.expense-summary-title').textContent = category;
         card.querySelector('.expense-summary-subtitle').textContent = `${subcategory} · ${allocationCount} 条分摊 · 发票 ${invoiceCount} · 附件 ${attachmentCount}`;
-        card.querySelector('.expense-summary-meta').textContent = `¥ ${amount.toFixed(2)}`;
+        card.querySelector('.expense-summary-meta').textContent = `${currencyCode} ${amount.toFixed(2)}`;
         card.querySelector('.invoice-count').textContent = invoiceCount;
         card.querySelector('.attachment-count').textContent = attachmentCount;
         card.querySelector('.invoice-empty')?.classList.toggle('hidden', invoiceCount > 0);
@@ -946,7 +971,7 @@
         updateExpenseSummary(card);
         return card;
       }
-      function updateExpenseTotal() { const total = [...document.querySelectorAll('.allocation-amount')].reduce((sum, input) => sum + (Number(input.value) || 0), 0); document.getElementById('expenseTotal').textContent = `¥ ${total.toFixed(2)}`; }
+      function updateExpenseTotal() { const overseas = checkedValue('overseas') === 'yes'; const selector = overseas ? '.allocation-foreign-amount' : '.allocation-amount'; const total = [...document.querySelectorAll(selector)].reduce((sum, input) => sum + (Number(input.value) || 0), 0); const currencyCode = overseas ? (document.getElementById('currency').value || '外币') : '¥'; document.getElementById('expenseTotal').textContent = `${currencyCode} ${total.toFixed(2)}`; }
       function validateExpenseFields() { if (expenseDetails.querySelectorAll('.expense-card').length === 0) return false; const expenseFields = [...expenseDetails.querySelectorAll('[required]')]; return expenseFields.length > 0 && expenseFields.every(field => String(field.value || '').trim()); }
       function updateReviewSummary() {
         return true;
