@@ -72,6 +72,7 @@
     .project-tag { display:inline-flex; align-items:center; min-height:20px; padding:0 6px; color:#365fc4; background:var(--blue-soft); border-radius:3px; font-size:11px; }
     .project-tag { min-height:0; padding:0; background:transparent; border-radius:0; font-size:13px; }
     .detail-link { padding:0; color:var(--blue); background:transparent; border:0; font-size:12px; }
+    .detail-link, .drawer-close { display:none !important; }
     .expense-group { overflow:hidden; margin-top:12px; border:1px solid #dce5f0; border-radius:7px; }
     .expense-group:first-child { margin-top:0; }
     .expense-head { display:flex; gap:10px; align-items:center; min-height:45px; padding:0 13px; background:#f8fbff; border-bottom:1px solid #e3eaf3; }
@@ -328,7 +329,7 @@ document.title = '付款申请审批｜AI 审批意见原型';
         updateReadonlyField('备注','教学中心多媒体设备采购及会议室预约系统年度服务费用。');
       }
       const detailLink=document.querySelector('.detail-link');
-      detailLink.onclick=()=>{ window.location.href=`审批详情页-AI影子审批原型.html?from=todo&documentType=payment&approvalKind=${activePaymentDocument.paymentType==='项目付款'?'project':'non-project'}&documentNo=${encodeURIComponent(approvalDocumentNo || 'PAY-20260805-0086')}`; };
+      if (detailLink) detailLink.onclick=()=>{ window.location.href=`审批详情页-AI影子审批原型.html?from=todo&documentType=payment&approvalKind=${activePaymentDocument.paymentType==='项目付款'?'project':'non-project'}&documentNo=${encodeURIComponent(approvalDocumentNo || 'PAY-20260805-0086')}`; };
       document.querySelectorAll('.expense-group').forEach((group,index)=>{
         const [type,amount]=activePaymentDocument.expenses[index] || [];
         const summary=type ? '1 条分摊 · 1 张发票 · 2 个附件' : '';
@@ -346,8 +347,10 @@ document.title = '报销申请审批｜AI 审批意见原型';
       const activeTab = document.querySelector('.workspace-tab.active');
       if (activeTab?.firstChild) activeTab.firstChild.textContent = '报销审批';
       const detailLink = document.querySelector('.detail-link');
-      detailLink.textContent = '查看完整报销申请 ↗';
-      detailLink.onclick = () => { window.location.href = `审批详情页-AI影子审批原型.html?documentType=reimbursement&approvalKind=${isNonProjectReimbursement ? 'non-project' : 'project'}&documentNo=${encodeURIComponent(reimbursementNumber)}`; };
+      if (detailLink) {
+        detailLink.textContent = '查看完整报销申请 ↗';
+        detailLink.onclick = () => { window.location.href = `审批详情页-AI影子审批原型.html?documentType=reimbursement&approvalKind=${isNonProjectReimbursement ? 'non-project' : 'project'}&documentNo=${encodeURIComponent(reimbursementNumber)}`; };
+      }
       const reimbursementSection = [...document.querySelectorAll('.document-section')].find(section => section.querySelector('.document-section-title')?.textContent.includes('付款信息'));
       reimbursementSection.querySelector('.document-section-title').textContent = '报销信息';
       const typeField = [...reimbursementSection.querySelectorAll('.document-field')].find(field => field.querySelector('label')?.textContent.trim() === '付款类型');
@@ -554,6 +557,10 @@ document.title = '报销申请审批｜AI 审批意见原型';
         .filter(title=>title.textContent.includes('费用、发票与业务材料'))
         .forEach(title=>title.closest('.card')?.querySelector('.card-note')?.remove());
     }
+    function removeApprovalUtilityButtons() {
+      document.querySelector('.detail-link')?.remove();
+      document.querySelector('.drawer-close')?.remove();
+    }
     applyDocumentRemarks();
     applyApprovalDocumentExample();
     alignExpenseAllocations();
@@ -567,6 +574,7 @@ document.title = '报销申请审批｜AI 审批意见原型';
     if (isReimbursementApproval && new URLSearchParams(window.location.search).get('from') === 'todo') applyTodoApprovalFields();
     alignReimbursementInvoiceTables();
     removeExpenseCardNotes();
+    removeApprovalUtilityButtons();
   </script>
   <script src="prototype-navigation.js"></script>
 </body>
