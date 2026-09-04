@@ -763,7 +763,7 @@
         bankMode = nextMode;
         const recipientBankRow = document.getElementById('recipientBankRow');
         recipientBankRow.hidden = linked;
-        document.getElementById('recipientAccount')?.closest('.form-row')?.removeAttribute('hidden');
+        document.getElementById('recipientAccount')?.closest('.form-row')?.toggleAttribute('hidden', linked);
         recipientBankManual.hidden = nextMode !== 'overseas';
         recipientBankPickerTrigger.hidden = nextMode !== 'domestic';
         recipientBankManual.required = nextMode === 'overseas';
