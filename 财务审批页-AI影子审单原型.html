@@ -278,7 +278,7 @@
        const activeApprovalTab = document.querySelector('[data-approval-tab].active');
        tab.dataset.previousApprovalTab = activeApprovalTab?.dataset.approvalTab || 'detail';
        const params = new URLSearchParams(window.location.search);
-       const preview = new URL('../../../附件预览/报销单文件预览-演示.html', window.location.href);
+       const preview = new URL('文件预览页-AI影子审批原型.html', window.location.href);
        preview.hash = 'preview';
        preview.search = new URLSearchParams({
          from: 'approval',
