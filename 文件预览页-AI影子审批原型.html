@@ -1,24 +1,596 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>文件预览｜AI 审批原型</title>
-  <style>
-    :root{--nav:#303d5b;--red:#f26b6b;--ink:#303846;--muted:#8793a5;--line:#e8edf3;--page:#f5f7fa;--blue:#2864ee}
-    *{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--page);font:14px/1.45 "Microsoft YaHei","PingFang SC",Arial,sans-serif}
-    .topbar{position:fixed;z-index:3;top:0;right:0;left:196px;height:36px;padding:0 18px;display:flex;align-items:center;justify-content:flex-end;background:#fff;border-bottom:1px solid var(--line);color:#718096;font-size:12px}
-    .brand{position:fixed;z-index:4;top:0;left:0;width:196px;height:36px;display:flex;align-items:center;gap:7px;padding:0 16px;color:#fff;background:#27334f;font-weight:700}.brand-mark{color:var(--red);font-size:18px}
-    .sidebar{position:fixed;top:36px;bottom:0;left:0;width:196px;padding:8px 0;background:var(--nav);color:#cbd4e3}.side-title{padding:9px 16px;color:#fff;font-weight:700}.nav-item{padding:10px 38px;font-size:13px}.nav-item.current{color:#ff7b7b;background:rgba(255,255,255,.07)}
-    .workspace{min-height:100vh;margin:36px 0 0 196px}.crumb{height:32px;padding:0 14px;display:flex;align-items:center;background:#fff;border-bottom:1px solid var(--line);color:#718096}.content{max-width:1180px;padding:18px 24px 44px}.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.page-head h1{margin:0;font-size:20px;color:#263854}.back{padding:7px 13px;color:#53627a;background:#fff;border:1px solid #d9e2ec;border-radius:4px;text-decoration:none}.summary,.file-card{margin-bottom:14px;background:#fff;border:1px solid var(--line);border-radius:7px}.summary{display:flex;gap:30px;padding:14px 17px;color:#6f7e93}.summary strong{color:#34445e}.file-card h2{margin:0;padding:13px 16px;border-bottom:1px solid var(--line);font-size:14px}.file-list{padding:4px 16px}.file-row{display:grid;grid-template-columns:34px 1fr 150px 90px;gap:12px;align-items:center;min-height:62px;border-bottom:1px solid #f0f2f5}.file-row:last-child{border-bottom:0}.file-icon{display:grid;place-items:center;width:28px;height:28px;color:#df5650;background:#fff0ee;border-radius:5px;font-size:10px;font-weight:700}.file-name strong{display:block;color:#40506a}.file-name small{display:block;margin-top:3px;color:var(--muted);font-size:11px}.file-meta{color:var(--muted);font-size:12px}.preview-btn{justify-self:end;padding:5px 10px;color:var(--blue);background:#f5f8ff;border:1px solid #dce6fa;border-radius:4px;cursor:pointer}.empty{padding:30px;color:#9aa4b2;text-align:center}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>报销单文件预览 · 可交互演示</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif; background:#eef1f5; color:#2b3447; font-size:13px; }
+  .topbar { height:48px; background:#fff; border-bottom:1px solid #e5e8ee; display:flex; align-items:center; padding:0 18px; }
+  .logo { font-weight:700; font-size:15px; color:#2468f2; display:flex; align-items:center; gap:8px;}
+  .logo .dot { width:20px;height:20px;border-radius:5px;background:linear-gradient(135deg,#2468f2,#5b8cff);}
+  .topmenu { margin-left:30px; display:flex; gap:22px; font-size:13px; color:#6b7488;}
+  .topmenu .on { color:#2468f2; font-weight:600; }
+  .topuser { margin-left:auto; display:flex; align-items:center; gap:7px; font-size:12px; color:#6b7488;}
+  .avatar { width:26px;height:26px;border-radius:50%;background:#dbe6ff;color:#2468f2;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;}
+
+  .wrap { max-width:1600px; margin:14px auto; padding:0 20px; }
+  .crumb { font-size:12px; color:#9aa3b5; margin-bottom:8px; }
+  .crumb b { color:#6b7488; font-weight:400; }
+  .crumb .back { color:#2468f2; cursor:pointer; margin-left:10px; }
+  .page-head { background:#fff; border:1px solid #e5e8ee; border-radius:8px; padding:14px 18px; display:flex; align-items:center; gap:14px; }
+  .page-head h1 { font-size:17px; }
+  .page-head .no { font-size:12px; color:#9aa3b5; }
+  .status { font-size:12px; padding:3px 10px; border-radius:11px; }
+  .status.review { color:#b8860b; background:#fdf6e3; border:1px solid #f0e2b6; }
+  .amt { font-size:12px; color:#6b7488; } .amt b { color:#2b3447; font-size:15px; }
+  .hacts { margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .btn { font-size:13px; color:#4a5366; border:1px solid #dde3ee; background:#fff; border-radius:4px; padding:7px 14px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;}
+  .btn:hover { background:#f5f7fa; }
+  .btn-pri { font-size:13px; color:#fff; border:none; background:#2468f2; border-radius:4px; padding:8px 16px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-weight:600; box-shadow:0 2px 6px rgba(36,104,242,.3);}
+  .btn-pri:hover { background:#1f5fd0; }
+
+  .tabs { background:#fff; border:1px solid #e5e8ee; border-bottom:none; border-radius:8px 8px 0 0; margin-top:12px; display:flex; padding:0 8px; }
+  .tab { padding:13px 18px; font-size:13px; color:#6b7488; border-bottom:2px solid transparent; cursor:pointer; }
+  .tab.on { color:#2468f2; border-color:#2468f2; font-weight:600; }
+
+  /* detail body */
+  .detail-body { background:#fff; border:1px solid #e5e8ee; border-top:none; border-radius:0 0 8px 8px; padding:18px; margin-bottom:18px;}
+  .card { border:1px solid #eef1f6; border-radius:6px; margin-bottom:14px; }
+  .card-h { font-size:14px; font-weight:700; padding:10px 14px; border-bottom:1px solid #eef1f6; background:#fafbfc; }
+  .card-b { padding:14px; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px 24px; }
+  .field label { display:block; font-size:11px; color:#9aa3b5; margin-bottom:4px; }
+  .field span { font-size:13px; color:#2b3447; }
+  .reason { font-size:13px; color:#4a5366; line-height:1.8; }
+  .ftab { width:100%; border-collapse:collapse; font-size:12px; }
+  .ftab th, .ftab td { border:1px solid #e6e9f0; padding:7px 10px; text-align:left; color:#4a5366; }
+  .ftab th { background:#f5f7fa; font-weight:600; color:#6b7488; }
+  .ftab .num { text-align:right; }
+  .file-hint { display:flex; align-items:center; gap:14px; padding:14px 16px; border:1px solid #c5d8ff; background:#eef4ff; border-radius:6px; margin-bottom:14px;}
+  .file-hint .ico { font-size:22px; }
+  .file-hint .t { font-size:13px; color:#2b3447; } .file-hint .t b { color:#2468f2; }
+  .file-hint .d { font-size:11px; color:#6b7488; margin-top:2px;}
+  .file-hint button { margin-left:auto; }
+
+  /* preview layout */
+  .panel { background:#fff; border:1px solid #e5e8ee; border-radius:8px; margin-top:12px; display:flex; height:680px; overflow:hidden; }
+  .flist { width:300px; border-right:1px solid #eef1f6; display:flex; flex-direction:column; background:#fafbfc; }
+  .flist-h { display:flex; align-items:center; gap:8px; padding:11px 12px; border-bottom:1px solid #eef1f6; }
+  .flist-h .t { font-weight:700; } .flist-h .c { font-size:11px; color:#9aa3b5; }
+  .pk { margin-left:auto; font-size:11px; color:#2468f2; border:1px solid #c5d8ff; background:#eef4ff; padding:3px 8px; border-radius:4px; cursor:pointer; }
+  .fsearch { margin:8px 10px 4px; height:28px; border:1px solid #e1e6ef; border-radius:4px; background:#fff; display:flex; align-items:center; gap:6px; padding:0 9px; }
+  .fsearch input { border:none; outline:none; flex:1; font-size:12px; background:transparent; color:#2b3447;}
+  .fbody { flex:1; overflow-y:auto; padding:2px 4px 10px; }
+  .grp { display:flex; align-items:center; gap:6px; padding:9px 8px 4px; font-size:12px; color:#6b7488; font-weight:700; cursor:pointer; user-select:none; }
+  .grp .arrow { font-size:9px; color:#aab2c2; transition:transform .15s; }
+  .grp.collapsed .arrow { transform:rotate(-90deg); }
+  .grp .cnt { color:#9aa3b5; font-weight:400; font-size:11px;}
+  .frow { display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:5px; margin:1px 4px; cursor:pointer; }
+  .frow:hover { background:#f0f3f8; }
+  .frow.on { background:#eef4ff; }
+  .frow.on .fn { color:#1f5fd0; font-weight:600; }
+  .fi { width:18px; height:22px; border-radius:3px; display:flex; align-items:flex-end; justify-content:center; font-size:8px; color:#fff; font-weight:700; padding-bottom:2px; flex:0 0 auto; position:relative;}
+  .fi::before { content:""; position:absolute; top:0; right:0; width:6px; height:6px; background:rgba(255,255,255,.35); border-radius:0 3px 0 4px; }
+  .fi.pdf{background:#e34c4c;} .fi.img{background:#3aa65a;} .fi.doc{background:#3b7bf0;} .fi.xls{background:#2a9d6e;} .fi.zip{background:#b58a2a;} .fi.ofd{background:#8a5cf6;}
+  .fn { flex:1; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fs { font-size:10px; color:#aab2c2; flex:0 0 auto; }
+
+  .pane { flex:1; display:flex; flex-direction:column; min-width:0; background:#fff; }
+  .pane-h { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid #eef1f6; }
+  .pane-h .pn { font-size:13px; font-weight:700; }
+  .navfile { font-size:12px; color:#2468f2; display:flex; gap:10px; }
+  .navfile span { cursor:pointer; }
+  .navfile span.disabled { color:#c2cad8; cursor:not-allowed; }
+  .acts { margin-left:auto; display:flex; gap:5px; align-items:center; }
+  .sbtn { font-size:12px; color:#4a5366; border:1px solid #dde3ee; background:#fff; border-radius:4px; padding:5px 9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  .sbtn:hover { background:#f5f7fa; }
+  .sbtn.p { color:#2468f2; border-color:#c5d8ff; background:#eef4ff; }
+  .zoom { font-size:12px; color:#6b7488; display:flex; align-items:center; gap:6px; }
+  .zoom .zb { width:22px; height:22px; border:1px solid #dde3ee; background:#fff; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+  .zoom .zb:hover{ background:#f5f7fa;}
+
+  .stage { flex:1; background:#edf0f4; display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:20px; position:relative; }
+  .stage-inner { transform-origin:center top; transition:transform .12s; }
+  .page { width:500px; background:#fff; box-shadow:0 4px 18px rgba(20,30,60,.14); border-radius:2px; }
+  .page.invoice { padding:24px 30px 28px; }
+  .page.doc { padding:30px 36px; }
+  .page.excel { padding:0; }
+  .page.image { width:500px; height:640px; padding:0; overflow:hidden; }
+  .page.waybill { padding:18px 22px; }
+  .pdf-badge { position:absolute; top:8px; left:8px; font-size:10px; color:#fff; background:#2468f2; padding:2px 8px; border-radius:3px; font-weight:600; z-index:2;}
+  .inv-title { text-align:center; font-size:16px; font-weight:700; letter-spacing:1px; }
+  .inv-sub { text-align:center; font-size:10px; color:#9aa3b5; margin-top:2px;}
+  .inv-line { display:flex; justify-content:space-between; font-size:11px; color:#4a5366; margin:3px 0;}
+  .inv-table { width:100%; border-collapse:collapse; margin:10px 0; font-size:10px;}
+  .inv-table th, .inv-table td { border:1px solid #d4dae5; padding:4px 6px; text-align:center; color:#4a5366;}
+  .inv-table th { background:#f5f7fa; font-weight:600;}
+  .inv-total { text-align:right; font-size:13px; font-weight:700; margin:6px 0; color:#2b3447;}
+  .seal { position:absolute; bottom:24px; right:30px; width:64px;height:64px;border:2px solid #e34c4c; border-radius:50%; color:#e34c4c; font-size:9px; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.2; opacity:.65; transform:rotate(-8deg);}
+  .doc h2 { font-size:14px; margin-bottom:10px; }
+  .doc p { font-size:11px; line-height:1.9; color:#4a5366; margin-bottom:7px; text-indent:2em;}
+  .doc .h { font-size:12px; font-weight:700; margin:12px 0 5px; }
+  .xl { width:100%; border-collapse:collapse; font-size:10px;}
+  .xl td, .xl th { border:1px solid #cdd3de; padding:3px 5px; color:#4a5366;}
+  .xl thead th { background:#2468f2; color:#fff; font-weight:600;}
+  .xl .rn { background:#f5f7fa; color:#9aa3b5; text-align:center; width:24px;}
+  .xl .num { text-align:right; }
+  .wb-logo { font-weight:700; font-size:14px; color:#e34c4c; margin-bottom:6px;}
+  .wb-bar { height:34px; background:repeating-linear-gradient(90deg,#2b3447 0,#2b3447 2px,#fff 2px,#fff 4px); margin:6px 0 10px; opacity:.7;}
+  .wb-row { font-size:11px; margin:5px 0; color:#4a5366;}
+  .wb-row b { color:#2b3447; }
+  .wb-big { font-size:15px; font-weight:700; margin:2px 0;}
+  .wb-div { border-top:1px dashed #cdd3de; margin:8px 0;}
+  .payment-slip { position:relative; min-height:640px; padding:46px 28px 24px; color:#27364f; font-family:"SimSun","宋体",serif; }
+  .payment-slip-no { font-size:11px; margin-bottom:10px; }
+  .payment-slip-title { text-align:center; font-size:22px; letter-spacing:4px; }
+  .payment-slip-rule { width:250px; height:3px; margin:5px auto 13px; background:#202a38; }
+  .payment-slip-table { width:100%; border-collapse:collapse; font-size:10px; }
+  .payment-slip-table td,.payment-slip-table th { min-height:28px; padding:7px 6px; border:1px solid #293443; font-weight:400; vertical-align:top; }
+  .payment-slip-table th { width:17%; text-align:center; }
+  .payment-slip-table .right { text-align:right; }
+  .payment-slip-table .expense-type-row th { color:#27364f; background:#f2f5f9; text-align:left; font-weight:700; }
+  .payment-slip-section-title { margin:14px 0 6px; color:#27364f; font-size:12px; font-weight:700; }
+  .payment-slip-flow { margin-top:8px; font-size:10px; line-height:1.7; }
+  .payment-slip-sign { width:100%; margin-top:5px; border-collapse:collapse; font-size:10px; }
+  .payment-slip-sign td { padding:7px 6px; border:1px solid #293443; }
+  .imgbox { width:100%; height:100%; background:linear-gradient(135deg,#cfd9e8,#a9b8d0); display:flex; align-items:center; justify-content:center; position:relative;}
+  .imgbox .paper { width:78%; height:84%; background:#fff; box-shadow:0 6px 18px rgba(0,0,0,.18); border-radius:2px; padding:16px; display:flex; flex-direction:column;}
+  .imgbox .paper .it { text-align:center; font-size:11px; font-weight:700; margin-bottom:6px;}
+  .imgbox .paper .il { height:5px; background:#eef1f6; border-radius:2px; margin:4px 0;}
+  .imgbox .photo-tag { position:absolute; bottom:10px; right:12px; background:rgba(0,0,0,.5); color:#fff; font-size:10px; padding:2px 8px; border-radius:10px;}
+
+  .pane-f { display:flex; align-items:center; justify-content:center; gap:16px; padding:8px; border-top:1px solid #eef1f6; font-size:12px; color:#8893a7; background:#fafbfc;}
+  .pane-f .pg { color:#4a5366; font-weight:600; }
+  .pane-f .pgnav { display:flex; align-items:center; gap:8px;}
+  .pane-f .pgbtn { width:24px;height:24px;border:1px solid #dde3ee;background:#fff;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;}
+  .pane-f .pgbtn.disabled { color:#c2cad8; cursor:not-allowed;}
+  .pane-f .hint { margin-left:auto; color:#aab2c2; font-size:11px;}
+
+  .state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; background:#fafbfc; color:#6b7488; }
+  .state .ico { font-size:40px; }
+  .state .tx { font-size:13px; text-align:center; line-height:1.6;}
+  .state .sbtns { display:flex; gap:8px; margin-top:4px;}
+  .state .stbtn { font-size:12px; color:#2468f2; border:1px solid #c5d8ff; background:#eef4ff; padding:5px 14px; border-radius:4px; cursor:pointer;}
+  .state .stbtn.g { color:#4a5366; border-color:#dde3ee; background:#fff;}
+
+  .viewer { position:fixed; inset:0; background:#1a1f29; z-index:100; display:none; flex-direction:column; }
+  .viewer.open { display:flex; }
+  .vw-top { display:flex; align-items:center; gap:14px; padding:12px 20px; background:#222732; border-bottom:1px solid #11151c;}
+  .vw-top .fn { font-size:14px; font-weight:700; color:#fff;}
+  .vw-top .cnt { font-size:12px; color:#8893a7;}
+  .vw-top .acts { margin-left:auto; display:flex; gap:8px;}
+  .vwbtn { font-size:12px; color:#cfd6e4; border:1px solid #3a4256; background:#2e3543; border-radius:4px; padding:6px 12px; cursor:pointer;}
+  .vwclose { width:30px; padding:6px; }
+  .vw-mid { flex:1; display:flex; min-height:0; }
+  .vw-rail { width:120px; background:#222732; border-right:1px solid #11151c; padding:10px 8px; overflow-y:auto;}
+  .rail-t { font-size:10px; color:#6b7488; letter-spacing:1px; margin-bottom:8px;}
+  .rthumb { width:100%; aspect-ratio:3/4; background:#3a4256; border:2px solid transparent; border-radius:4px; margin-bottom:8px; cursor:pointer; position:relative; padding:4px; display:flex; flex-direction:column; gap:3px;}
+  .rthumb.on { border-color:#2468f2; }
+  .rthumb .rtl { height:3px; background:#5a6478; border-radius:1px; width:80%;}
+  .rthumb .rname { position:absolute; bottom:2px; left:4px; right:4px; font-size:8px; color:#cfd6e4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .rthumb.img { background:linear-gradient(135deg,#5a6478,#444c5e);}
+  .vw-prev { flex:1; background:#15191f; display:flex; align-items:center; justify-content:center; position:relative; overflow:auto; padding:24px;}
+  .vw-arrow { position:absolute; top:50%; transform:translateY(-50%); width:40px; height:56px; border-radius:6px; background:rgba(255,255,255,.06); display:flex; align-items:center; justify-content:center; color:#8893a7; font-size:22px; cursor:pointer; z-index:2;}
+  .vw-arrow:hover { background:rgba(255,255,255,.12);}
+  .vw-arrow.l { left:16px;} .vw-arrow.r { right:16px;}
+  .vw-arrow.disabled { opacity:.3; cursor:not-allowed;}
+  .vw-stage { transform-origin:center top; }
+  .vw-bot { display:flex; align-items:center; gap:12px; padding:10px 20px; background:#222732; border-top:1px solid #11151c; font-size:12px;}
+  .vw-bot .grp { display:flex; gap:6px; align-items:center; color:#cfd6e4;}
+  .vw-bot .sep { width:1px;height:18px;background:#3a4256;}
+  .vw-bot .hint { margin-left:auto; color:#6b7488; font-size:11px;}
+
+  .banner { position:fixed; right:16px; bottom:16px; background:#2468f2; color:#fff; font-size:11px; padding:9px 13px; border-radius:8px; box-shadow:0 6px 18px rgba(36,104,242,.4); max-width:280px; line-height:1.7; z-index:50; }
+  .banner b { font-weight:700; }
+  .banner .x { position:absolute; top:4px; right:8px; cursor:pointer; opacity:.8;}
+  body.embedded-preview .topbar, body.embedded-preview .banner { display:none; }
+  body.embedded-preview .wrap { margin-top:0; max-width:none; }
+  body.embedded-preview .panel { height:calc(100vh - 170px); min-height:760px; }
+</style>
 </head>
 <body>
-  <div class="brand"><span class="brand-mark">✥</span><span>博商管理</span></div><div class="topbar">财务管理　/　审批确认　/　文件预览</div>
-  <aside class="sidebar"><div class="side-title">财务管理</div><div class="nav-item current">文件预览</div><div class="nav-item">审批确认</div><div class="nav-item">AI审单记录</div></aside>
-  <main class="workspace"><div class="crumb">审批确认　›　文件预览</div><div class="content"><div class="page-head"><h1>文件预览</h1><a class="back" id="backToApproval" href="财务审批页-AI影子审单原型.html">返回审批详情</a></div><section class="summary"><span>单号：<strong id="documentNo">--</strong></span><span>单据类型：<strong id="documentType">付款申请</strong></span><span>查看关联发票及附件</span></section><section class="file-card"><h2>发票文件</h2><div class="file-list"><div class="file-row"><span class="file-icon">PDF</span><div class="file-name"><strong>044032600201_电子发票.pdf</strong><small>深圳同鹏餐饮管理有限公司 · 2026-07-29</small></div><span class="file-meta">发票影像</span><button class="preview-btn" type="button">预览</button></div></div></section><section class="file-card"><h2>附件文件</h2><div class="file-list"><div class="file-row"><span class="file-icon">PDF</span><div class="file-name"><strong>差旅行程单.pdf</strong><small>费用明细：差旅－交通</small></div><span class="file-meta">业务材料</span><button class="preview-btn" type="button">预览</button></div><div class="file-row"><span class="file-icon">PDF</span><div class="file-name"><strong>住宿发票附件.pdf</strong><small>费用明细：差旅－住宿</small></div><span class="file-meta">业务材料</span><button class="preview-btn" type="button">预览</button></div></div></section></div></main>
-  <script>
-    (()=>{const params=new URLSearchParams(location.search);const no=params.get('documentNo')||'PAY-20260805-0086';document.getElementById('documentNo').textContent=no;document.getElementById('documentType').textContent=params.get('documentType')==='reimbursement'?'报销申请':'付款申请';const back=new URL('财务审批页-AI影子审单原型.html',location.href);back.search=new URLSearchParams({from:'file-preview',documentType:params.get('documentType')||'payment',approvalKind:params.get('approvalKind')||'project',documentNo:no,aiStatus:params.get('aiStatus')||'',aiSuggestion:params.get('aiSuggestion')||''});document.getElementById('backToApproval').href=back.href;document.querySelectorAll('.preview-btn').forEach(button=>button.addEventListener('click',()=>alert('原型演示：已打开文件预览。')));})();
-  </script>
+
+<div class="topbar">
+  <div class="logo"><span class="dot"></span>业财一体化平台</div>
+  <div class="topmenu"><span>工作台</span><span class="on">报销付款</span><span>发票管理</span><span>资金管理</span></div>
+  <div class="topuser"><span>张三 · 财务部</span><span class="avatar">张</span></div>
+</div>
+
+<!-- ========== 页面一：报销单详情 ========== -->
+<div id="detailPage" class="wrap">
+  <div class="crumb">首页 / 报销付款 / <b>报销单详情</b></div>
+  <div class="page-head">
+    <h1>报销单详情</h1>
+    <span class="no">单号 BX20260707-001</span>
+    <span class="status review">● 审核中</span>
+    <div class="hacts">
+      <button class="btn-pri" onclick="openPreview()">🗂 文件预览 ↗</button>
+      <button class="btn">⨳ 打印</button>
+      <button class="btn">⬇ 导出</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab on">单据信息</div>
+    <div class="tab">审批流程</div>
+    <div class="tab">付款记录</div>
+  </div>
+
+  <div class="detail-body">
+    <div class="file-hint">
+      <div class="ico">📁</div>
+      <div>
+        <div class="t">本单相关文件：流程附件 <b>2</b> · 发票 <b>5</b> · 面单 <b>2</b></div>
+        <div class="d">附件、发票、面单（系统按单据生成）可在新页签中在线预览，无需下载。</div>
+      </div>
+      <button class="btn-pri" onclick="openPreview()">在新页签预览 ↗</button>
+    </div>
+
+    <div class="card">
+      <div class="card-h">基本信息</div>
+      <div class="card-b">
+        <div class="grid">
+          <div class="field"><label>报销人</label><span>张三</span></div>
+          <div class="field"><label>所属部门</label><span>财务部</span></div>
+          <div class="field"><label>报销类型</label><span>日常费用报销</span></div>
+          <div class="field"><label>申请日期</label><span>2026-07-07</span></div>
+          <div class="field"><label>支付方式</label><span>银行转账</span></div>
+          <div class="field"><label>收款账户</label><span>工行 ****1234</span></div>
+          <div class="field"><label>报销金额</label><span style="color:#e34c4c;font-weight:700;">¥3,500.00</span></div>
+          <div class="field"><label>单据数量</label><span>2</span></div>
+          <div class="field"><label>发票数量</label><span>5</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">报销事由</div>
+      <div class="card-b">
+        <p class="reason">部门日常办公采购（A4 打印纸、签字笔等）及项目阶段会议相关费用支出，合计 ¥3,500.00，附发票 5 张、报销说明及费用明细，详见「文件预览」。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">费用明细</div>
+      <div class="card-b">
+        <table class="ftab">
+          <thead><tr><th>费用类型</th><th>事由</th><th>发生日期</th><th class="num">金额</th></tr></thead>
+          <tbody>
+            <tr><td>办公耗材</td><td>A4 打印纸 ×10</td><td>2026-06-15</td><td class="num">¥1,200.00</td></tr>
+            <tr><td>办公耗材</td><td>签字笔 ×50</td><td>2026-06-15</td><td class="num">¥400.00</td></tr>
+            <tr><td>差旅/会议</td><td>项目阶段会议用品</td><td>2026-06-20</td><td class="num">¥1,900.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 页面二：文件预览（独立页，新页签打开） ========== -->
+<div id="previewPage" class="wrap" style="display:none">
+  <div class="crumb">首页 / 报销付款 / 报销单详情 / <b>文件预览</b><span class="back" onclick="goDetail()">← 返回报销单</span></div>
+  <div class="page-head">
+    <h1>文件预览</h1>
+    <span class="no">报销单 BX20260707-001</span>
+    <span class="status review">● 审核中</span>
+    <span class="amt" style="margin-left:auto;">报销金额 <b>¥3,500.00</b></span>
+  </div>
+
+  <div class="panel">
+    <aside class="flist">
+      <div class="flist-h"><span class="t">文件列表</span><span class="c" id="totalCount"></span><span class="pk">⬇ 打包下载</span></div>
+      <div class="fsearch">🔍 <input id="search" placeholder="搜索文件名…"></div>
+      <div class="fbody" id="fbody"></div>
+    </aside>
+
+    <section class="pane">
+      <div class="pane-h">
+        <span class="pn" id="paneName">—</span>
+        <div class="navfile">
+          <span id="prevFile">‹ 上一份</span>
+          <span id="nextFile">下一份 ›</span>
+        </div>
+        <div class="acts">
+          <div class="zoom">
+            <span class="zb" id="zOut">−</span>
+            <span id="zVal" style="min-width:42px;text-align:center;">100%</span>
+            <span class="zb" id="zIn">＋</span>
+          </div>
+          <span class="sbtn" id="btnRotate">⟳ 旋转</span>
+          <span class="sbtn" id="btnDownload">⬇ 下载</span>
+          <span class="sbtn p" id="btnFull">⤢ 全屏</span>
+        </div>
+      </div>
+      <div class="stage" id="stage"></div>
+      <div class="pane-f" id="paneFoot">
+        <div class="pgnav">
+          <span class="pgbtn" id="pgPrev">‹</span>
+          <span class="pg" id="pgInfo">—</span>
+          <span class="pgbtn" id="pgNext">›</span>
+        </div>
+        <span class="hint">← → 切换文件　滚轮缩放　双击还原</span>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Fullscreen viewer -->
+<div class="viewer" id="viewer">
+  <div class="vw-top">
+    <span class="fn" id="vwName">—</span>
+    <span class="cnt" id="vwCnt"></span>
+    <div class="acts">
+      <span class="vwbtn" id="vwDownload">⬇ 下载</span>
+      <span class="vwbtn" id="vwPrint">⨳ 打印</span>
+      <span class="vwbtn vwclose" id="vwClose">✕</span>
+    </div>
+  </div>
+  <div class="vw-mid">
+    <div class="vw-rail" id="vwRail"></div>
+    <div class="vw-prev" id="vwPrev">
+      <div class="vw-arrow l" id="vwPrevFile">‹</div>
+      <div class="vw-stage" id="vwStage"></div>
+      <div class="vw-arrow r" id="vwNextFile">›</div>
+    </div>
+  </div>
+  <div class="vw-bot">
+    <div class="grp"><span class="vwbtn" id="vwRotate">⟲ 旋转</span><span class="vwbtn" id="vwFit">⤢ 适应宽度</span></div>
+    <span class="sep"></span>
+    <div class="grp"><span class="vwbtn" id="vwZOut">−</span><span id="vwZVal">100%</span><span class="vwbtn" id="vwZIn">＋</span></div>
+    <span class="sep"></span>
+    <div class="grp" id="vwPg" style="color:#8893a7;"></div>
+    <span class="hint">Esc 退出　← → 切换文件　滚轮缩放</span>
+  </div>
+</div>
+
+<div class="banner" id="banner">
+  <span class="x" id="bannerX">✕</span>
+  <b>可交互演示</b><br>
+  当前是「报销单详情」页，点右上 <b>🗂 文件预览</b> 或下方蓝色条进入文件预览工作台；<br>
+  预览页里：点左侧文件切换、全屏查看器、<b>.zip</b>=不支持 / <b>发票_004</b>=加载失败。
+</div>
+
+<script>
+// ===== 路由：URL 带 #preview 为文件预览独立页，否则为报销单详情页 =====
+// 用 hash 路由：hash 不会发送到服务器，浏览器始终请求根路径（200），
+// 再由本脚本根据 #preview 切换"报销单详情 / 文件预览"两套界面。
+const base = location.href.split('#')[0];
+const MODE = location.hash.includes('preview') ? 'preview' : 'detail';
+const PREVIEW_PARAMS = new URLSearchParams(location.search);
+const PAYMENT_PREVIEW = PREVIEW_PARAMS.get('documentType') === 'payment';
+const PAYMENT_PROJECT = PREVIEW_PARAMS.get('approvalKind') === 'project';
+const PAYMENT_DOCUMENT_NO = PREVIEW_PARAMS.get('documentNo') || 'PAY-20260805-0086';
+if(PREVIEW_PARAMS.get('embedded') === '1') document.body.classList.add('embedded-preview');
+const previewUrl = base + '#preview';
+
+function openPreview(){ window.open(previewUrl, '_blank'); }
+function goDetail(){
+  // 预览页是新页签打开的：有 opener 就关掉自己回到详情页签；否则本页签回到详情
+  if(window.opener){ try{ window.opener.focus(); }catch(e){} window.close(); return; }
+  location.href = base;
+}
+
+function showBannerFor(mode){
+  const b = document.getElementById('banner');
+  if(mode==='preview'){
+     b.innerHTML = `<span class="x" id="bannerX">✕</span><b>文件预览工作台</b><br>点左侧文件切换预览；点 <b>全屏</b> 进入查看器；<b>合同附件.zip</b>→不支持；<b>发票_004.pdf</b>→加载失败（可点重试）。`;
+  }
+  document.getElementById('bannerX').onclick = ()=>b.style.display='none';
+}
+
+if(MODE === 'detail'){
+  document.getElementById('detailPage').style.display = '';
+  document.getElementById('previewPage').style.display = 'none';
+  showBannerFor('detail');
+} else {
+  document.getElementById('detailPage').style.display = 'none';
+  document.getElementById('previewPage').style.display = '';
+  document.title = '文件预览 · 报销单 BX20260707-001';
+  showBannerFor('preview');
+  // initPreview() 延后到脚本末尾执行，需等 const FILES 等常量定义完毕（避免 TDZ）
+}
+
+// ===== 文件预览页逻辑 =====
+const FILES = [
+  {id:'a1', cat:'流程附件', name:'报销说明.docx',  ext:'doc', size:'86 KB',  type:'word',       pages:3},
+  {id:'a2', cat:'流程附件', name:'费用明细.xlsx',  ext:'xls', size:'42 KB',  type:'excel',      pages:2},
+  {id:'a3', cat:'流程附件', name:'合同附件.zip',   ext:'zip', size:'2.1 MB', type:'unsupported'},
+  {id:'f1', cat:'发票',     name:'发票_001.pdf',   ext:'pdf', size:'120 KB', type:'pdf',  pages:3, kind:'invoice'},
+  {id:'f2', cat:'发票',     name:'发票_002.pdf',   ext:'pdf', size:'118 KB', type:'pdf',  pages:1, kind:'invoice'},
+  {id:'f3', cat:'发票',     name:'发票_003.jpg',   ext:'img', size:'340 KB', type:'image'},
+  {id:'f4', cat:'发票',     name:'发票_004.pdf',   ext:'pdf', size:'125 KB', type:'error'},
+  {id:'f5', cat:'发票',     name:'发票_005.ofd',   ext:'ofd', size:'110 KB', type:'ofd',  pages:1, kind:'invoice'},
+  {id:'w1', cat:'面单',     name:`${PAYMENT_PREVIEW ? (PAYMENT_PROJECT ? '项目付款单' : '付款单') : (PAYMENT_PROJECT ? '项目报销申请' : '报销申请')}面单.pdf`, ext:'pdf', size:'88 KB', type:'pdf', pages:1, kind:'payment'},
+  {id:'w2', cat:'面单',     name:'面单_快递123456.pdf', ext:'pdf', size:'90 KB', type:'pdf', pages:1, kind:'waybill'},
+];
+const CATS = ['流程附件','发票','面单'];
+
+let curId = null, page = 1, zoom = 1, rot = 0, collapsed = {};
+const $ = s => document.querySelector(s);
+function fileById(id){ return FILES.find(f=>f.id===id); }
+function indexOf(id){ return FILES.findIndex(f=>f.id===id); }
+
+function initPreview(){
+  renderList();
+  bindToolbar();
+  select('w1');
+}
+
+function renderList(){
+  const q = ($('#search').value||'').trim().toLowerCase();
+  $('#totalCount').textContent = `共 ${FILES.length} 个`;
+  let html = '';
+  CATS.forEach(cat=>{
+    const items = FILES.filter(f=>f.cat===cat && (!q || f.name.toLowerCase().includes(q)));
+    if(q && items.length===0) return;
+    const isCol = collapsed[cat];
+    html += `<div class="grp ${isCol?'collapsed':''}" data-cat="${cat}"><span class="arrow">▼</span>${cat} <span class="cnt">(${items.length})</span></div>`;
+    if(!isCol){
+      items.forEach(f=>{
+        html += `<div class="frow ${f.id===curId?'on':''}" data-id="${f.id}"><div class="fi ${f.ext}">${f.ext.toUpperCase()}</div><span class="fn">${f.name}</span><span class="fs">${f.size}</span></div>`;
+      });
+    }
+  });
+  if(q && !FILES.some(f=>f.name.toLowerCase().includes(q))) html += `<div style="text-align:center;color:#aab2c2;font-size:12px;padding:30px;">无匹配文件</div>`;
+  $('#fbody').innerHTML = html;
+  $('#fbody').querySelectorAll('.grp').forEach(g=> g.onclick = ()=>{ collapsed[g.dataset.cat]=!collapsed[g.dataset.cat]; renderList(); });
+  $('#fbody').querySelectorAll('.frow').forEach(r=> r.onclick = ()=>select(r.dataset.id));
+}
+
+function select(id){ curId = id; page = 1; zoom = 1; rot = 0; renderList(); renderPane(); }
+
+function renderPane(){
+  const f = fileById(curId);
+  $('#paneName').textContent = f.name;
+  const i = indexOf(curId);
+  $('#prevFile').classList.toggle('disabled', i<=0);
+  $('#nextFile').classList.toggle('disabled', i>=FILES.length-1);
+  $('#zVal').textContent = Math.round(zoom*100)+'%';
+  const stage = $('#stage');
+  if(f.type==='unsupported'){ stage.innerHTML = stateHTML('📵','该格式暂不支持<br>在线预览',[['⬇ 下载查看','g']]); $('#paneFoot').style.display='none'; return; }
+  if(f.type==='error'){ stage.innerHTML = stateHTML('⚠️','预览加载失败<br>请重试或下载查看',[['↻ 重试',''],['⬇ 下载','g']]); bindRetry(); $('#paneFoot').style.display='none'; return; }
+  $('#paneFoot').style.display='flex';
+  if(f.type==='image'){
+    stage.innerHTML = `<div class="stage-inner" style="transform:scale(${zoom}) rotate(${rot}deg);"><div class="page image"><div class="imgbox"><div class="paper"><div class="it">增值税电子普通发票</div><div class="il" style="width:70%;"></div><div class="il" style="width:90%;"></div><div class="il" style="width:50%;"></div><div class="il" style="width:80%;"></div><div class="il" style="width:60%;"></div><div style="margin-top:auto;text-align:right;color:#e34c4c;font-size:20px;font-weight:700;">¥3,500.00</div></div><span class="photo-tag">📷 发票照片</span></div></div></div>`;
+    $('#pgInfo').textContent='图片'; $('#pgPrev').classList.add('disabled'); $('#pgNext').classList.add('disabled');
+    return;
+  }
+  $('#pgPrev').classList.toggle('disabled', page<=1);
+  $('#pgNext').classList.toggle('disabled', page>=f.pages);
+  $('#pgInfo').textContent = `第 ${page} / ${f.pages} 页`;
+  const badge = (f.type!=='pdf') ? `<div class="pdf-badge">PDF 预览</div>` : '';
+  stage.innerHTML = badge + `<div class="stage-inner" style="transform:scale(${zoom}) rotate(${rot}deg);">${pageHTML(f)}</div>`;
+}
+
+function pageHTML(f){
+  const p = page;
+  if(f.kind==='invoice'){
+    if(p===1) return `<div class="page invoice"><div class="inv-title">增值税电子普通发票</div><div class="inv-sub">发票号码 24422000000123456 · 开票日期 2026-06-15</div><div style="margin:10px 0;"><div class="inv-line"><span>购买方：某某科技有限公司</span><span>销售方：某某办公用品商行</span></div></div><table class="inv-table"><thead><tr><th>货物或应税劳务名称</th><th>数量</th><th>单价</th><th>金额</th></tr></thead><tbody><tr><td>办公耗材-A4打印纸</td><td>10</td><td>¥120.00</td><td>¥1,200.00</td></tr><tr><td>办公耗材-签字笔</td><td>50</td><td>¥8.00</td><td>¥400.00</td></tr><tr><td>差旅-会议用品</td><td>1</td><td>¥1,900.00</td><td>¥1,900.00</td></tr></tbody></table><div class="inv-total">价税合计：¥3,500.00</div><div class="seal">发票<br>专用章</div></div>`;
+    return `<div class="page invoice"><div class="inv-sub" style="text-align:left;">（续页）备注与明细补充</div><div class="doc" style="margin-top:8px;"><p>以上金额均为含税金额，税率 13%。本发票对应的报销事由为部门日常办公采购及项目会议。</p><p>相关附件详见流程附件中的报销说明。</p></div></div>`;
+  }
+  if(f.type==='word'){
+    const heads = ['一、报销事由','二、费用明细','三、附件说明'];
+    return `<div class="page doc">${p===1?`<h2>差旅及办公费用报销说明</h2><p>兹因部门日常办公及项目推进需要，本月发生办公采购与差旅费用合计 ¥3,500.00，现申请报销，相关发票及明细详见附件。</p>`:''}<div class="h">${heads[p-1]||'补充说明'}</div><p>本次费用主要用于团队办公耗材补充、签字文具采购，以及项目阶段会议的相关支出。所有支出均有对应发票，金额核对一致。</p><p>费用已由经办人垫付，现按公司报销流程申请付款至个人账户，恳请审批。</p></div>`;
+  }
+  if(f.type==='excel'){
+    return `<div class="page excel"><table class="xl"><thead><tr><th class="rn"></th><th>费用类型</th><th>事由</th><th>发生日期</th><th>金额</th></tr></thead><tbody>${[1,2,3,4,5,6,7].map(n=>{const idx=(p-1)*7+n-1;return `<tr><td class="rn">${idx+1}</td><td>${['办公耗材','办公耗材','差旅','会议','办公耗材','差旅','其他'][idx%7]}</td><td>明细${idx+1}</td><td>2026-06-${10+idx}</td><td class="num">¥${((idx+1)*150).toFixed(2)}</td></tr>`;}).join('')}</tbody></table></div>`;
+  }
+  if(f.kind==='payment') return paymentSlipHTML();
+  if(f.kind==='waybill'){
+    return `<div class="page waybill"><div class="wb-logo">SF 顺丰速运 · 标准快递</div><div class="wb-bar"></div><div class="wb-row">寄件人：<b>某某科技有限公司 · 张三</b> 138****1234</div><div class="wb-row">寄件地址：广东省深圳市南山区科技园</div><div class="wb-div"></div><div class="wb-row">收件人：<b>某某办公用品商行</b> 139****5678</div><div class="wb-big">广东省广州市天河区XX路XX号</div><div class="wb-div"></div><div class="wb-row">运单号：<b>SF1234567890</b>　　代收货款：¥0.00</div><div class="wb-row">物品：办公用品　　重量：2.5kg　　保价：¥3,500</div></div>`;
+  }
+  return `<div class="page doc"><p>（文档内容）</p></div>`;
+}
+
+function paymentSlipHTML(){
+  const isReimbursement = PREVIEW_PARAMS.get('documentType') === 'reimbursement';
+  const project = PAYMENT_PROJECT ? (isReimbursement ? '华南区域公开课项目' : '目的班级') : '无关联项目';
+  const title = isReimbursement
+    ? (PAYMENT_PROJECT ? '8 月办公用品采购项目报销' : '8 月客户拜访交通费用报销')
+    : (PAYMENT_PROJECT ? '2026 年 8 月项目差旅费用付款' : '教学中心投影仪采购付款');
+  const applicant = isReimbursement ? (PAYMENT_PROJECT ? '陈敏' : '林佳') : (PAYMENT_PROJECT ? '刘宇鑫' : '陈敏');
+  const department = isReimbursement ? (PAYMENT_PROJECT ? '行政部' : '市场部') : '教学运营部';
+  const company = isReimbursement ? '深圳市博商管理科学研究院股份有限公司' : (PAYMENT_PROJECT ? '博商管理集团有限公司' : '深圳市博商管理咨询有限公司');
+  const payee = isReimbursement ? applicant : (PAYMENT_PROJECT ? '深圳同鹏餐饮管理有限公司' : '深圳高新设备有限公司');
+  const bank = isReimbursement ? (PAYMENT_PROJECT ? '招商银行深圳分行' : '中国银行深圳科技园支行') : (PAYMENT_PROJECT ? '招商银行深圳科技园支行' : '中国银行深圳科技园支行');
+  const account = isReimbursement ? (PAYMENT_PROJECT ? '6222 1001 8354 6120' : '6225 8888 0731 6204') : (PAYMENT_PROJECT ? '6225 8888 0462 9551' : '6225 8888 0731 6204');
+  const amount = isReimbursement ? (PAYMENT_PROJECT ? '2,380.00' : '1,280.00') : (PAYMENT_PROJECT ? '1,560.00' : '42,500.00');
+  const expenseDate = isReimbursement ? '2026-08-05' : '2026-07-30';
+  const expenseRows = isReimbursement
+    ? (PAYMENT_PROJECT ? '<tr><td>日常运营</td><td>办公用品</td><td>2,380.00</td><td>项目办公文具及耗材采购</td></tr>' : '<tr><td>差旅费用</td><td>差旅－交通</td><td>880.00</td><td>客户拜访交通费</td></tr><tr><td></td><td>业务招待－餐费</td><td>400.00</td><td>客户拜访餐费</td></tr>')
+    : (PAYMENT_PROJECT ? '<tr><td>差旅费用</td><td>差旅－交通</td><td>960.00</td><td>北京客户拜访交通费</td></tr><tr><td></td><td>差旅－住宿</td><td>600.00</td><td>北京客户拜访住宿费</td></tr>' : '<tr><td>固定资产</td><td>办公设备</td><td>36,000.00</td><td>教学中心投影仪采购</td></tr><tr><td>管理费用</td><td>软件服务</td><td>6,500.00</td><td>会议室预约系统年度服务</td></tr>');
+  const slipTitle = isReimbursement ? '报销申请' : '付款申请';
+  const documentTypeLabel = isReimbursement ? (PAYMENT_PROJECT ? '项目报销' : '报销') : (PAYMENT_PROJECT ? '项目付款' : '付款');
+  const showProject = PAYMENT_PROJECT;
+  const projectRow = showProject ? `<tr><th>本单关联项目</th><td colspan="3">${project}</td></tr>` : '';
+  const basicRows = `<tr><th>单号</th><td>${PAYMENT_DOCUMENT_NO}</td><th>申请人</th><td>${applicant}</td></tr><tr><th>申请部门</th><td>${department}</td><th>${isReimbursement ? '报销类型' : '付款类型'}</th><td>${documentTypeLabel}</td></tr><tr><th>标题</th><td colspan="3">${title}</td></tr><tr><th>费用时间</th><td>${expenseDate}</td><th>主体公司</th><td>${company}</td></tr><tr><th>是否有发票</th><td>是</td><th>申请金额</th><td class="right">¥ ${amount}</td></tr>${projectRow}<tr><th>${isReimbursement ? '领款人' : '收款方类型'}</th><td>${isReimbursement ? payee : '公司'}</td><th>${isReimbursement ? '领款人银行卡账号' : '收款单位'}</th><td>${isReimbursement ? account : payee}</td></tr><tr><th>开户行</th><td>${bank}</td><th>是否海外付款</th><td>否</td></tr><tr><th>付款币种</th><td>CNY</td><th>银行账号</th><td>${account}</td></tr>`;
+  const hasLaborTax = !isReimbursement && PAYMENT_DOCUMENT_NO === 'PAY-20260805-0083';
+  const detailColumns = [ ...(PAYMENT_PROJECT ? ['项目'] : []), '分摊人', '分摊人部门', '费用承担团队', '分摊金额', ...(hasLaborTax ? ['劳务个税'] : []), '事由' ];
+  const detailGroup = (type, subtype, person, team, value, reason, tax = '') => `<tr class="expense-type-row"><th colspan="${detailColumns.length}">${type}－${subtype}</th></tr><tr>${PAYMENT_PROJECT ? `<td>${project}</td>` : ''}<td>${person}</td><td>${department}</td><td>${team}</td><td>¥ ${value}</td>${hasLaborTax ? `<td>¥ ${tax}</td>` : ''}<td>${reason}</td></tr>`;
+  const detailRows = isReimbursement
+    ? (PAYMENT_PROJECT ? detailGroup('日常运营', '办公用品', applicant, '行政支持组', '2,380.00', '项目办公文具及耗材采购') : detailGroup('差旅费用', '差旅－交通', applicant, '市场部', '880.00', '客户拜访交通费') + detailGroup('业务招待', '餐费', applicant, '市场部', '400.00', '客户拜访餐费'))
+    : (PAYMENT_PROJECT ? detailGroup('差旅费用', '差旅－交通', '刘宇鑫', '教学运营组', '960.00', '北京客户拜访交通费') + detailGroup('差旅费用', '差旅－住宿', '刘宇鑫', '教学运营组', '600.00', '北京客户拜访住宿费') : (hasLaborTax ? detailGroup('教学运营', '劳务费', '赵立', '教学运营组', '12,600.00', '7 月外聘讲师课酬结算', '1,260.00') : detailGroup('固定资产', '办公设备', '陈敏', '教学运营组', '36,000.00', '教学中心投影仪采购') + detailGroup('管理费用', '软件服务', '陈敏', '教学运营组', '6,500.00', '会议室预约系统年度服务')));
+  const amountUppercase = { '1,280.00':'壹仟贰佰捌拾元整', '1,560.00':'壹仟伍佰陆拾元整', '2,380.00':'贰仟叁佰捌拾元整', '3,260.00':'叁仟贰佰陆拾元整', '8,600.00':'捌仟陆佰元整', '12,600.00':'壹万贰仟陆佰元整', '42,500.00':'肆万贰仟伍佰元整' }[amount] || amount;
+  const flowText = `申请人（${applicant}，2026-08-05 14:26:18） → 业务审批（业务负责人，2026-08-05 16:10:24） → 财务审批（财务专员，待处理） → 出纳付款（出纳，待处理）`;
+  const amountIndex = detailColumns.indexOf('分摊金额');
+  return `<div class="page payment-slip"><div class="payment-slip-no">${slipTitle} · ${PAYMENT_DOCUMENT_NO}</div><div class="payment-slip-title">${slipTitle}</div><div class="payment-slip-rule"></div><div class="payment-slip-section-title">基础信息</div><table class="payment-slip-table">${basicRows}</table><div class="payment-slip-section-title">费用明细</div><table class="payment-slip-table"><tr>${detailColumns.map(column => `<th>${column}</th>`).join('')}</tr>${detailRows}<tr><th colspan="${amountIndex}" class="right">合计</th><td>¥ ${amount}</td>${hasLaborTax ? '<td>--</td>' : ''}<td>金额大写：${amountUppercase}</td></tr></table><div class="payment-slip-section-title">审批流程</div><div class="payment-slip-flow">${flowText}</div><table class="payment-slip-sign"><tr><td>会计主管：</td><td>复核：</td><td>出纳：</td><td>申请人：${applicant}</td></tr></table></div>`;
+}
+
+function stateHTML(icon, txt, btns){
+  return `<div class="state"><div class="ico">${icon}</div><div class="tx">${txt}</div><div class="sbtns">${btns.map(([t,c])=>`<span class="stbtn ${c}">${t}</span>`).join('')}</div></div>`;
+}
+function bindRetry(){ setTimeout(()=>{ const r=$('#stage').querySelector('.stbtn'); if(r) r.onclick=()=>{ const ok=confirm('模拟：重试后预览成功？\\n(确定=成功加载, 取消=继续失败)'); if(ok){ fileById(curId).type='pdf'; fileById(curId).pages=1; fileById(curId).kind='invoice'; renderPane(); } }; },0); }
+
+function bindToolbar(){
+  $('#prevFile').onclick = ()=>{ const i=indexOf(curId); if(i>0) select(FILES[i-1].id); };
+  $('#nextFile').onclick = ()=>{ const i=indexOf(curId); if(i<FILES.length-1) select(FILES[i+1].id); };
+  $('#zIn').onclick  = ()=>{ zoom=Math.min(3,zoom+0.25); renderPane(); };
+  $('#zOut').onclick = ()=>{ zoom=Math.max(0.5,zoom-0.25); renderPane(); };
+  $('#btnRotate').onclick = ()=>{ rot=(rot+90)%360; renderPane(); };
+  $('#btnDownload').onclick = ()=>alert('（演示）开始下载：'+ (fileById(curId)?.name||''));
+  $('#btnFull').onclick = openViewer;
+  $('#pgPrev').onclick = ()=>{ const f=fileById(curId); if(page>1){page--;renderPane();} };
+  $('#pgNext').onclick = ()=>{ const f=fileById(curId); if(page<f.pages){page++;renderPane();} };
+  $('#search').oninput = renderList;
+  $('#stage').addEventListener('wheel', e=>{ if(!curId) return; const f=fileById(curId); if(f.type==='unsupported'||f.type==='error') return; e.preventDefault(); zoom = e.deltaY<0?Math.min(3,zoom+0.1):Math.max(0.5,zoom-0.1); renderPane(); }, {passive:false});
+  $('#stage').addEventListener('dblclick', ()=>{ zoom=1;rot=0;renderPane(); });
+}
+
+// fullscreen viewer
+let vwZoom=1, vwRot=0;
+function openViewer(){
+  if(!curId) return; vwZoom=1; vwRot=0;
+  $('#viewer').classList.add('open'); renderRail(); renderViewer();
+}
+function closeViewer(){ $('#viewer').classList.remove('open'); }
+function renderRail(){
+  $('#vwRail').innerHTML = `<div class="rail-t">本单文件</div>` + FILES.map(f=>`<div class="rthumb ${f.ext==='img'?'img':''} ${f.id===curId?'on':''}" data-id="${f.id}">${f.ext==='img'?'':`<div class="rtl"></div><div class="rtl" style="width:60%;"></div><div class="rtl"></div>`}<div class="rname">${f.name}</div></div>`).join('');
+  $('#vwRail').querySelectorAll('.rthumb').forEach(t=> t.onclick=()=>{ select(t.dataset.id); renderRail(); renderViewer(); });
+}
+function renderViewer(){
+  const f=fileById(curId); const i=indexOf(curId);
+  $('#vwName').textContent = f.name;
+  $('#vwCnt').textContent = `第 ${i+1} / ${FILES.length} 份`;
+  $('#vwPrevFile').classList.toggle('disabled', i<=0);
+  $('#vwNextFile').classList.toggle('disabled', i>=FILES.length-1);
+  $('#vwZVal').textContent = Math.round(vwZoom*100)+'%';
+  const pgEl=$('#vwPg');
+  if(f.type==='unsupported'){ $('#vwStage').innerHTML = `<div style="color:#8893a7;font-size:13px;">该格式暂不支持预览，请下载查看</div>`; pgEl.textContent=''; return; }
+  if(f.type==='error'){ $('#vwStage').innerHTML = `<div style="color:#e3a00a;font-size:13px;">⚠️ 预览加载失败</div>`; pgEl.textContent=''; return; }
+  if(f.type==='image'){ $('#vwStage').innerHTML = `<div style="transform:scale(${vwZoom}) rotate(${vwRot}deg);width:420px;"><div class="page image"><div class="imgbox"><div class="paper"><div class="it">增值税电子普通发票</div><div class="il" style="width:70%;"></div><div class="il" style="width:90%;"></div><div class="il" style="width:50%;"></div><div style="margin-top:auto;text-align:right;color:#e34c4c;font-size:20px;font-weight:700;">¥3,500.00</div></div><span class="photo-tag">📷 发票照片</span></div></div></div>`; pgEl.textContent='图片'; return; }
+  const badge = (f.type!=='pdf')?`<div class="pdf-badge">PDF 预览</div>`:'';
+  $('#vwStage').innerHTML = badge + `<div style="transform:scale(${vwZoom}) rotate(${vwRot}deg);transform-origin:center top;">${pageHTML(f)}</div>`;
+  pgEl.textContent = f.pages>1?`第 ${page} / ${f.pages} 页`:'';
+}
+function bindViewer(){
+  $('#vwClose').onclick = closeViewer;
+  $('#vwPrevFile').onclick = ()=>{ const i=indexOf(curId); if(i>0){ select(FILES[i-1].id); renderRail(); renderViewer(); } };
+  $('#vwNextFile').onclick = ()=>{ const i=indexOf(curId); if(i<FILES.length-1){ select(FILES[i+1].id); renderRail(); renderViewer(); } };
+  $('#vwZIn').onclick  = ()=>{ vwZoom=Math.min(3,vwZoom+0.25); renderViewer(); };
+  $('#vwZOut').onclick = ()=>{ vwZoom=Math.max(0.5,vwZoom-0.25); renderViewer(); };
+  $('#vwRotate').onclick = ()=>{ vwRot=(vwRot+90)%360; renderViewer(); };
+  $('#vwFit').onclick = ()=>{ vwZoom=1; vwRot=0; renderViewer(); };
+  $('#vwDownload').onclick = ()=>alert('（演示）开始下载：'+fileById(curId).name);
+  $('#vwPrint').onclick = ()=>alert('（演示）调用打印');
+  $('#vwPrev').addEventListener('wheel', e=>{ if(!$('#viewer').classList.contains('open'))return; const f=fileById(curId); if(f.type==='unsupported'||f.type==='error')return; e.preventDefault(); vwZoom=e.deltaY<0?Math.min(3,vwZoom+0.1):Math.max(0.5,vwZoom-0.1); renderViewer(); },{passive:false});
+}
+bindViewer();
+
+document.addEventListener('keydown', e=>{
+  if($('#viewer').classList.contains('open')){
+    if(e.key==='Escape') closeViewer();
+    else if(e.key==='ArrowLeft'){ const i=indexOf(curId); if(i>0){ select(FILES[i-1].id); renderRail(); renderViewer(); } }
+    else if(e.key==='ArrowRight'){ const i=indexOf(curId); if(i<FILES.length-1){ select(FILES[i+1].id); renderRail(); renderViewer(); } }
+  } else if(MODE==='preview') {
+    if(e.key==='ArrowLeft'){ const i=indexOf(curId); if(i>0) select(FILES[i-1].id); }
+    else if(e.key==='ArrowRight'){ const i=indexOf(curId); if(i<FILES.length-1) select(FILES[i+1].id); }
+  }
+});
+
+// 预览页初始化：放在所有 const/函数定义之后执行，避免引用尚未初始化的 FILES（TDZ）
+if(MODE === 'preview') initPreview();
+</script>
 </body>
 </html>
