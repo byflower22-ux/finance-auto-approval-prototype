@@ -153,12 +153,14 @@
     const detailSearch = new URLSearchParams(window.location.search);
     const isReimbursementDetail = detailSearch.get('documentType') === 'reimbursement';
     const reimbursementDocumentNo = detailSearch.get('documentNo');
-    const isNonProjectReimbursementDetail = reimbursementDocumentNo ? reimbursementDocumentNo === 'EXP-20260805-0048' : detailSearch.get('approvalKind') === 'non-project';
+    const nonProjectReimbursementDocumentNumbers = new Set(['EXP-20260805-0048', 'EXP-20260805-0051', 'EXP-20260805-0055']);
+    const isNonProjectReimbursementDetail = reimbursementDocumentNo ? nonProjectReimbursementDocumentNumbers.has(reimbursementDocumentNo) : detailSearch.get('approvalKind') === 'non-project';
+    const usesLoanOffset = reimbursementDocumentNo !== 'EXP-20260805-0051';
     const paymentDetailDocuments = {
       'PAY-20260805-0086': { title:'2026 年 8 月项目差旅费用付款', applicant:'刘宇鑫　/　教学运营部', payee:'深圳同鹏餐饮管理有限公司', paymentType:'项目付款', expenseTime:'2026-07-28 至 2026-07-30', amount:'¥ 1,560.00', remark:'用于项目班级客户拜访的交通及住宿费用付款。', date:'2026-08-05' },
       'PAY-20260805-0081': { title:'教学中心投影仪采购付款', applicant:'陈敏　/　教学运营部', payee:'深圳高新设备有限公司', paymentType:'付款', expenseTime:'2026-08-01 至 2026-08-05', amount:'¥ 42,500.00', remark:'教学中心多媒体设备采购及会议室预约系统年度服务费用。', date:'2026-08-05' },
-      'PAY-20260804-0074': { title:'华南区域公开课市场推广费', applicant:'周蕾　/　市场部', payee:'Singapore Event Marketing Pte. Ltd', paymentType:'付款', expenseTime:'2026-08-01 至 2026-08-04', amount:'¥ 8,600.00', remark:'境外公开课场地推广费用。', date:'2026-08-04' },
-      'PAY-20260805-0083': { title:'7 月外聘讲师课酬付款', applicant:'赵立　/　教学运营部', payee:'李明', paymentType:'付款', expenseTime:'2026-07-01 至 2026-07-31', amount:'¥ 12,600.00', remark:'7 月外聘讲师课酬结算。', date:'2026-08-05' },
+      'PAY-20260804-0074': { title:'华南区域公开课市场推广费', applicant:'周蕾　/　市场部', payee:'Singapore Event Marketing Pte. Ltd', paymentType:'付款', expenseTime:'2026-08-01 至 2026-08-04', amount:'USD 8,600.00', foreignAmount:'USD 8,600.00', exchangeRate:7.18, remark:'境外公开课场地推广费用。', date:'2026-08-04', payer:'Sands Bosum Business Pte. Ltd', invoice:'否', bank:'DBS Bank Singapore', account:'018-729-883', overseas:'是', currency:'USD', swift:'DBSSSGSG', project:'', expenses:[{ type:'市场推广－场地', foreignAmount:'USD 8,600.00', team:'市场部', reason:'华南区域公开课场地推广' }] },
+      'PAY-20260805-0083': { title:'7 月外聘讲师课酬付款', applicant:'赵立　/　教学运营部', payee:'李明', paymentType:'付款', expenseTime:'2026-07-01 至 2026-07-31', amount:'¥ 12,600.00', remark:'7 月外聘讲师课酬结算。', date:'2026-08-05', payer:'博商管理集团有限公司', invoice:'是', bank:'招商银行深圳分行', account:'6225 8800 1234 5688', overseas:'否', laborPayment:'是', laborTax:'¥ 1,260.00', expenses:[{ type:'教学运营－劳务费', amount:'¥ 12,600.00', laborTax:'¥ 1,260.00', team:'教学运营组', reason:'7 月外聘讲师课酬结算' }] },
       'PAY-20260805-0088': { title:'北京客户拜访差旅费用付款', applicant:'孙晨　/　项目管理部', payee:'孙晨', paymentType:'项目付款', expenseTime:'2026-08-02 至 2026-08-04', amount:'¥ 3,260.00', remark:'北京客户拜访交通及住宿费用。', date:'2026-08-05' }
     };
     function switchExpensePanel(button) { const group=button.closest('.expense-group'); const tab=button.dataset.expenseTab; group.querySelectorAll('[data-expense-tab]').forEach(item=>item.classList.toggle('active',item===button)); group.querySelectorAll('[data-expense-panel]').forEach(panel=>panel.hidden=panel.dataset.expensePanel!==tab); }
@@ -181,6 +183,32 @@
       updateOverviewField('费用时间', documentData.expenseTime);
       updateOverviewField('申请金额', documentData.amount);
       updateOverviewField('备注', documentData.remark);
+      const isOverseasPayment = documentData.overseas === '是';
+      if (isOverseasPayment) renderOverseasPaymentDetail(documentData);
+      else if (documentData.laborPayment === '是') renderLaborPaymentDetail(documentData);
+    }
+    function calculateDetailCnyAmount(foreignAmount, exchangeRate) {
+      const amount = Number(String(foreignAmount).replace(/[^\d.-]/g, ''));
+      return Number.isFinite(amount) && Number.isFinite(exchangeRate)
+        ? `¥ ${(amount * exchangeRate).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : '';
+    }
+    function renderOverseasPaymentDetail(documentData) {
+      const expenseCard = [...document.querySelectorAll('.document-column > .card')].find(card => card.querySelector('.card-title')?.textContent.includes('费用、发票与业务材料'));
+      if (!expenseCard) return;
+      const [applicant, department] = documentData.applicant.split('　/　');
+      const headers = ['费用类型','分摊人','分摊人部门','费用承担团队','分摊金额（人民币）',`金额（外币，${documentData.currency}）`,'事由'];
+      expenseCard.querySelector('.card-body').innerHTML = documentData.expenses.map(expense => {
+        const cnyAmount = calculateDetailCnyAmount(expense.foreignAmount, documentData.exchangeRate);
+        return `<section class="expense-group"><div class="expense-head"><span class="expense-tag">费用类型</span><strong>${expense.type}</strong><span>1 条明细 · 0 张发票 · 2 个附件</span><span class="expense-amount">${expense.foreignAmount}</span></div><div class="expense-tabs"><button class="active" type="button" data-expense-tab="allocation" onclick="switchExpensePanel(this)">费用明细</button><button type="button" data-expense-tab="attachment" onclick="switchExpensePanel(this)">附件（2）</button></div><div class="expense-panel" data-expense-panel="allocation"><table class="mini-table"><thead><tr>${headers.map(header => `<th>${header}</th>`).join('')}</tr></thead><tbody><tr><td>${expense.type}</td><td>${applicant}</td><td>${department}</td><td>${expense.team}</td><td>${cnyAmount}</td><td>${expense.foreignAmount}</td><td>${expense.reason}</td></tr></tbody></table></div><div class="expense-panel" data-expense-panel="attachment" hidden><div class="attachment-row"><span class="attachment-icon">▣</span><div><strong>境外场地推广合同.pdf</strong><small>合同 · 已关联本费用类型</small></div><span class="attachment-state">已上传</span></div><div class="attachment-row"><span class="attachment-icon">▣</span><div><strong>尚未上传</strong><small>其他说明材料 · 已关联本费用类型</small></div><span class="attachment-state">待上传</span></div></div></section>`;
+      }).join('');
+    }
+    function renderLaborPaymentDetail(documentData) {
+      const expenseCard = [...document.querySelectorAll('.document-column > .card')].find(card => card.querySelector('.card-title')?.textContent.includes('费用、发票与业务材料'));
+      if (!expenseCard) return;
+      const [applicant, department] = documentData.applicant.split('　/　');
+      const headers = ['费用类型','分摊人','分摊人部门','费用承担团队','分摊金额（人民币）','劳务个税','事由'];
+      expenseCard.querySelector('.card-body').innerHTML = documentData.expenses.map(expense => `<section class="expense-group"><div class="expense-head"><span class="expense-tag">费用类型</span><strong>${expense.type}</strong><span>1 条明细 · 0 张发票 · 2 个附件</span><span class="expense-amount">${expense.amount}</span></div><div class="expense-tabs"><button class="active" type="button" data-expense-tab="allocation" onclick="switchExpensePanel(this)">费用明细</button><button type="button" data-expense-tab="attachment" onclick="switchExpensePanel(this)">附件（2）</button></div><div class="expense-panel" data-expense-panel="allocation"><table class="mini-table"><thead><tr>${headers.map(header => `<th>${header}</th>`).join('')}</tr></thead><tbody><tr><td>${expense.type}</td><td>${applicant}</td><td>${department}</td><td>${expense.team}</td><td>${expense.amount}</td><td>${expense.laborTax}</td><td>${expense.reason}</td></tr></tbody></table></div><div class="expense-panel" data-expense-panel="attachment" hidden><div class="attachment-row"><span class="attachment-icon">▣</span><div><strong>外聘讲师课酬结算说明.pdf</strong><small>其他说明材料 · 已关联本费用类型</small></div><span class="attachment-state">已上传</span></div><div class="attachment-row"><span class="attachment-icon">▣</span><div><strong>尚未上传</strong><small>合同 · 已关联本费用类型</small></div><span class="attachment-state">待上传</span></div></div></section>`).join('');
     }
     function applyReimbursementDetailMode() {
       if (!isReimbursementDetail) return;
@@ -305,10 +333,15 @@ overviewCard.querySelector('.card-title').innerHTML = '<span class="num">1</span
         type: paymentDocument.paymentType,
         amount: paymentDocument.amount,
         recipient: paymentDocument.payee,
-        bank: '招商银行深圳科技园支行',
-        account: '6225 8888 0462 9551',
-        overseas: '否',
-        project: paymentDocument.paymentType === '项目付款' ? '目的班级' : ''
+        payer: paymentDocument.payer || '博商管理集团有限公司',
+        invoice: paymentDocument.invoice || '是',
+        bank: paymentDocument.bank || '招商银行深圳科技园支行',
+        account: paymentDocument.account || '6225 8888 0462 9551',
+        overseas: paymentDocument.overseas || '否',
+        laborPayment: paymentDocument.laborPayment || '否',
+        currency: paymentDocument.currency || '',
+        swift: paymentDocument.swift || '',
+        project: paymentDocument.project || (paymentDocument.paymentType === '项目付款' ? '目的班级' : '')
       };
       const readonlyField = (label, value, wide = false) => `<div class="document-field${wide ? ' wide' : ''}"><label>${label}</label><div class="readonly-value">${value}</div></div>`;
       const relatedProject = data.project ? readonlyField('本单关联项目', `<span class="project-tag">${data.project}</span>`, true) : '';
@@ -318,16 +351,22 @@ overviewCard.querySelector('.card-title').innerHTML = '<span class="num">1</span
       const reimbursementOverseasFields = reimbursement && !isNonProjectReimbursementDetail
         ? `${readonlyField('币种', 'USD')}${readonlyField('SWIFT Code', 'CMBCCNBS')}`
         : '';
-      const loanOffsetSection = reimbursement ? `<section class="document-section"><div class="document-section-title">借款单冲抵</div><div class="document-grid">${readonlyField('是否使用借款单冲抵', '是')}${readonlyField('领款人当前剩余欠款', isNonProjectReimbursementDetail ? '(CNY) 3,000.00' : '(CNY) 12,500.00；(HKD) 1,500.00', true)}</div><div class="table-wrap"><table class="mini-table"><thead><tr><th>借款单编号</th><th>主体公司</th><th>状态</th><th>币种</th><th>剩余欠款金额</th><th>实际借款时间</th><th>本次抵冲金额</th></tr></thead><tbody>${isNonProjectReimbursementDetail ? '<tr><td>JK202608030010</td><td>深圳市博商管理科学研究院股份有限公司</td><td>待还款</td><td>CNY</td><td>3,000.00</td><td>2026-08-03</td><td>1,280.00</td></tr>' : '<tr><td>JK202608120001</td><td>深圳市博商管理科学研究院股份有限公司</td><td>待还款</td><td>CNY</td><td>6,000.00</td><td>2026-08-12</td><td>2,380.00</td></tr>'}</tbody></table></div></section>` : '';
+      const paymentOverseasFields = !reimbursement && data.overseas === '是'
+        ? `${readonlyField('币种', data.currency)}${readonlyField('SWIFT Code', data.swift)}`
+        : '';
+      const paymentLaborField = !reimbursement && data.laborPayment === '是'
+        ? readonlyField('是否付劳务费', '是')
+        : '';
+      const loanOffsetDetails = usesLoanOffset
+        ? `${readonlyField('领款人当前剩余欠款', isNonProjectReimbursementDetail ? '(CNY) 3,000.00' : '(CNY) 12,500.00；(HKD) 1,500.00', true)}</div><div class="table-wrap"><table class="mini-table"><thead><tr><th>借款单编号</th><th>主体公司</th><th>状态</th><th>币种</th><th>剩余欠款金额</th><th>实际借款时间</th><th>本次抵冲金额</th></tr></thead><tbody>${isNonProjectReimbursementDetail ? '<tr><td>JK202608030010</td><td>深圳市博商管理科学研究院股份有限公司</td><td>待还款</td><td>CNY</td><td>3,000.00</td><td>2026-08-03</td><td>1,280.00</td></tr>' : '<tr><td>JK202608120001</td><td>深圳市博商管理科学研究院股份有限公司</td><td>待还款</td><td>CNY</td><td>6,000.00</td><td>2026-08-12</td><td>2,380.00</td></tr>'}</tbody></table></div>`
+        : '</div>';
+      const loanOffsetSection = reimbursement ? `<section class="document-section"><div class="document-section-title">借款单冲抵</div><div class="document-grid">${readonlyField('是否使用借款单冲抵', usesLoanOffset ? '是' : '否')}${loanOffsetDetails}</section>` : '';
       overviewCard.querySelector('.card-title').innerHTML = '<span class="num">1</span>申请基础信息';
       overviewCard.querySelector('.card-note').textContent = `申请日期：${reimbursement ? '2026-08-05' : paymentDocument.date}`;
-      overviewCard.querySelector('.card-body').innerHTML = `<div class="document-context"><span>申请人：<strong>${data.applicant}</strong></span><span>申请部门：<strong>${data.department}</strong></span><span>申请单号：<strong>${data.documentNo}</strong></span></div><section class="document-section"><div class="document-section-title">${informationTitle}</div><div class="document-grid">${readonlyField('标题', data.title)}${readonlyField('费用时间', reimbursement ? '2026-08-01 至 2026-08-05' : paymentDocument.expenseTime)}${readonlyField(reimbursement ? '报销类型' : '付款类型', data.type)}${readonlyField('主体公司', '博商管理集团有限公司')}${readonlyField('是否有发票', '是')}${readonlyField('申请金额', data.amount)}${relatedProject}${readonlyField('备注', reimbursement ? '用于日常业务开展产生的交通、住宿及办公物料费用报销。' : paymentDocument.remark, true)}</div></section><section class="document-section"><div class="document-section-title">${recipientTitle}</div><div class="document-grid">${readonlyField(recipientLabel, data.recipient)}${readonlyField(reimbursement ? '领款人开户行' : '开户行', data.bank)}${readonlyField(reimbursement ? '领款人银行卡账号' : '银行账号', data.account)}${readonlyField('是否海外付款', data.overseas)}${reimbursementOverseasFields}</div></section>`;
+      overviewCard.querySelector('.card-body').innerHTML = `<div class="document-context"><span>申请人：<strong>${data.applicant}</strong></span><span>申请部门：<strong>${data.department}</strong></span><span>申请单号：<strong>${data.documentNo}</strong></span></div><section class="document-section"><div class="document-section-title">${informationTitle}</div><div class="document-grid">${readonlyField('标题', data.title)}${readonlyField('费用时间', reimbursement ? '2026-08-01 至 2026-08-05' : paymentDocument.expenseTime)}${readonlyField(reimbursement ? '报销类型' : '付款类型', data.type)}${readonlyField('主体公司', reimbursement ? '博商管理集团有限公司' : data.payer)}${readonlyField('是否有发票', reimbursement ? '是' : data.invoice)}${paymentLaborField}${readonlyField('申请金额', data.amount)}${relatedProject}${readonlyField('备注', reimbursement ? '用于日常业务开展产生的交通、住宿及办公物料费用报销。' : paymentDocument.remark, true)}</div></section><section class="document-section"><div class="document-section-title">${recipientTitle}</div><div class="document-grid">${readonlyField(recipientLabel, data.recipient)}${readonlyField(reimbursement ? '领款人开户行' : '开户行', data.bank)}${readonlyField(reimbursement ? '领款人银行卡账号' : '银行账号', data.account)}${readonlyField('是否海外付款', data.overseas)}${reimbursementOverseasFields}${paymentOverseasFields}</div></section>`;
       if (loanOffsetSection) overviewCard.querySelector('.card-body').insertAdjacentHTML('beforeend', loanOffsetSection);
       const offsetCard = [...document.querySelectorAll('.document-column > .card')].find(card => card.querySelector('.card-title')?.textContent.includes('借款单冲抵'));
-      if (offsetCard) {
-        offsetCard.querySelector('.card-title').innerHTML = '<span class="num">2</span>借款单冲抵';
-        offsetCard.querySelector('.card-body').innerHTML = `<section class="document-section"><div class="document-section-title">借款单冲抵信息</div><div class="document-grid">${readonlyField('是否使用借款单冲抵', '是')}${readonlyField('领款人当前剩余欠款', isNonProjectReimbursementDetail ? '(CNY) 3,000.00' : '(CNY) 12,500.00；(HKD) 1,500.00', true)}</div><div class="table-wrap"><table class="mini-table"><thead><tr><th>借款单编号</th><th>主体公司</th><th>状态</th><th>币种</th><th>剩余欠款金额</th><th>实际借款时间</th><th>本次抵冲金额</th></tr></thead><tbody>${isNonProjectReimbursementDetail ? '<tr><td>JK202608030010</td><td>深圳市博商管理科学研究院股份有限公司</td><td>待还款</td><td>CNY</td><td>3,000.00</td><td>2026-08-03</td><td>1,280.00</td></tr>' : '<tr><td>JK202608120001</td><td>深圳市博商管理科学研究院股份有限公司</td><td>待还款</td><td>CNY</td><td>6,000.00</td><td>2026-08-12</td><td>2,380.00</td></tr>'}</tbody></table></div></section>`;
-      }
+      offsetCard?.remove();
     }
     applyPaymentDetailMode();
     applyReimbursementDetailMode();

@@ -360,11 +360,28 @@ const base = location.href.split('#')[0];
 const MODE = location.hash.includes('preview') ? 'preview' : 'detail';
 const PREVIEW_PARAMS = new URLSearchParams(location.search);
 const PAYMENT_PREVIEW = PREVIEW_PARAMS.get('documentType') === 'payment';
-const PAYMENT_PROJECT = PREVIEW_PARAMS.get('approvalKind') === 'project';
 const PAYMENT_DOCUMENT_NO = PREVIEW_PARAMS.get('documentNo') || 'PAY-20260805-0086';
-const PAYMENT_PROJECT_INFO = {
-  'PAY-20260805-0086': { name: '目的班级', code: 'PR20260103000589', type: '课程项目', region: '博商深圳' }
+const RELATED_PROJECTS = {
+  payment: {
+    'PAY-20260805-0086': '目的班级',
+    'PAY-20260805-0088': '北京客户拜访项目'
+  },
+  reimbursement: {
+    'EXP-20260805-0042': '华南区域公开课项目'
+  }
 };
+const REIMBURSEMENT_SLIP_DOCUMENTS = {
+  'EXP-20260805-0055': { title: '供应商合同异常费用报销', applicant: '周蕾', department: '市场部', company: '博商管理集团有限公司', invoice: '是', amount: '3,200.00', expenseDate: '2026-08-05', expense: { type: '市场活动', subtype: '供应商费用', team: '市场部', reason: '市场活动供应商费用结算' } }
+};
+const reimbursementLoanOffsetAmounts = {
+  'EXP-20260805-0042': '2,380.00',
+  'EXP-20260805-0055': '3,200.00'
+};
+const PAYMENT_SLIP_DOCUMENTS = {
+  'PAY-20260804-0074': { title: '华南区域公开课市场推广费', applicant: '周蕾', department: '市场部', company: 'Sands Bosum Business Pte. Ltd', invoice: '否', payeeType: '公司', payee: 'Singapore Event Marketing Pte. Ltd', bank: 'DBS Bank Singapore', account: '018-729-883', overseas: '是', currency: 'USD', swift: 'DBSSSGSG', amount: '8,600.00', cnyAmount: '61,920.00', foreignAmount: '8,600.00', expenseDate: '2026-08-04', expense: { type: '市场推广', subtype: '场地', team: '市场部', reason: '华南区域公开课场地推广' } },
+  'PAY-20260805-0083': { title: '7 月外聘讲师课酬付款', applicant: '赵立', department: '教学运营部', company: '博商管理集团有限公司', invoice: '是', payeeType: '个人', payee: '李明', bank: '招商银行深圳分行', account: '6225 8800 1234 5688', overseas: '否', amount: '12,600.00', expenseDate: '2026-07-31', laborPayment: '是', expense: { type: '教学运营', subtype: '劳务费', team: '教学运营组', reason: '7 月外聘讲师课酬结算', laborTax: '1,260.00' } }
+};
+const PAYMENT_PROJECT = Boolean(RELATED_PROJECTS[PAYMENT_PREVIEW ? 'payment' : 'reimbursement']?.[PAYMENT_DOCUMENT_NO]);
 if(PREVIEW_PARAMS.get('embedded') === '1') document.body.classList.add('embedded-preview');
 const previewUrl = base + '#preview';
 
@@ -489,39 +506,55 @@ function pageHTML(f){
 
 function paymentSlipHTML(){
   const isReimbursement = PREVIEW_PARAMS.get('documentType') === 'reimbursement';
-  const projectInfo = PAYMENT_PROJECT ? (isReimbursement
-    ? { name: '华南区域公开课项目', code: 'PR20260315000448', type: '课程项目', region: '博商深圳' }
-    : PAYMENT_PROJECT_INFO[PAYMENT_DOCUMENT_NO] || { name: '目的班级', code: '--', type: '--', region: '--' }) : null;
-  const project = projectInfo?.name || '无关联项目';
-  const title = isReimbursement
+  const paymentDocument = !isReimbursement ? (PAYMENT_SLIP_DOCUMENTS[PAYMENT_DOCUMENT_NO] || {}) : (REIMBURSEMENT_SLIP_DOCUMENTS[PAYMENT_DOCUMENT_NO] || {});
+  const project = PAYMENT_PROJECT
+    ? (RELATED_PROJECTS[isReimbursement ? 'reimbursement' : 'payment'][PAYMENT_DOCUMENT_NO] || '无关联项目')
+    : '无关联项目';
+  const title = paymentDocument.title || (isReimbursement
     ? (PAYMENT_PROJECT ? '8 月办公用品采购项目报销' : '8 月客户拜访交通费用报销')
-    : (PAYMENT_PROJECT ? '2026 年 8 月项目差旅费用付款' : '教学中心投影仪采购付款');
-  const applicant = isReimbursement ? (PAYMENT_PROJECT ? '陈敏' : '林佳') : (PAYMENT_PROJECT ? '刘宇鑫' : '陈敏');
-  const department = isReimbursement ? (PAYMENT_PROJECT ? '行政部' : '市场部') : '教学运营部';
-  const company = isReimbursement ? '深圳市博商管理科学研究院股份有限公司' : (PAYMENT_PROJECT ? '博商管理集团有限公司' : '深圳市博商管理咨询有限公司');
-  const payee = isReimbursement ? applicant : (PAYMENT_PROJECT ? '深圳同鹏餐饮管理有限公司' : '深圳高新设备有限公司');
-  const bank = isReimbursement ? (PAYMENT_PROJECT ? '招商银行深圳分行' : '中国银行深圳科技园支行') : (PAYMENT_PROJECT ? '招商银行深圳科技园支行' : '中国银行深圳科技园支行');
-  const account = isReimbursement ? (PAYMENT_PROJECT ? '6222 1001 8354 6120' : '6225 8888 0731 6204') : (PAYMENT_PROJECT ? '6225 8888 0462 9551' : '6225 8888 0731 6204');
-  const amount = isReimbursement ? (PAYMENT_PROJECT ? '2,380.00' : '1,280.00') : (PAYMENT_PROJECT ? '1,560.00' : '42,500.00');
-  const expenseDate = isReimbursement ? '2026-08-05' : '2026-07-30';
+    : (PAYMENT_PROJECT ? '2026 年 8 月项目差旅费用付款' : '教学中心投影仪采购付款'));
+  const applicant = paymentDocument.applicant || (isReimbursement ? (PAYMENT_PROJECT ? '陈敏' : '林佳') : (PAYMENT_PROJECT ? '刘宇鑫' : '陈敏'));
+  const department = paymentDocument.department || (isReimbursement ? (PAYMENT_PROJECT ? '行政部' : '市场部') : '教学运营部');
+  const company = paymentDocument.company || (isReimbursement ? '深圳市博商管理科学研究院股份有限公司' : (PAYMENT_PROJECT ? '博商管理集团有限公司' : '深圳市博商管理咨询有限公司'));
+  const payee = paymentDocument.payee || (isReimbursement ? applicant : (PAYMENT_PROJECT ? '深圳同鹏餐饮管理有限公司' : '深圳高新设备有限公司'));
+  const bank = paymentDocument.bank || (isReimbursement ? (PAYMENT_PROJECT ? '招商银行深圳分行' : '中国银行深圳科技园支行') : '中国银行深圳科技园支行');
+  const account = paymentDocument.account || (isReimbursement ? (PAYMENT_PROJECT ? '6222 1001 8354 6120' : '6225 8888 0731 6204') : (PAYMENT_PROJECT ? '6225 8888 0462 9551' : '6225 8888 0731 6204'));
+  const amount = paymentDocument.amount || (isReimbursement ? (PAYMENT_PROJECT ? '2,380.00' : '1,280.00') : (PAYMENT_PROJECT ? '1,560.00' : '42,500.00'));
+  const isOverseasPayment = paymentDocument.overseas === '是';
+  const cnyAmount = paymentDocument.cnyAmount || amount;
+  const foreignAmount = paymentDocument.foreignAmount || '';
+  const expenseDate = paymentDocument.expenseDate || (isReimbursement ? '2026-08-05' : '2026-07-30');
   const expenseRows = isReimbursement
     ? (PAYMENT_PROJECT ? '<tr><td>日常运营</td><td>办公用品</td><td>2,380.00</td><td>项目办公文具及耗材采购</td></tr>' : '<tr><td>差旅费用</td><td>差旅－交通</td><td>880.00</td><td>客户拜访交通费</td></tr><tr><td></td><td>业务招待－餐费</td><td>400.00</td><td>客户拜访餐费</td></tr>')
     : (PAYMENT_PROJECT ? '<tr><td>差旅费用</td><td>差旅－交通</td><td>960.00</td><td>北京客户拜访交通费</td></tr><tr><td></td><td>差旅－住宿</td><td>600.00</td><td>北京客户拜访住宿费</td></tr>' : '<tr><td>固定资产</td><td>办公设备</td><td>36,000.00</td><td>教学中心投影仪采购</td></tr><tr><td>管理费用</td><td>软件服务</td><td>6,500.00</td><td>会议室预约系统年度服务</td></tr>');
   const slipTitle = isReimbursement ? '报销申请' : '付款申请';
   const documentTypeLabel = isReimbursement ? (PAYMENT_PROJECT ? '项目报销' : '报销') : (PAYMENT_PROJECT ? '项目付款' : '付款');
   const showProject = PAYMENT_PROJECT;
-  const projectRow = showProject ? `<tr><th>项目编号</th><td>${projectInfo.code}</td><th>项目名称</th><td>${projectInfo.name}</td></tr><tr><th>项目类型</th><td>${projectInfo.type}</td><th>所属区域</th><td>${projectInfo.region}</td></tr>` : '';
-  const basicRows = `<tr><th>单号</th><td>${PAYMENT_DOCUMENT_NO}</td><th>申请人</th><td>${applicant}</td></tr><tr><th>申请部门</th><td>${department}</td><th>${isReimbursement ? '报销类型' : '付款类型'}</th><td>${documentTypeLabel}</td></tr><tr><th>标题</th><td colspan="3">${title}</td></tr><tr><th>费用时间</th><td>${expenseDate}</td><th>主体公司</th><td>${company}</td></tr><tr><th>是否有发票</th><td>是</td><th>申请金额</th><td class="right">¥ ${amount}</td></tr>${projectRow}<tr><th>${isReimbursement ? '领款人' : '收款方类型'}</th><td>${isReimbursement ? payee : '公司'}</td><th>${isReimbursement ? '领款人银行卡账号' : '收款单位'}</th><td>${isReimbursement ? account : payee}</td></tr><tr><th>开户行</th><td>${bank}</td><th>是否海外付款</th><td>否</td></tr><tr><th>付款币种</th><td>CNY</td><th>银行账号</th><td>${account}</td></tr>`;
-  const hasLaborTax = !isReimbursement && PAYMENT_DOCUMENT_NO === 'PAY-20260805-0083';
-  const detailColumns = [ ...(PAYMENT_PROJECT ? ['项目'] : []), '分摊人', '分摊人部门', '费用承担团队', '分摊金额', ...(hasLaborTax ? ['劳务个税'] : []), '事由' ];
-  const detailGroup = (type, subtype, person, team, value, reason, tax = '') => `<tr class="expense-type-row"><th colspan="${detailColumns.length}">${type}－${subtype}</th></tr><tr>${PAYMENT_PROJECT ? `<td>${project}</td>` : ''}<td>${person}</td><td>${department}</td><td>${team}</td><td>¥ ${value}</td>${hasLaborTax ? `<td>¥ ${tax}</td>` : ''}<td>${reason}</td></tr>`;
-  const detailRows = isReimbursement
+  const projectRow = showProject ? `<tr><th>关联项目</th><td colspan="3">${project}</td></tr>` : '';
+  const overseasPaymentRows = paymentDocument.overseas === '是'
+    ? `<tr><th>币种</th><td>${paymentDocument.currency}</td><th>SWIFT Code</th><td>${paymentDocument.swift}</td></tr>`
+    : '';
+  const laborPaymentRow = paymentDocument.laborPayment === '是'
+    ? `<tr><th>是否付劳务费</th><td colspan="3">是</td></tr>`
+    : '';
+  const accumulatedOffsetAmount = isReimbursement ? (reimbursementLoanOffsetAmounts[PAYMENT_DOCUMENT_NO] || '') : '';
+  const accumulatedOffsetRow = accumulatedOffsetAmount
+    ? `<tr><th>累计冲抵金额</th><td colspan="3">¥ ${accumulatedOffsetAmount}</td></tr>`
+    : '';
+  const basicRows = `<tr><th>单号</th><td>${PAYMENT_DOCUMENT_NO}</td><th>申请人</th><td>${applicant}</td></tr><tr><th>申请部门</th><td>${department}</td><th>${isReimbursement ? '报销类型' : '付款类型'}</th><td>${documentTypeLabel}</td></tr><tr><th>标题</th><td colspan="3">${title}</td></tr><tr><th>费用时间</th><td>${expenseDate}</td><th>主体公司</th><td>${company}</td></tr><tr><th>是否有发票</th><td>${paymentDocument.invoice || '是'}</td><th>申请金额</th><td class="right">${isOverseasPayment ? `${paymentDocument.currency} ${foreignAmount}` : `¥ ${amount}`}</td></tr>${accumulatedOffsetRow}${laborPaymentRow}${projectRow}<tr><th>${isReimbursement ? '领款人' : '收款方类型'}</th><td>${isReimbursement ? payee : (paymentDocument.payeeType || '公司')}</td><th>${isReimbursement ? '领款人银行卡账号' : '收款单位'}</th><td>${isReimbursement ? account : payee}</td></tr><tr><th>开户行</th><td>${bank}</td><th>银行账号</th><td>${account}</td></tr><tr><th>是否海外付款</th><td colspan="3">${paymentDocument.overseas || '否'}</td></tr>${overseasPaymentRows}`;
+  const hasLaborTax = !isReimbursement && paymentDocument.laborPayment === '是';
+  const detailColumns = [ ...(PAYMENT_PROJECT ? ['项目'] : []), '分摊人', '分摊人部门', '费用承担团队', isOverseasPayment ? '分摊金额（人民币）' : '分摊金额', ...(isOverseasPayment ? [`金额（外币，${paymentDocument.currency}）`] : []), ...(hasLaborTax ? ['劳务个税'] : []), '事由' ];
+  const detailGroup = (type, subtype, person, team, value, reason, tax = '', foreignValue = '') => `<tr class="expense-type-row"><th colspan="${detailColumns.length}">${type}－${subtype}</th></tr><tr>${PAYMENT_PROJECT ? `<td>${project}</td>` : ''}<td>${person}</td><td>${department}</td><td>${team}</td><td>¥ ${value}</td>${isOverseasPayment ? `<td>${paymentDocument.currency} ${foreignValue}</td>` : ''}${hasLaborTax ? `<td>¥ ${tax}</td>` : ''}<td>${reason}</td></tr>`;
+  const detailRows = paymentDocument.expense
+    ? detailGroup(paymentDocument.expense.type, paymentDocument.expense.subtype, applicant, paymentDocument.expense.team, cnyAmount, paymentDocument.expense.reason, paymentDocument.expense.laborTax || '', foreignAmount)
+    : isReimbursement
     ? (PAYMENT_PROJECT ? detailGroup('日常运营', '办公用品', applicant, '行政支持组', '2,380.00', '项目办公文具及耗材采购') : detailGroup('差旅费用', '差旅－交通', applicant, '市场部', '880.00', '客户拜访交通费') + detailGroup('业务招待', '餐费', applicant, '市场部', '400.00', '客户拜访餐费'))
     : (PAYMENT_PROJECT ? detailGroup('差旅费用', '差旅－交通', '刘宇鑫', '教学运营组', '960.00', '北京客户拜访交通费') + detailGroup('差旅费用', '差旅－住宿', '刘宇鑫', '教学运营组', '600.00', '北京客户拜访住宿费') : (hasLaborTax ? detailGroup('教学运营', '劳务费', '赵立', '教学运营组', '12,600.00', '7 月外聘讲师课酬结算', '1,260.00') : detailGroup('固定资产', '办公设备', '陈敏', '教学运营组', '36,000.00', '教学中心投影仪采购') + detailGroup('管理费用', '软件服务', '陈敏', '教学运营组', '6,500.00', '会议室预约系统年度服务')));
-  const amountUppercase = { '1,280.00':'壹仟贰佰捌拾元整', '1,560.00':'壹仟伍佰陆拾元整', '2,380.00':'贰仟叁佰捌拾元整', '3,260.00':'叁仟贰佰陆拾元整', '8,600.00':'捌仟陆佰元整', '12,600.00':'壹万贰仟陆佰元整', '42,500.00':'肆万贰仟伍佰元整' }[amount] || amount;
+  const amountUppercase = { '1,280.00':'壹仟贰佰捌拾元整', '1,560.00':'壹仟伍佰陆拾元整', '2,380.00':'贰仟叁佰捌拾元整', '3,260.00':'叁仟贰佰陆拾元整', '12,600.00':'壹万贰仟陆佰元整', '42,500.00':'肆万贰仟伍佰元整', '61,920.00':'陆万壹仟玖佰贰拾元整' }[cnyAmount] || cnyAmount;
   const flowText = `申请人（${applicant}，2026-08-05 14:26:18） → 业务审批（业务负责人，2026-08-05 16:10:24） → 财务审批（财务专员，待处理） → 出纳付款（出纳，待处理）`;
-  const amountIndex = detailColumns.indexOf('分摊金额');
-  return `<div class="page payment-slip"><div class="payment-slip-no">${slipTitle} · ${PAYMENT_DOCUMENT_NO}</div><div class="payment-slip-title">${slipTitle}</div><div class="payment-slip-rule"></div><div class="payment-slip-section-title">基础信息</div><table class="payment-slip-table">${basicRows}</table><div class="payment-slip-section-title">费用明细</div><table class="payment-slip-table"><tr>${detailColumns.map(column => `<th>${column}</th>`).join('')}</tr>${detailRows}<tr><th colspan="${amountIndex}" class="right">合计</th><td>¥ ${amount}</td>${hasLaborTax ? '<td>--</td>' : ''}<td>金额大写：${amountUppercase}</td></tr></table><div class="payment-slip-section-title">审批流程</div><div class="payment-slip-flow">${flowText}</div><table class="payment-slip-sign"><tr><td>会计主管：</td><td>复核：</td><td>出纳：</td><td>申请人：${applicant}</td></tr></table></div>`;
+  const amountColumn = isOverseasPayment ? '分摊金额（人民币）' : '分摊金额';
+  const amountIndex = detailColumns.indexOf(amountColumn);
+  return `<div class="page payment-slip"><div class="payment-slip-no">${slipTitle} · ${PAYMENT_DOCUMENT_NO}</div><div class="payment-slip-title">${slipTitle}</div><div class="payment-slip-rule"></div><div class="payment-slip-section-title">基础信息</div><table class="payment-slip-table">${basicRows}</table><div class="payment-slip-section-title">费用明细</div><table class="payment-slip-table"><tr>${detailColumns.map(column => `<th>${column}</th>`).join('')}</tr>${detailRows}<tr><th colspan="${amountIndex}" class="right">合计</th><td>¥ ${cnyAmount}</td>${isOverseasPayment ? `<td>外币合计：${paymentDocument.currency} ${foreignAmount}</td>` : ''}${hasLaborTax ? '<td>--</td>' : ''}<td>金额大写：${amountUppercase}</td></tr></table><div class="payment-slip-section-title">审批流程</div><div class="payment-slip-flow">${flowText}</div><table class="payment-slip-sign"><tr><td>会计主管：</td><td>复核：</td><td>出纳：</td><td>申请人：${applicant}</td></tr></table></div>`;
 }
 
 function stateHTML(icon, txt, btns){
