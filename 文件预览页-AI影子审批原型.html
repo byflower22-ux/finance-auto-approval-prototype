@@ -362,6 +362,9 @@ const PREVIEW_PARAMS = new URLSearchParams(location.search);
 const PAYMENT_PREVIEW = PREVIEW_PARAMS.get('documentType') === 'payment';
 const PAYMENT_PROJECT = PREVIEW_PARAMS.get('approvalKind') === 'project';
 const PAYMENT_DOCUMENT_NO = PREVIEW_PARAMS.get('documentNo') || 'PAY-20260805-0086';
+const PAYMENT_PROJECT_INFO = {
+  'PAY-20260805-0086': { name: '目的班级', code: 'PR20260103000589', type: '课程项目', region: '博商深圳' }
+};
 if(PREVIEW_PARAMS.get('embedded') === '1') document.body.classList.add('embedded-preview');
 const previewUrl = base + '#preview';
 
@@ -486,7 +489,10 @@ function pageHTML(f){
 
 function paymentSlipHTML(){
   const isReimbursement = PREVIEW_PARAMS.get('documentType') === 'reimbursement';
-  const project = PAYMENT_PROJECT ? (isReimbursement ? '华南区域公开课项目' : '目的班级') : '无关联项目';
+  const projectInfo = PAYMENT_PROJECT ? (isReimbursement
+    ? { name: '华南区域公开课项目', code: 'PR20260315000448', type: '课程项目', region: '博商深圳' }
+    : PAYMENT_PROJECT_INFO[PAYMENT_DOCUMENT_NO] || { name: '目的班级', code: '--', type: '--', region: '--' }) : null;
+  const project = projectInfo?.name || '无关联项目';
   const title = isReimbursement
     ? (PAYMENT_PROJECT ? '8 月办公用品采购项目报销' : '8 月客户拜访交通费用报销')
     : (PAYMENT_PROJECT ? '2026 年 8 月项目差旅费用付款' : '教学中心投影仪采购付款');
@@ -504,7 +510,7 @@ function paymentSlipHTML(){
   const slipTitle = isReimbursement ? '报销申请' : '付款申请';
   const documentTypeLabel = isReimbursement ? (PAYMENT_PROJECT ? '项目报销' : '报销') : (PAYMENT_PROJECT ? '项目付款' : '付款');
   const showProject = PAYMENT_PROJECT;
-  const projectRow = showProject ? `<tr><th>本单关联项目</th><td colspan="3">${project}</td></tr>` : '';
+  const projectRow = showProject ? `<tr><th>项目编号</th><td>${projectInfo.code}</td><th>项目名称</th><td>${projectInfo.name}</td></tr><tr><th>项目类型</th><td>${projectInfo.type}</td><th>所属区域</th><td>${projectInfo.region}</td></tr>` : '';
   const basicRows = `<tr><th>单号</th><td>${PAYMENT_DOCUMENT_NO}</td><th>申请人</th><td>${applicant}</td></tr><tr><th>申请部门</th><td>${department}</td><th>${isReimbursement ? '报销类型' : '付款类型'}</th><td>${documentTypeLabel}</td></tr><tr><th>标题</th><td colspan="3">${title}</td></tr><tr><th>费用时间</th><td>${expenseDate}</td><th>主体公司</th><td>${company}</td></tr><tr><th>是否有发票</th><td>是</td><th>申请金额</th><td class="right">¥ ${amount}</td></tr>${projectRow}<tr><th>${isReimbursement ? '领款人' : '收款方类型'}</th><td>${isReimbursement ? payee : '公司'}</td><th>${isReimbursement ? '领款人银行卡账号' : '收款单位'}</th><td>${isReimbursement ? account : payee}</td></tr><tr><th>开户行</th><td>${bank}</td><th>是否海外付款</th><td>否</td></tr><tr><th>付款币种</th><td>CNY</td><th>银行账号</th><td>${account}</td></tr>`;
   const hasLaborTax = !isReimbursement && PAYMENT_DOCUMENT_NO === 'PAY-20260805-0083';
   const detailColumns = [ ...(PAYMENT_PROJECT ? ['项目'] : []), '分摊人', '分摊人部门', '费用承担团队', '分摊金额', ...(hasLaborTax ? ['劳务个税'] : []), '事由' ];
