@@ -246,7 +246,8 @@
       'PAY-20260805-0081': { applicant:'陈敏', department:'教学运营部', title:'教学中心投影仪采购付款', expenseTime:'2026-08-01 至 2026-08-05', paymentType:'付款', payer:'深圳市博商管理咨询有限公司', invoice:'是', amount:'¥ 42,500.00', project:'无关联项目', payeeType:'公司', payee:'深圳高新设备有限公司', account:'6225 8888 0731 6204', overseas:'否', bank:'中国银行深圳科技园支行', currency:'CNY', remark:'教学中心多媒体设备采购及会议室预约系统年度服务费用。', expenses:[['固定资产－办公设备','¥ 36,000.00','教学中心投影仪采购'],['管理费用－软件服务','¥ 6,500.00','会议室预约系统年度服务']] },
       'PAY-20260804-0074': { applicant:'周蕾', department:'市场部', title:'华南区域公开课市场推广费', expenseTime:'2026-08-01 至 2026-08-04', paymentType:'付款', payer:'Sands Bosum Business Pte. Ltd', invoice:'否', amount:'USD 8,600.00', foreignAmount:'USD 8,600.00', exchangeRate:7.18, project:'无关联项目', payeeType:'公司', payee:'Singapore Event Marketing Pte. Ltd', account:'018-729-883', overseas:'是', bank:'DBS Bank Singapore', currency:'USD', swift:'DBSSSGSG', remark:'境外公开课场地推广费用。', expenses:[['市场推广－场地','','USD 8,600.00','华南区域公开课场地推广']] },
       'PAY-20260805-0083': { applicant:'赵立', department:'教学运营部', title:'7 月外聘讲师课酬付款', expenseTime:'2026-07-01 至 2026-07-31', paymentType:'付款', payer:'博商管理集团有限公司', invoice:'是', amount:'¥ 12,600.00', project:'无关联项目', payeeType:'个人', payee:'李明', account:'6225 8800 1234 5688', overseas:'否', bank:'招商银行深圳分行', currency:'CNY', laborPayment:'是', laborTax:'¥ 1,260.00', remark:'7 月外聘讲师课酬结算。', expenses:[['教学运营－课酬','¥ 12,600.00','7 月外聘讲师课酬结算']] },
-      'PAY-20260805-0088': { applicant:'孙晨', department:'项目管理部', title:'北京客户拜访差旅费用付款', expenseTime:'2026-08-02 至 2026-08-04', paymentType:'项目付款', payer:'深圳市博商管理咨询有限公司', invoice:'是', amount:'¥ 3,260.00', project:'北京客户拜访项目', payeeType:'个人', payee:'孙晨', account:'6225 8811 7643 0295', overseas:'否', bank:'中国银行北京分行', currency:'CNY', remark:'北京客户拜访交通及住宿费用。', expenses:[['差旅－交通及住宿','¥ 3,260.00','北京客户拜访交通及住宿']] }
+      'PAY-20260805-0088': { applicant:'孙晨', department:'项目管理部', title:'北京客户拜访差旅费用付款', expenseTime:'2026-08-02 至 2026-08-04', paymentType:'项目付款', payer:'深圳市博商管理咨询有限公司', invoice:'是', amount:'¥ 3,260.00', project:'北京客户拜访项目', payeeType:'个人', payee:'孙晨', account:'6225 8811 7643 0295', overseas:'否', bank:'中国银行北京分行', currency:'CNY', remark:'北京客户拜访交通及住宿费用。', expenses:[['差旅－交通及住宿','¥ 3,260.00','北京客户拜访交通及住宿']] },
+      'PAY-20260805-0089': { applicant:'罗娜', department:'财务部', title:'财务系统年度服务链接付款', expenseTime:'2026-08-05', paymentType:'付款', payer:'博商管理集团有限公司', invoice:'是', amount:'¥ 3,680.00', payeeType:'链接付款', payee:'北京云账单科技有限公司', paymentLink:'https://pay.example.com/order/PAY-20260805-0089', overseas:'否', currency:'CNY', remark:'财务系统年度订阅服务费。', expenses:[['管理费用－软件服务','¥ 3,680.00','财务系统年度订阅服务费']] }
     };
     let activePaymentDocument = null;
     function showToast(message) { const toast=document.getElementById('toast'); toast.textContent=message; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),2800); }
@@ -323,10 +324,20 @@ document.title = '付款申请审批｜AI 审批意见原型';
       const activeTab = document.querySelector('.workspace-tab.active');
       if (activeTab?.firstChild) activeTab.firstChild.textContent = '付款审批';
       document.querySelector('.document-context').innerHTML=`<span>申请人：<strong>${activePaymentDocument.applicant}</strong></span><span>申请部门：<strong>${activePaymentDocument.department}</strong></span><span>申请单号：<strong>${approvalDocumentNo || 'PAY-20260805-0086'}</strong></span>`;
-      const fieldValues={ '标题':activePaymentDocument.title, '费用时间':activePaymentDocument.expenseTime, '付款类型':activePaymentDocument.paymentType, '主体公司':activePaymentDocument.payer, '是否有发票':activePaymentDocument.invoice, '申请金额':activePaymentDocument.amount, '本单关联项目':activePaymentDocument.project, '收款方类型':activePaymentDocument.payeeType, '收款单位':activePaymentDocument.payee, '银行账号':activePaymentDocument.account, '是否海外付款':activePaymentDocument.overseas, '开户行':activePaymentDocument.bank, '币种':activePaymentDocument.currency, 'SWIFT Code':activePaymentDocument.swift, '备注':activePaymentDocument.remark };
+      const isProjectPayment = activePaymentDocument.paymentType === '项目付款';
+      const fieldValues={ '标题':activePaymentDocument.title, '费用时间':activePaymentDocument.expenseTime, '付款类型':activePaymentDocument.paymentType, '主体公司':activePaymentDocument.payer, '是否有发票':activePaymentDocument.invoice, '申请金额':activePaymentDocument.amount, '收款方类型':activePaymentDocument.payeeType, '收款单位':activePaymentDocument.payee, '银行账号':activePaymentDocument.account, '是否海外付款':activePaymentDocument.overseas, '开户行':activePaymentDocument.bank, '币种':activePaymentDocument.currency, 'SWIFT Code':activePaymentDocument.swift, '备注':activePaymentDocument.remark };
       Object.entries(fieldValues).forEach(([label,value])=>updateReadonlyField(label,value));
+      const relatedProjectField = [...document.querySelectorAll('.document-field')].find(field => field.querySelector('label')?.textContent.trim() === '本单关联项目');
+      if (!isProjectPayment) relatedProjectField?.remove();
+      else updateReadonlyField('本单关联项目', activePaymentDocument.project);
+      const receiptGrid = [...document.querySelectorAll('.document-section')].find(section => section.querySelector('.document-section-title')?.textContent.trim() === '收款信息')?.querySelector('.document-grid');
+      const isLinkedPayment = activePaymentDocument.payeeType === '链接付款';
+      const linkedPaymentField = `<div class="document-field wide" data-payment-link><label>付款链接</label><div class="readonly-value">${activePaymentDocument.paymentLink}</div></div>`;
+      if (isLinkedPayment && receiptGrid) {
+        [...receiptGrid.querySelectorAll('.document-field')].filter(field => ['开户行', '银行账号'].includes(field.querySelector('label')?.textContent.trim())).forEach(field => field.remove());
+        if (!receiptGrid.querySelector('[data-payment-link]')) receiptGrid.insertAdjacentHTML('beforeend', linkedPaymentField);
+      }
       if (activePaymentDocument.overseas === '是') {
-        const receiptGrid = [...document.querySelectorAll('.document-section')].find(section => section.querySelector('.document-section-title')?.textContent.trim() === '收款信息')?.querySelector('.document-grid');
         if (receiptGrid && !receiptGrid.querySelector('[data-swift-code]')) receiptGrid.insertAdjacentHTML('beforeend', `<div class="document-field" data-swift-code><label>SWIFT Code</label><div class="readonly-value">${activePaymentDocument.swift}</div></div>`);
       }
       if ((approvalDocumentNo || 'PAY-20260805-0086') === 'PAY-20260805-0081') {
@@ -488,17 +499,19 @@ document.title = '报销申请审批｜AI 审批意见原型';
     function alignExpenseAllocations() {
       const isOverseasPayment = activePaymentDocument?.overseas === '是';
       const hasLaborTax = activePaymentDocument?.laborPayment === '是';
+      const isProjectPayment = activePaymentDocument?.paymentType === '项目付款';
+      const hasProjectColumn = isReimbursementApproval ? !isNonProjectApproval : isProjectPayment;
       const allocationRows=activePaymentDocument ? activePaymentDocument.expenses.map(([type,amount,foreignAmount,reason])=>{
         const cnyAmount=isOverseasPayment ? calculateApprovalCnyAmount(foreignAmount, activePaymentDocument.exchangeRate) : amount;
-        return ['1',type,activePaymentDocument.project,activePaymentDocument.applicant,activePaymentDocument.department,activePaymentDocument.department,cnyAmount,...(isOverseasPayment ? [foreignAmount] : []),...(hasLaborTax ? [activePaymentDocument.laborTax || ''] : []),reason || foreignAmount];
+        return ['1',type,...(isProjectPayment ? [activePaymentDocument.project] : []),activePaymentDocument.applicant,activePaymentDocument.department,activePaymentDocument.department,cnyAmount,...(isOverseasPayment ? [foreignAmount] : []),...(hasLaborTax ? [activePaymentDocument.laborTax || ''] : []),reason || foreignAmount];
       }) : isNonProjectApproval ? [
-        ['1','固定资产','—','陈敏','行政部','行政支持组','¥ 260,000.00','¥ 36,000.00','教学中心投影仪采购'],
-        ['1','管理费用','—','陈敏','行政部','行政支持组','¥ 120,000.00','¥ 6,500.00','会议室预约系统年度服务']
+        ['1','固定资产','陈敏','行政部','行政支持组','¥ 260,000.00','¥ 36,000.00','教学中心投影仪采购'],
+        ['1','管理费用','陈敏','行政部','行政支持组','¥ 120,000.00','¥ 6,500.00','会议室预约系统年度服务']
       ] : [
         ['1','差旅－交通','目的班级','刘宇鑫','教学运营部','教学运营组','¥ 960.00','北京客户拜访交通费'],
         ['1','差旅－住宿','目的班级','刘宇鑫','教学运营部','教学运营组','¥ 600.00','北京客户拜访住宿费']
       ];
-      const headers=['序号','费用类型','项目','分摊人','分摊人部门','费用承担团队','分摊金额（人民币）','事由'];
+      const headers=['序号','费用类型',...(hasProjectColumn ? ['项目'] : []),'分摊人','分摊人部门','费用承担团队','分摊金额（人民币）','事由'];
       if (isReimbursementApproval && !isNonProjectApproval) {
         headers.splice(7, 0, '金额（外币，USD）');
         allocationRows.forEach((row, index) => row.splice(7, 0, index === 0 ? 'USD 133.70' : 'USD 83.60'));

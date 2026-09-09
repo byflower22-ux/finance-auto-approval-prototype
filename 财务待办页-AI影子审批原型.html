@@ -245,6 +245,21 @@
         createRow({ number:'EXP-20260805-0055', title:'供应商合同异常费用报销', applicant:'周蕾', department:'市场部', payer:'博商管理集团有限公司', content:'市场活动供应商费用结算', amount:'3,200.00', kind:'报销', suggestion:'建议驳回', suggestionClass:'reject', created:'9', failureReason:'合同信息与发票不一致' })
       );
     }
+    function appendLinkedPaymentTodoRow() {
+      const source = document.querySelector('#todoList tr');
+      if (!source) return;
+      const linkedPaymentData = { number:'PAY-20260805-0089', title:'财务系统年度服务链接付款', applicant:'罗娜', department:'财务部', payer:'博商管理集团有限公司', content:'财务系统年度订阅服务费', amount:'3,680.00', payeeType:'链接付款', created:'10' };
+      const row = source.cloneNode(true);
+      Object.assign(row.dataset, { status:'待财务审核', type:'付款单', approvalKind:'non-project', overseas:'否', invoice:'是', payer:linkedPaymentData.payer, payeeType:linkedPaymentData.payeeType, receiptStatus:'待拉取', kingdeeStatus:'待同步', approvalPassed:'2026-08-05 17:24:16', failureReason:'', aiAudit:'AI已审批', aiSuggestion:'建议通过', created:linkedPaymentData.created, amount:'3680', referenceReady:'true' });
+      row.cells[0].innerHTML = '<div class="actions"><a class="action-link" href="审批详情页-AI影子审批原型.html?from=todo">详情</a></div>';
+      row.cells[1].innerHTML = `<span class="code">${linkedPaymentData.number}</span>`;
+      row.cells[2].innerHTML = `<a class="title-link" href="审批详情页-AI影子审批原型.html?from=todo">${linkedPaymentData.title}</a>`;
+      row.cells[3].textContent = '是'; row.cells[4].textContent = '否'; row.cells[5].textContent = '--'; row.cells[6].textContent = '--';
+      row.cells[7].innerHTML = '2026-08-05<span class="subline">17:24:16</span>'; row.cells[8].textContent = '2026-08-05 17:24:16';
+      row.cells[9].textContent = linkedPaymentData.applicant; row.cells[10].textContent = linkedPaymentData.department; row.cells[11].innerHTML = `<div class="payer">${linkedPaymentData.payer}</div>`; row.cells[12].innerHTML = `<div class="content-cell">${linkedPaymentData.content}</div>`;
+      row.cells[13].textContent = linkedPaymentData.amount; row.cells[14].textContent = '--'; row.cells[15].textContent = '付款单'; row.cells[16].textContent = '付款'; row.cells[17].innerHTML = '<span class="status pending">待财务审核</span>'; row.cells[18].textContent = linkedPaymentData.payeeType; row.cells[19].textContent = '待拉取'; row.cells[20].textContent = '待同步'; row.cells[21].innerHTML = '2026-08-05<span class="subline">17:24:16</span>'; row.cells[22].textContent = '--'; row.cells[23].innerHTML = '<span class="tag done">AI已审批</span>'; row.cells[24].innerHTML = '<span class="tag pass">建议通过</span>'; row.cells[25].textContent = '王晓雯';
+      document.getElementById('todoList').append(row);
+    }
     function referenceCell(value, className='') { const cell=document.createElement('td'); cell.className=className; cell.textContent=value||'--'; return cell; }
     function hydrateReferenceColumns() {
       document.querySelectorAll('#todoList tr').forEach((row,index)=>{
@@ -264,7 +279,7 @@
         const documentType = row.dataset.type === '报销单' ? 'reimbursement' : 'payment';
         const paymentType = row.cells[15]?.textContent.trim() || '';
         const approvalKind = row.dataset.approvalKind || (/项目付款|项目报销/.test(paymentType) ? 'project' : 'non-project');
-        const detailUrl = `审批详情页-AI影子审批原型.html?from=todo&documentType=${documentType}&approvalKind=${approvalKind}&documentNo=${encodeURIComponent(documentNo)}&aiStatus=${encodeURIComponent(row.dataset.aiAudit || '未审批')}`;
+        const detailUrl = `审批详情页-AI影子审批原型.html?from=todo&documentType=${documentType}&approvalKind=${approvalKind}&documentNo=${encodeURIComponent(documentNo)}&aiStatus=${encodeURIComponent(row.dataset.aiAudit || '未审批')}&aiSuggestion=${encodeURIComponent(row.dataset.aiSuggestion || '')}`;
         row.dataset.approvalKind = approvalKind;
         const detailAction = row.querySelector('.actions .action-link:not(.primary-action)');
         const titleLink = row.querySelector('.title-link');
@@ -311,6 +326,7 @@
     function addApprovalActions() { document.querySelectorAll('#todoList .actions').forEach(actions=>{ if(actions.querySelector('.primary-action')) return; const row=actions.closest('tr'); const documentType=row.dataset.type==='报销单'?'reimbursement':'payment'; const documentNo=row.cells[1].textContent.trim(); const approval=document.createElement('a'); approval.className='action-link primary-action'; approval.href=`财务审批页-AI影子审单原型.html?from=todo&documentType=${documentType}&approvalKind=${row.dataset.approvalKind}&documentNo=${encodeURIComponent(documentNo)}&aiStatus=${encodeURIComponent(row.dataset.aiAudit || '未审批')}&aiSuggestion=${encodeURIComponent(row.dataset.aiSuggestion || '')}`; approval.textContent='审批'; const log=document.createElement('button'); log.className='action-link log-action'; log.type='button'; log.textContent='日志'; log.onclick=()=>showOperationLog(log); actions.append(log); actions.append(approval); }); }
     hydrateReferenceColumns();
     appendReimbursementTodoRows();
+    appendLinkedPaymentTodoRow();
     wireDocumentRoutes();
     addApprovalActions();
     normalizeDocumentTypeLabels();
