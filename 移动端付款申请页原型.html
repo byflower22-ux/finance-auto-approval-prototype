@@ -740,10 +740,10 @@
         document.querySelectorAll('.material-launcher [data-material-action="invoice"], .expense-invoice').forEach(node => { node.hidden = !hasInvoice; });
         document.querySelectorAll('.expense-invoice').forEach(node => { node.querySelector('.material-panel-title strong em')?.toggleAttribute('hidden', !hasInvoice); });
       }
-      function updateServiceFeeState() {
+      function updateServiceFeeState(recalculate = false) {
         const enabled = checkedValue('serviceFee') === 'yes';
         document.querySelectorAll('.labor-tax-field').forEach(field => field.classList.toggle('show', enabled));
-        document.querySelectorAll('.labor-tax-input').forEach(input => { input.required = enabled; if (enabled) { const amount = input.closest('.allocation-row')?.querySelector('.allocation-amount'); input.value = calculateLaborTax(amount?.value); } });
+        document.querySelectorAll('.labor-tax-input').forEach(input => { input.required = enabled; if (!enabled) { input.value = ''; return; } if (recalculate || !input.value) { const amount = input.closest('.allocation-row')?.querySelector('.allocation-amount'); input.value = calculateLaborTax(amount?.value); } });
       }
       function updatePayeeTypeState() {
         const linked = checkedValue('payeeType') === 'linked';
@@ -856,7 +856,7 @@
         const list = card.querySelector('.allocation-list');
         const row = document.createElement('div'); row.className = 'allocation-row allocation-card';
         if (automatic) row.dataset.autoApplicantAllocation = 'true';
-        row.innerHTML = `<div class="allocation-grid"><label class="allocation-field allocation-project-field"><span>项目</span><input class="allocation-project-name" readonly value="${project?.name || ''}" aria-label="项目"></label><label class="allocation-field"><span>分摊人 <em>*</em></span><select class="allocation-owner" aria-label="分摊人"><option${owner === '陈敏' ? ' selected' : ''}>陈敏</option><option${owner === '刘宇鑫' ? ' selected' : ''}>刘宇鑫</option><option${owner === '张明' ? ' selected' : ''}>张明</option></select></label><label class="allocation-field"><span>分摊人部门</span><input class="allocation-owner-department" readonly value="" aria-label="分摊人部门"></label><label class="allocation-field"><span>费用承担团队</span><select class="allocation-team" aria-label="费用承担团队">${teams.map(item => `<option>${item}</option>`).join('')}</select></label><label class="allocation-field"><span>预算余额</span><input class="allocation-team-balance" readonly value="" aria-label="预算余额"></label><label class="allocation-field allocation-foreign-amount-field" hidden><span>外币金额 <em>*</em></span><input class="allocation-foreign-amount" type="number" min="0" step="0.01" placeholder="请输入" aria-label="外币金额"></label><label class="allocation-field allocation-amount-field"><span>分摊金额（人民币） <em>*</em></span><input class="allocation-amount" type="number" min="0" step="0.01" required placeholder="请输入" aria-label="分摊金额（人民币）"></label><label class="allocation-field labor-tax-field"><span>劳务个税</span><input class="labor-tax-input" type="number" min="0" step="0.01" placeholder="请输入" aria-label="劳务个税"></label><label class="allocation-field wide"><span>事由 <em>*</em></span><input class="allocation-reason" type="text" required placeholder="请输入" aria-label="事由"></label></div><button class="allocation-remove" type="button" aria-label="删除分摊">×</button>`;
+        row.innerHTML = `<div class="allocation-grid"><label class="allocation-field allocation-project-field"><span>项目</span><input class="allocation-project-name" readonly value="${project?.name || ''}" aria-label="项目"></label><label class="allocation-field"><span>分摊人 <em>*</em></span><select class="allocation-owner" aria-label="分摊人"><option${owner === '陈敏' ? ' selected' : ''}>陈敏</option><option${owner === '刘宇鑫' ? ' selected' : ''}>刘宇鑫</option><option${owner === '张明' ? ' selected' : ''}>张明</option></select></label><label class="allocation-field"><span>分摊人部门</span><input class="allocation-owner-department" readonly value="" aria-label="分摊人部门"></label><label class="allocation-field"><span>费用承担团队</span><select class="allocation-team" aria-label="费用承担团队">${teams.map(item => `<option>${item}</option>`).join('')}</select></label><label class="allocation-field"><span>预算余额</span><input class="allocation-team-balance" readonly value="" aria-label="预算余额"></label><label class="allocation-field allocation-foreign-amount-field" hidden><span>外币金额 <em>*</em></span><input class="allocation-foreign-amount" type="number" min="0" step="0.01" placeholder="请输入" aria-label="外币金额"></label><label class="allocation-field allocation-amount-field"><span>分摊金额（人民币） <em>*</em></span><input class="allocation-amount" type="number" min="0" step="0.01" required placeholder="请输入" aria-label="分摊金额（人民币）"></label><label class="allocation-field labor-tax-field${checkedValue('serviceFee') === 'yes' ? ' show' : ''}"><span>劳务个税</span><input class="labor-tax-input" type="number" min="0" step="0.01" placeholder="自动计算" aria-label="劳务个税"></label><label class="allocation-field wide"><span>事由 <em>*</em></span><input class="allocation-reason" type="text" required placeholder="请输入" aria-label="事由"></label></div><button class="allocation-remove" type="button" aria-label="删除分摊">×</button>`;
         row.querySelector('.allocation-owner').addEventListener('change', () => { updateAllocationOwner(row); });
         row.querySelector('.allocation-team').addEventListener('change', () => updateAllocationTeam(row));
         row.querySelector('.allocation-amount').addEventListener('input', () => { updateExpenseTotal(); if (checkedValue('serviceFee') === 'yes') row.querySelector('.labor-tax-input').value = calculateLaborTax(row.querySelector('.allocation-amount').value); updateServiceFeeState(); updateExpenseSummary(card); });
@@ -868,7 +868,7 @@
         updateAllocationOwner(row);
         updateAutomaticAllocationRowState(row);
         updateMobileAllocationAmountMode(card);
-        updateServiceFeeState();
+        updateServiceFeeState(true);
         refreshChoiceTrigger(row.querySelector('.allocation-team'));
         updateExpenseSummary(card);
       }
@@ -1243,7 +1243,7 @@
       });
       companyEntity.addEventListener('change', refreshBasicCompletion);
       document.querySelectorAll('input[name="hasInvoice"]').forEach(input => input.addEventListener('change', () => { updateInvoiceVisibility(); refreshBasicCompletion(); }));
-      document.querySelectorAll('input[name="serviceFee"]').forEach(input => input.addEventListener('change', () => { updateServiceFeeState(); refreshBasicCompletion(); }));
+      document.querySelectorAll('input[name="serviceFee"]').forEach(input => input.addEventListener('change', () => { updateServiceFeeState(true); refreshBasicCompletion(); }));
       document.querySelectorAll('input[name="payeeType"]').forEach(input => input.addEventListener('change', () => { updatePayeeTypeState(); refreshBasicCompletion(); }));
       recipientBankManual.addEventListener('input', event => { recipientBank.value = event.target.value; refreshBasicCompletion(); });
       recipientAccount.addEventListener('input', refreshBasicCompletion);
@@ -1304,7 +1304,7 @@
       document.getElementById('submitApplication').addEventListener('click', validateAndSubmit);
       refreshBasicCompletion();
       updateInvoiceVisibility();
-      updateServiceFeeState();
+      updateServiceFeeState(true);
       updatePayeeTypeState();
       setStep(1);
     })();
